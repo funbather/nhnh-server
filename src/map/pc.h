@@ -221,6 +221,7 @@ struct map_session_data {
 		unsigned int standalone : 1;/* [Ind/Hercules <3] */
 		unsigned int loggingout : 1;
 		unsigned int warp_clean : 1;
+		unsigned int autotarget : 1;
 	} state;
 	struct {
 		unsigned char no_weapon_damage, no_magic_damage, no_misc_damage;
@@ -236,6 +237,7 @@ struct map_session_data {
 	} special_state;
 	int login_id1, login_id2;
 	uint16 job; //This is the internal job ID used by the map server to simplify comparisons/queries/etc. [Skotlex]
+	unsigned int class_choices;
 
 	/// Groups & permissions
 	int group_id;

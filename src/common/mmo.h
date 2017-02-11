@@ -326,6 +326,7 @@ struct item {
 	char favorite;
 	unsigned char bound;
 	uint64 unique_id;
+	unsigned int rolls;
 };
 
 //Equip position constants
@@ -567,6 +568,7 @@ struct mmo_charstatus {
 	int bank_vault;
 
 	int16 class;
+	unsigned int class_choices;
 	int status_point, skill_point;
 	int hp,max_hp,sp,max_sp;
 	unsigned int option;

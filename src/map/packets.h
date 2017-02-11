@@ -96,7 +96,7 @@ packet(0x0099,-1,clif->pBroadcast,2,4);
 packet(0x009a,-1);
 packet(0x009b,5,clif->pChangeDir,2,4);
 packet(0x009c,9);
-packet(0x009d,17);
+packet(0x009d,23);
 packet(0x009e,17);
 packet(0x009f,6,clif->pTakeItem,2);
 packet(0x00a0,23);
@@ -2994,10 +2994,10 @@ packet(0x96e,-1,clif->ackmergeitems);
 
 #if PACKETVER >= 20150226
 // shuffle packets not added
-	packet(0x0A09,45);
-	packet(0x0A0A,47);
-	packet(0x0A0B,47);
-	packet(0x0A0C,56);
+	packet(0x0A09,49);
+	packet(0x0A0A,51);
+	packet(0x0A0B,51);
+	packet(0x0A0C,60);
 	packet(0x0A0D,-1);
 	packet(0x0A0F,-1);
 	packet(0x0A10,-1);

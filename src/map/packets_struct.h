@@ -319,28 +319,16 @@ struct NORMALITEM_INFO {
 	int16 index;
 	uint16 ITID;
 	uint8 type;
-#if PACKETVER < 20120925
-	uint8 IsIdentified;
-#endif
 	int16 count;
-#if PACKETVER >= 20120925
 	uint32 WearState;
-#else
-	uint16 WearState;
-#endif
-#if PACKETVER >= 5
 	struct EQUIPSLOTINFO slot;
-#endif
-#if PACKETVER >= 20080102
 	int32 HireExpireDate;
-#endif
-#if PACKETVER >= 20120925
 	struct {
 		uint8 IsIdentified : 1;
 		uint8 PlaceETCTab : 1;
 		uint8 SpareBits : 6;
 	} Flag;
-#endif
+	uint32 rolls;
 } __attribute__((packed));
 
 struct RndOptions {
@@ -353,42 +341,21 @@ struct EQUIPITEM_INFO {
 	int16 index;
 	uint16 ITID;
 	uint8 type;
-#if PACKETVER < 20120925
-	uint8 IsIdentified;
-#endif
-#if PACKETVER >= 20120925
 	uint32 location;
 	uint32 WearState;
-#else
-	uint16 location;
-	uint16 WearState;
-#endif
-#if PACKETVER < 20120925
-	uint8 IsDamaged;
-#endif
 	uint8 RefiningLevel;
 	struct EQUIPSLOTINFO slot;
-#if PACKETVER >= 20071002
 	int32 HireExpireDate;
-#endif
-#if PACKETVER >= 20080102
 	uint16 bindOnEquipType;
-#endif
-#if PACKETVER >= 20100629
 	uint16 wItemSpriteNumber;
-#endif
-#if PACKETVER >= 20150226
 	uint8 option_count;
 	struct RndOptions option_data[5];
-#endif
-#if PACKETVER >= 20120925
 	struct {
 		uint8 IsIdentified : 1;
 		uint8 IsDamaged : 1;
 		uint8 PlaceETCTab : 1;
 		uint8 SpareBits : 5;
 	} Flag;
-#endif
 } __attribute__((packed));
 
 struct packet_authok {
@@ -397,12 +364,8 @@ struct packet_authok {
 	uint8 PosDir[3];
 	uint8 xSize;
 	uint8 ySize;
-#if PACKETVER >= 20080102
 	int16 font;
-#endif
-#if PACKETVER >= 20141022
 	uint8 sex;
-#endif
 } __attribute__((packed));
 
 struct packet_monster_hp {
@@ -428,37 +391,33 @@ struct packet_additem {
 	uint8 IsDamaged;
 	uint8 refiningLevel;
 	struct EQUIPSLOTINFO slot;
-#if PACKETVER >= 20120925
 	uint32 location;
-#else
-	uint16 location;
-#endif
 	uint8 type;
 	uint8 result;
-#if PACKETVER >= 20061218
 	int32 HireExpireDate;
-#endif
-#if PACKETVER >= 20071002
 	uint16 bindOnEquipType;
-#endif
-#if PACKETVER >= 20150226
+	uint32 rolls;
 	struct RndOptions option_data[5];
-#endif
 } __attribute__((packed));
 
 struct packet_dropflooritem {
 	int16 PacketType;
 	uint32 ITAID;
 	uint16 ITID;
-#if PACKETVER >= 20130000 /* not sure date */
 	uint16 type;
-#endif
-	uint8 IsIdentified;
+	uint8 rarity;
 	int16 xPos;
 	int16 yPos;
 	uint8 subX;
 	uint8 subY;
 	int16 count;
+	uint8 quality;
+	uint8 ilvl;
+	uint16 slot1;
+	uint16 slot2;
+	uint16 slot3;
+	uint16 slot4;
+	uint32 rolls;
 } __attribute__((packed));
 struct packet_idle_unit2 {
 #if PACKETVER < 20091103
@@ -530,182 +489,107 @@ struct packet_spawn_unit2 {
 
 struct packet_spawn_unit {
 	int16 PacketType;
-#if PACKETVER >= 20091103
 	int16 PacketLength;
 	uint8 objecttype;
-#endif
-#if PACKETVER >= 20131223
 	uint32 AID;
-#endif
 	uint32 GID;
 	int16 speed;
 	int16 bodyState;
 	int16 healthState;
-#if PACKETVER < 20080102
-	int16 effectState;
-#else
 	int32 effectState;
-#endif
 	int16 job;
 	int16 head;
-#if PACKETVER < 7
-	int16 weapon;
-#else
 	int32 weapon;
-#endif
 	int16 accessory;
-#if PACKETVER < 7
-	int16 shield;
-#endif
 	int16 accessory2;
 	int16 accessory3;
 	int16 headpalette;
 	int16 bodypalette;
 	int16 headDir;
-#if PACKETVER >= 20101124
 	int16 robe;
-#endif
 	uint32 GUID;
 	int16 GEmblemVer;
 	int16 honor;
-#if PACKETVER > 7
 	int32 virtue;
-#else
-	int16 virtue;
-#endif
 	uint8 isPKModeON;
 	uint8 sex;
 	uint8 PosDir[3];
 	uint8 xSize;
 	uint8 ySize;
 	int16 clevel;
-#if PACKETVER >= 20080102
 	int16 font;
-#endif
-#if PACKETVER >= 20120221
 	int32 maxHP;
 	int32 HP;
 	uint8 isBoss;
-#endif
-#if PACKETVER >= 20150513
 	int16 body;
+	uint32 classchoices;
 	char name[NAME_LENGTH];
-#endif
 } __attribute__((packed));
 
 struct packet_unit_walking {
 	int16 PacketType;
-#if PACKETVER >= 20091103
 	int16 PacketLength;
-#endif
-#if PACKETVER > 20071106
 	uint8 objecttype;
-#endif
-#if PACKETVER >= 20131223
 	uint32 AID;
-#endif
 	uint32 GID;
 	int16 speed;
 	int16 bodyState;
 	int16 healthState;
-#if PACKETVER < 7
-	int16 effectState;
-#else
 	int32 effectState;
-#endif
 	int16 job;
 	int16 head;
-#if PACKETVER < 7
-	int16 weapon;
-#else
 	int32 weapon;
-#endif
 	int16 accessory;
 	uint32 moveStartTime;
-#if PACKETVER < 7
-	int16 shield;
-#endif
 	int16 accessory2;
 	int16 accessory3;
 	int16 headpalette;
 	int16 bodypalette;
 	int16 headDir;
-#if PACKETVER >= 20101124
 	int16 robe;
-#endif
 	uint32 GUID;
 	int16 GEmblemVer;
 	int16 honor;
-#if PACKETVER > 7
 	int32 virtue;
-#else
-	int16 virtue;
-#endif
 	uint8 isPKModeON;
 	uint8 sex;
 	uint8 MoveData[6];
 	uint8 xSize;
 	uint8 ySize;
 	int16 clevel;
-#if PACKETVER >= 20080102
 	int16 font;
-#endif
-#if PACKETVER >= 20120221
 	int32 maxHP;
 	int32 HP;
 	uint8 isBoss;
-#endif
-#if PACKETVER >= 20150513
 	int16 body;
+	uint32 classchoices;
 	char name[NAME_LENGTH];
-#endif
 } __attribute__((packed));
 
 struct packet_idle_unit {
 	int16 PacketType;
-#if PACKETVER >= 20091103
 	int16 PacketLength;
 	uint8 objecttype;
-#endif
-#if PACKETVER >= 20131223
 	uint32 AID;
-#endif
 	uint32 GID;
 	int16 speed;
 	int16 bodyState;
 	int16 healthState;
-#if PACKETVER < 20080102
-	int16 effectState;
-#else
 	int32 effectState;
-#endif
 	int16 job;
 	int16 head;
-#if PACKETVER < 7
-	int16 weapon;
-#else
 	int32 weapon;
-#endif
 	int16 accessory;
-#if PACKETVER < 7
-	int16 shield;
-#endif
 	int16 accessory2;
 	int16 accessory3;
 	int16 headpalette;
 	int16 bodypalette;
 	int16 headDir;
-#if PACKETVER >= 20101124
 	int16 robe;
-#endif
 	uint32 GUID;
 	int16 GEmblemVer;
 	int16 honor;
-#if PACKETVER > 7
 	int32 virtue;
-#else
-	int16 virtue;
-#endif
 	uint8 isPKModeON;
 	uint8 sex;
 	uint8 PosDir[3];
@@ -713,18 +597,13 @@ struct packet_idle_unit {
 	uint8 ySize;
 	uint8 state;
 	int16 clevel;
-#if PACKETVER >= 20080102
 	int16 font;
-#endif
-#if PACKETVER >= 20120221
 	int32 maxHP;
 	int32 HP;
 	uint8 isBoss;
-#endif
-#if PACKETVER >= 20150513
 	int16 body;
+	uint32 classchoices;
 	char name[NAME_LENGTH];
-#endif
 } __attribute__((packed));
 
 struct packet_status_change {
@@ -966,53 +845,35 @@ struct packet_itemlist_equip {
 struct packet_storelist_normal {
 	int16 PacketType;
 	int16 PacketLength;
-#if PACKETVER >= 20120925
 	char name[NAME_LENGTH];
-#endif
 	struct NORMALITEM_INFO list[MAX_ITEMLIST];
 } __attribute__((packed));
 
 struct packet_storelist_equip {
 	int16 PacketType;
 	int16 PacketLength;
-#if PACKETVER >= 20120925
 	char name[NAME_LENGTH];
-#endif
 	struct EQUIPITEM_INFO list[MAX_ITEMLIST];
 } __attribute__((packed));
 
 struct packet_equip_item {
 	int16 PacketType;
 	uint16 index;
-#if PACKETVER >= 20120925
 	uint32 wearLocation;
-#else
-	uint16 wearLocation;
-#endif
 } __attribute__((packed));
 
 struct packet_equipitem_ack {
 	int16 PacketType;
 	uint16 index;
-#if PACKETVER >= 20120925
 	uint32 wearLocation;
-#else
-	uint16 wearLocation;
-#endif
-#if PACKETVER >= 20100629
 	uint16 wItemSpriteNumber;
-#endif
 	uint8 result;
 } __attribute__((packed));
 
 struct packet_unequipitem_ack {
 	int16 PacketType;
 	uint16 index;
-#if PACKETVER >= 20120925
 	uint32 wearLocation;
-#else
-	uint16 wearLocation;
-#endif
 	uint8 result;
 } __attribute__((packed));
 
@@ -1025,9 +886,7 @@ struct packet_viewequip_ack {
 	int16 accessory;
 	int16 accessory2;
 	int16 accessory3;
-#if PACKETVER >= 20101124
 	int16 robe;
-#endif
 	int16 headpalette;
 	int16 bodypalette;
 	uint8 sex;
