@@ -3112,7 +3112,7 @@ packet(0x96e,-1,clif->ackmergeitems);
 	packet(0x0860,36,clif->pStoragePassword,0);
 	packet(0x0363,8,clif->pDull); // CZ_JOIN_BATTLE_FIELD
 	packet(0x0436,4,clif->pDull); // CZ_GANGSI_RANK
-	packet(0x0a39,36);
+	packet(0x0a39,44);
 #endif
 
 // 2015-11-04aRagexe
@@ -3146,7 +3146,7 @@ packet(0x96e,-1,clif->ackmergeitems);
 	packet(0x0940,36,clif->pStoragePassword,2,4,20);
 	packet(0x08a3,4,clif->pDull); // CZ_GANGSI_RANK
 	packet(0x0939,8,clif->pDull); // CZ_JOIN_BATTLE_FIELD
-	packet(0x0a39,36);
+	packet(0x0a39,44);
 #endif
 
 // 2015-12-16aRagexe

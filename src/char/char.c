@@ -1000,6 +1000,7 @@ int char_mmo_chars_fromsql(struct char_session_data* sd, uint8* buf)
 	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 37, SQLDT_USHORT, &p.slotchange, 0, NULL, NULL)
 	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 38, SQLDT_LONG,   &unban_time, 0, NULL, NULL)
 	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 39, SQLDT_ENUM,   &sex, sizeof(sex), NULL, NULL)
+	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 40, SQLDT_UINT32, &p.class_choices, 0, NULL, NULL)
 	) {
 		SqlStmt_ShowDebug(stmt);
 		SQL->StmtFree(stmt);
@@ -1248,7 +1249,7 @@ int char_mmo_char_fromsql(int char_id, struct mmo_charstatus* p, bool load_every
 		SqlStmt_ShowDebug(stmt);
 	}
 	for( i = 0; i < MAX_SLOTS; ++i )
-		if( SQL_ERROR == SQL->StmtBindColumn(stmt, 10+i, SQLDT_SHORT, &tmp_item.card[i], 0, NULL, NULL) )
+		if( SQL_ERROR == SQL->StmtBindColumn(stmt, 11+i, SQLDT_SHORT, &tmp_item.card[i], 0, NULL, NULL) )
 			SqlStmt_ShowDebug(stmt);
 
 	for( i = 0; i < MAX_CART && SQL_SUCCESS == SQL->StmtNextRow(stmt); ++i )
@@ -1548,7 +1549,7 @@ int char_check_char_name(char * name, char * esc_name)
  *  -5: 'Symbols in Character Names are forbidden'
  *  char_id: Success
  **/
-int char_make_new_char_sql(struct char_session_data *sd, const char *name_, int str, int agi, int vit, int int_, int dex, int luk, int slot, int hair_color, int hair_style, int16 starting_class)
+int char_make_new_char_sql(struct char_session_data *sd, const char *name_, int str, int agi, int vit, int int_, int dex, int luk, int slot, int hair_color, int hair_style, int16 starting_class, short sex, unsigned int class_choices)
 {
 	char name[NAME_LENGTH];
 	char esc_name[NAME_LENGTH*2+1];
@@ -1564,58 +1565,40 @@ int char_make_new_char_sql(struct char_session_data *sd, const char *name_, int 
 	if (flag < 0)
 		return flag;
 
-	switch (starting_class) {
-		case JOB_SUMMONER:
-		case JOB_NOVICE:
+	switch( sex ) {
+		case 0:
+			sex = 'F';
+			break;
+		case 1:
+			sex = 'M';
 			break;
 		default:
-			return -2;	// Char Creation Denied
+			sex = 'U';
+			break;
 	}
 
 	//check other inputs
-#if PACKETVER >= 20120307
-	if(slot < 0 || slot >= sd->char_slots)
-#else
-	if((slot < 0 || slot >= sd->char_slots) // slots
-	|| (str + agi + vit + int_ + dex + luk != 6*5 ) // stats
-	|| (str < 1 || str > 9 || agi < 1 || agi > 9 || vit < 1 || vit > 9 || int_ < 1 || int_ > 9 || dex < 1 || dex > 9 || luk < 1 || luk > 9) // individual stat values
-	|| (str + int_ != 10 || agi + luk != 10 || vit + dex != 10) ) // pairs
-#endif
-#if PACKETVER >= 20100413
-		return -4; // invalid slot
-#else
-		return -2; // invalid input
-#endif
+	if((slot < 0 || slot >= sd->char_slots) ||
+		 (str + agi + vit + int_ + dex + luk > 30) || // More than 30 points
+		 (str + agi + vit + int_ + dex + luk < 30))   // Less than 30 points?
+				return -2; // invalid input
 
 	// check char slot
 	if( sd->found_char[slot] != -1 )
 		return -2; /* character account limit exceeded */
 
-#if PACKETVER >= 20120307
 	// Insert the new char entry to the database
-	if (SQL_ERROR == SQL->Query(inter->sql_handle, "INSERT INTO `%s` (`account_id`, `char_num`, `name`, `class`, `zeny`, `status_point`,`str`, `agi`, `vit`, `int`, `dex`, `luk`, `max_hp`, `hp`,"
-		"`max_sp`, `sp`, `hair`, `hair_color`, `last_map`, `last_x`, `last_y`, `save_map`, `save_x`, `save_y`) VALUES ("
-		"'%d', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d','%d', '%d','%d', '%d', '%s', '%d', '%d', '%s', '%d', '%d')",
-		char_db, sd->account_id , slot, esc_name, starting_class, start_zeny, 48, str, agi, vit, int_, dex, luk,
-		(40 * (100 + vit)/100) , (40 * (100 + vit)/100 ),  (11 * (100 + int_)/100), (11 * (100 + int_)/100), hair_style, hair_color,
-		mapindex_id2name(start_point.map), start_point.x, start_point.y, mapindex_id2name(start_point.map), start_point.x, start_point.y) )
+	if (SQL_ERROR == SQL->Query(inter->sql_handle, "INSERT INTO `%s` (`account_id`, `char_num`, `name`, `sex`, `class`, `zeny`, `status_point`,`str`, `agi`, `vit`, `int`, `dex`, `luk`, `max_hp`, `hp`,"
+		"`max_sp`, `sp`, `hair`, `hair_color`, `last_map`, `last_x`, `last_y`, `save_map`, `save_x`, `save_y`, `class_choices`) VALUES ("
+		"'%d', '%d', '%s', '%c', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d','%d', '%d','%d', '%d', '%s', '%d', '%d', '%s', '%d', '%d', '%d')",
+		char_db, sd->account_id , slot, esc_name, sex, starting_class, start_zeny, 0, str, agi, vit, int_, dex, luk,
+		(50 * (100 + vit * 5)/100) , (50 * (100 + vit * 5)/100),  100, 100, hair_style, hair_color,
+		mapindex_id2name(start_point.map), start_point.x, start_point.y, mapindex_id2name(start_point.map), start_point.x, start_point.y, class_choices) )
 	{
 		Sql_ShowDebug(inter->sql_handle);
 		return -2; //No, stop the procedure!
 	}
-#else
-	//Insert the new char entry to the database
-	if( SQL_ERROR == SQL->Query(inter->sql_handle, "INSERT INTO `%s` (`account_id`, `char_num`, `name`, `class`, `zeny`, `str`, `agi`, `vit`, `int`, `dex`, `luk`, `max_hp`, `hp`,"
-							   "`max_sp`, `sp`, `hair`, `hair_color`, `last_map`, `last_x`, `last_y`, `save_map`, `save_x`, `save_y`) VALUES ("
-							   "'%d', '%d', '%s', '%d',  '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d','%d', '%d','%d', '%d', '%s', '%d', '%d', '%s', '%d', '%d')",
-							   char_db, sd->account_id , slot, esc_name, starting_class, start_zeny, str, agi, vit, int_, dex, luk,
-							   (40 * (100 + vit)/100) , (40 * (100 + vit)/100 ),  (11 * (100 + int_)/100), (11 * (100 + int_)/100), hair_style, hair_color,
-							   mapindex_id2name(start_point.map), start_point.x, start_point.y, mapindex_id2name(start_point.map), start_point.x, start_point.y) )
-	{
-		Sql_ShowDebug(inter->sql_handle);
-		return -2; //No, stop the procedure!
-	}
-#endif
+	
 	//Retrieve the newly auto-generated char id
 	char_id = (int)SQL->LastInsertId(inter->sql_handle);
 
@@ -1862,9 +1845,8 @@ int char_count_users(void)
 // Writes char data to the buffer in the format used by the client.
 // Used in packets 0x6b (chars info) and 0x6d (new char info)
 // Returns the size
-#define MAX_CHAR_BUF 150 //Max size (for WFIFOHEAD calls)
+#define MAX_CHAR_BUF 151 //Max size (for WFIFOHEAD calls)
 int char_mmo_char_tobuf(uint8* buffer, struct mmo_charstatus* p) {
-	unsigned short offset = 0;
 	uint8* buf;
 
 	if( buffer == NULL || p == NULL )
@@ -1882,78 +1864,41 @@ int char_mmo_char_tobuf(uint8* buffer, struct mmo_charstatus* p) {
 	WBUFL(buf,32) = p->karma;
 	WBUFL(buf,36) = p->manner;
 	WBUFW(buf,40) = min(p->status_point, INT16_MAX);
-#if PACKETVER > 20081217
 	WBUFL(buf,42) = p->hp;
 	WBUFL(buf,46) = p->max_hp;
-	offset+=4;
-	buf = WBUFP(buffer,offset);
-#else
-	WBUFW(buf,42) = min(p->hp, INT16_MAX);
-	WBUFW(buf,44) = min(p->max_hp, INT16_MAX);
-#endif
-	WBUFW(buf,46) = min(p->sp, INT16_MAX);
-	WBUFW(buf,48) = min(p->max_sp, INT16_MAX);
-	WBUFW(buf,50) = DEFAULT_WALK_SPEED; // p->speed;
-	WBUFW(buf,52) = p->class;
-	WBUFW(buf,54) = p->hair;
-#if PACKETVER >= 20141022
-	WBUFW(buf,56) = p->body;
-	offset+=2;
-	buf = WBUFP(buffer,offset);
-#endif
-
-	//When the weapon is sent and your option is riding, the client crashes on login!?
-	// FIXME[Haru]: is OPTION_HANBOK intended to be part of this list? And if it is, should the list also include other OPTION_ costumes?
-	WBUFW(buf,56) = (p->option&(OPTION_RIDING|OPTION_DRAGON|OPTION_WUG|OPTION_WUGRIDER|OPTION_MADOGEAR|OPTION_HANBOK)) ? 0 : p->weapon;
-
-	WBUFW(buf,58) = p->base_level;
-	WBUFW(buf,60) = min(p->skill_point, INT16_MAX);
-	WBUFW(buf,62) = p->head_bottom;
-	WBUFW(buf,64) = p->shield;
-	WBUFW(buf,66) = p->head_top;
-	WBUFW(buf,68) = p->head_mid;
-	WBUFW(buf,70) = p->hair_color;
-	WBUFW(buf,72) = p->clothes_color;
-	memcpy(WBUFP(buf,74), p->name, NAME_LENGTH);
-	WBUFB(buf,98) = min(p->str, UINT8_MAX);
-	WBUFB(buf,99) = min(p->agi, UINT8_MAX);
-	WBUFB(buf,100) = min(p->vit, UINT8_MAX);
-	WBUFB(buf,101) = min(p->int_, UINT8_MAX);
-	WBUFB(buf,102) = min(p->dex, UINT8_MAX);
-	WBUFB(buf,103) = min(p->luk, UINT8_MAX);
-	WBUFW(buf,104) = p->slot;
-#if PACKETVER >= 20061023
-	WBUFW(buf,106) = ( p->rename > 0 ) ? 0 : 1;
-	offset += 2;
-#endif
-#if (PACKETVER >= 20100720 && PACKETVER <= 20100727) || PACKETVER >= 20100803
-	mapindex->getmapname_ext(mapindex_id2name(p->last_point.map), WBUFP(buf,108));
-	offset += MAP_NAME_LENGTH_EXT;
-#endif
-#if PACKETVER >= 20100803
-	WBUFL(buf,124) = (int)p->delete_date;
-	offset += 4;
-#endif
-#if PACKETVER >= 20110111
-	WBUFL(buf,128) = p->robe;
-	offset += 4;
-#endif
-#if PACKETVER != 20111116 //2011-11-16 wants 136, ask gravity.
-	#if PACKETVER >= 20110928
-		WBUFL(buf,132) = ( p->slotchange > 0 ) ? 1 : 0;  // change slot feature (0 = disabled, otherwise enabled)
-		offset += 4;
-	#endif
-	#if PACKETVER >= 20111025
-		WBUFL(buf,136) = ( p->rename > 0 ) ? 1 : 0;  // (0 = disabled, otherwise displays "Add-Ons" sidebar)
-		offset += 4;
-	#endif
-	#if PACKETVER >= 20141016
-		WBUFB(buf,140) = p->sex;// sex - (0 = female, 1 = male, 99 = logindefined)
-		offset += 1;
-	#endif
-#endif
-
-	return 106+offset;
+	WBUFW(buf,50) = min(p->sp, INT16_MAX);
+	WBUFW(buf,52) = min(p->max_sp, INT16_MAX);
+	WBUFW(buf,54) = DEFAULT_WALK_SPEED; // p->speed;
+	WBUFW(buf,56) = p->class;
+	WBUFW(buf,58) = p->hair;
+	WBUFW(buf,60) = p->body;
+	WBUFW(buf,62) = p->weapon;
+	WBUFW(buf,64) = p->base_level;
+	WBUFW(buf,66) = min(p->skill_point, INT16_MAX);
+	WBUFW(buf,68) = p->head_bottom;
+	WBUFW(buf,70) = p->shield;
+	WBUFW(buf,72) = p->head_top;
+	WBUFW(buf,74) = p->head_mid;
+	WBUFW(buf,76) = p->hair_color;
+	WBUFW(buf,78) = p->clothes_color;
+	memcpy(WBUFP(buf,80), p->name, NAME_LENGTH);
+	WBUFB(buf,104) = min(p->str, UINT8_MAX);
+	WBUFB(buf,105) = min(p->agi, UINT8_MAX);
+	WBUFB(buf,106) = min(p->vit, UINT8_MAX);
+	WBUFB(buf,107) = min(p->int_, UINT8_MAX);
+	WBUFB(buf,108) = min(p->dex, UINT8_MAX);
+	WBUFB(buf,109) = min(p->luk, UINT8_MAX);
+	WBUFW(buf,110) = p->slot;
+	WBUFW(buf,112) = ( p->rename > 0 ) ? 0 : 1;
+	mapindex->getmapname_ext(mapindex_id2name(p->last_point.map), WBUFP(buf,114));
+	WBUFL(buf,130) = (int)p->delete_date;
+	WBUFL(buf,134) = p->robe;
+	WBUFL(buf,138) = ( p->slotchange > 0 ) ? 1 : 0;  // change slot feature (0 = disabled, otherwise enabled)
+	WBUFL(buf,142) = ( p->rename > 0 ) ? 1 : 0;  // (0 = disabled, otherwise displays "Add-Ons" sidebar)
+	WBUFB(buf,146) = p->sex;// sex - (0 = female, 1 = male, 99 = logindefined)
+	WBUFL(buf,147) = p->class_choices;
+	
+	return 151;
 }
 
 /* Made Possible by Yommy~! <3 */
@@ -4637,13 +4582,7 @@ void char_parse_char_create_new_char(int fd, struct char_session_data* sd)
 		//turn character creation on/off [Kevin]
 		result = -2;
 	} else {
-	#if PACKETVER >= 20151001
-		result = chr->make_new_char_sql(sd, RFIFOP(fd,2), 1, 1, 1, 1, 1, 1, RFIFOB(fd,26), RFIFOW(fd,27), RFIFOW(fd,29), RFIFOW(fd, 31));
-	#elif PACKETVER >= 20120307
-		result = chr->make_new_char_sql(sd, RFIFOP(fd,2), 1, 1, 1, 1, 1, 1, RFIFOB(fd,26), RFIFOW(fd,27), RFIFOW(fd,29), JOB_NOVICE);
-	#else
-		result = chr->make_new_char_sql(sd, RFIFOP(fd,2), RFIFOB(fd,26), RFIFOB(fd,27), RFIFOB(fd,28), RFIFOB(fd,29), RFIFOB(fd,30), RFIFOB(fd,31), RFIFOB(fd,32), RFIFOW(fd,33), RFIFOW(fd,35), JOB_NOVICE);
-	#endif
+		result = chr->make_new_char_sql(sd, RFIFOP(fd,2), RFIFOB(fd,38), RFIFOB(fd,39), RFIFOB(fd,40), RFIFOB(fd,41), RFIFOB(fd,42), RFIFOB(fd,43), RFIFOB(fd,26), RFIFOW(fd,27), RFIFOW(fd,29), RFIFOW(fd, 31), RFIFOB(fd,37), RFIFOL(fd, 33));
 	}
 
 	//'Charname already exists' (-1), 'Char creation denied' (-2) and 'You are underaged' (-3)
@@ -4658,13 +4597,8 @@ void char_parse_char_create_new_char(int fd, struct char_session_data* sd)
 		// add new entry to the chars list
 		sd->found_char[char_dat.slot] = result; // the char_id of the new char
 	}
-#if PACKETVER >= 20151001
-	RFIFOSKIP(fd, 36);
-#elif PACKETVER >= 20120307
-	RFIFOSKIP(fd, 31);
-#else
-	RFIFOSKIP(fd, 37);
-#endif
+	
+	RFIFOSKIP(fd, 44);
 }
 
 // flag:
@@ -5042,23 +4976,10 @@ int char_parse_char(int fd)
 			break;
 
 			// create new char
-#if PACKETVER >= 20151001
 			// S 0a39 <name>.24B <slot>.B <hair color>.W <hair style>.W <starting job class ID>.W <Unknown>.(W or 2 B's)??? <sex>.B
 			case 0xa39:
 			{
-				FIFOSD_CHECK(36);	
-#elif PACKETVER >= 20120307
-			// S 0970 <name>.24B <slot>.B <hair color>.W <hair style>.W
-			case 0x970:
-			{
-				FIFOSD_CHECK(31);
-#else
-			// S 0067 <name>.24B <str>.B <agi>.B <vit>.B <int>.B <dex>.B <luk>.B <slot>.B <hair color>.W <hair style>.W
-			case 0x67:
-			{
-				FIFOSD_CHECK(37);
-#endif
-
+				FIFOSD_CHECK(44);
 				chr->parse_char_create_new_char(fd, sd);
 			}
 			break;
