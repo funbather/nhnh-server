@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS `auction` (
   `card2` SMALLINT(11) NOT NULL DEFAULT '0',
   `card3` SMALLINT(11) NOT NULL DEFAULT '0',
   `unique_id` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0',
+  `rolls` SMALLINT(11) UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`auction_id`)
 ) ENGINE=MyISAM;
 
@@ -127,6 +128,7 @@ CREATE TABLE IF NOT EXISTS `cart_inventory` (
   `expire_time` INT(11) UNSIGNED NOT NULL DEFAULT '0',
   `bound` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0',
   `unique_id` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0',
+  `rolls` SMALLINT(11) UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `char_id` (`char_id`)
 ) ENGINE=MyISAM;
@@ -197,6 +199,7 @@ CREATE TABLE IF NOT EXISTS `char` (
   `uniqueitem_counter` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0',
   `sex` ENUM('M','F','U') NOT NULL DEFAULT 'U',
   `hotkey_rowshift` TINYINT(3) UNSIGNED NOT NULL DEFAULT '0',
+  `class_choices` SMALLINT(11) UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`char_id`),
   UNIQUE KEY `name_key` (`name`),
   KEY `account_id` (`account_id`),
@@ -472,6 +475,7 @@ CREATE TABLE IF NOT EXISTS `guild_storage` (
   `expire_time` INT(11) UNSIGNED NOT NULL DEFAULT '0',
   `bound` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0',
   `unique_id` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0',
+  `rolls` SMALLINT(11) UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `guild_id` (`guild_id`)
 ) ENGINE=MyISAM;
@@ -537,6 +541,7 @@ CREATE TABLE IF NOT EXISTS `inventory` (
   `favorite` TINYINT(3) UNSIGNED NOT NULL DEFAULT '0',
   `bound` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0',
   `unique_id` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0',
+  `rolls` SMALLINT(11) UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `char_id` (`char_id`)
 ) ENGINE=MyISAM;
@@ -648,6 +653,7 @@ CREATE TABLE IF NOT EXISTS `mail` (
   `card2` SMALLINT(11) NOT NULL DEFAULT '0',
   `card3` SMALLINT(11) NOT NULL DEFAULT '0',
   `unique_id` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0',
+  `rolls` SMALLINT(11) UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM;
 
@@ -851,6 +857,7 @@ CREATE TABLE IF NOT EXISTS `storage` (
   `expire_time` INT(11) UNSIGNED NOT NULL DEFAULT '0',
   `bound` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0',
   `unique_id` BIGINT(20) UNSIGNED NOT NULL DEFAULT '0',
+  `rolls` SMALLINT(11) UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `account_id` (`account_id`)
 ) ENGINE=MyISAM;
