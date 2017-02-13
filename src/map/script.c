@@ -7827,6 +7827,106 @@ BUILDIN(getitem2)
 	return true;
 }
 
+/// spawnitem id qty quality ilvl give slot1 slot2 slot3 slot4 roll1 roll2 roll3 roll4
+/// Generate an item with specific attributes
+BUILDIN(spawnitem)
+{
+	int nameid,amount,give,flag;
+	int quality,ilvl,s1,s2,s3,s4,r1,r2,r3,r4;
+	unsigned int rolls = 0;
+	struct map_session_data *sd;
+
+	sd=script->rid2sd(st);
+
+	if ( sd == NULL )
+		return true;
+
+	if( script_isstringtype(st, 2) ) {
+		const char *name = script_getstr(st, 2);
+		struct item_data *item_data = itemdb->search_name(name);
+		if( item_data )
+			nameid=item_data->nameid;
+		else
+			nameid=UNKNOWN_ITEM_ID;
+	} else
+		nameid = script_getnum(st, 2);
+
+	amount=script_getnum(st,3);
+	quality=script_getnum(st,4);
+	ilvl=script_getnum(st,5);
+	give=script_getnum(st,6); // 0 - drop to floor, 1 - give to player
+
+	s1 = script_hasdata(st,7)  ? script_getnum(st,7)  : 0;
+	s2 = script_hasdata(st,8)  ? script_getnum(st,8)  : 0;
+	s3 = script_hasdata(st,9 ) ? script_getnum(st,9 ) : 0;
+	s4 = script_hasdata(st,10) ? script_getnum(st,10) : 0;
+	r1 = script_hasdata(st,11) ? script_getnum(st,11) : 0;
+	r2 = script_hasdata(st,12) ? script_getnum(st,12) : 0;
+	r3 = script_hasdata(st,13) ? script_getnum(st,13) : 0;
+	r4 = script_hasdata(st,14) ? script_getnum(st,14) : 0;
+
+	rolls |= r1;
+	rolls |= (r2 << 8);
+	rolls |= (r3 << 16);
+	rolls |= (r4 << 24);
+
+	if (nameid < 0) { // Invalide nameid
+		nameid = -nameid;
+		flag = 1;
+	}
+
+	if (nameid > 0) {
+		struct item item_tmp;
+		struct item_data *item_data = itemdb->exists(nameid);
+		int get_count, i;
+		memset(&item_tmp,0,sizeof(item_tmp));
+		if (item_data == NULL)
+			return false;
+		if(item_data->type==IT_WEAPON || item_data->type==IT_ARMOR) {
+			quality = cap_value(quality, 0, MAX_REFINE);
+		}
+		else if(item_data->type==IT_PETEGG) {
+			quality = 0;
+		}
+		else {
+			quality = ilvl = 0;
+		}
+
+		item_tmp.nameid=nameid;
+		if(!flag)
+			item_tmp.identify=1;
+		else if(item_data->type==IT_WEAPON || item_data->type==IT_ARMOR)
+			item_tmp.identify=1;
+		item_tmp.refine=quality;
+		item_tmp.attribute=ilvl;
+		item_tmp.card[0]=(short)s1;
+		item_tmp.card[1]=(short)s2;
+		item_tmp.card[2]=(short)s3;
+		item_tmp.card[3]=(short)s4;
+		item_tmp.rolls=rolls;
+
+		//Check if it's stackable.
+		if (!itemdb->isstackable(nameid))
+			get_count = 1;
+		else
+			get_count = amount;
+
+		for (i = 0; i < amount; i += get_count) {
+			if ( !give )
+				if( pc->candrop(sd,&item_tmp) )
+					map->addflooritem(&sd->bl, &item_tmp, get_count, sd->bl.m, sd->bl.x, sd->bl.y, 0, 0, 0, 0);
+			else
+				if ((flag = pc->additem(sd, &item_tmp, get_count, LOG_TYPE_SCRIPT))) {
+					clif->additem(sd, 0, 0, flag);
+					if( pc->candrop(sd,&item_tmp) )
+						map->addflooritem(&sd->bl, &item_tmp, get_count, sd->bl.m, sd->bl.x, sd->bl.y, 0, 0, 0, 0);
+				}
+		}
+	}
+
+	return true;
+}
+
 /*==========================================
  * rentitem <item id>,<seconds>
  * rentitem "<item name>",<seconds>
@@ -20907,6 +21007,7 @@ void script_parse_builtin(void) {
 		BUILDIN_DEF(getitem,"vi?"),
 		BUILDIN_DEF(rentitem,"vi"),
 		BUILDIN_DEF(getitem2,"viiiiiiii?"),
+		BUILDIN_DEF(spawnitem,"viiii????????"),
 		BUILDIN_DEF(getnameditem,"vv"),
 		BUILDIN_DEF2(grouprandomitem,"groupranditem","i"),
 		BUILDIN_DEF(makeitem,"visii"),

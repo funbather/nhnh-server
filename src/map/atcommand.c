@@ -1334,6 +1334,78 @@ ACMD(item2)
 	return true;
 }
 
+
+ACMD(it)
+{
+	struct item item_tmp;
+	struct item_data *item_data;
+	char item_name[100];
+	int item_id, number = 0;
+	int quality = 0, ilvl = 0;
+	int s1 = 0, s2 = 0, s3 = 0, s4 = 0, r1 = 0, r2 = 0, r3 = 0, r4 = 0;
+	unsigned int rolls = 0;
+
+	memset(item_name, '\0', sizeof(item_name));
+
+	if (!*message
+		|| ( sscanf(message, "%99s %12d %12d %12d %12d %12d %12d %12d %12d %12d %12d %12d", item_name, &number, &quality, &ilvl, &s1, &s2, &s3, &s4, &r1, &r2, &r3, &r4) < 12
+		  && sscanf(message, "%99s %12d %12d %12d %12d %12d %12d %12d %12d %12d %12d %12d", item_name, &number, &quality, &ilvl, &s1, &s2, &s3, &s4, &r1, &r2, &r3, &r4) < 12
+	)) {
+		clif->message(fd, "USAGE: @it <id> <qty> <quality> <ilvl> <slot1>...<slot4> <roll1>...<roll4>");
+		return false;
+	}
+
+	if (number <= 0)
+		number = 1;
+
+	rolls |= r1;
+	rolls |= (r2 << 8);
+	rolls |= (r3 << 16);
+	rolls |= (r4 << 24);
+
+	item_id = 0;
+	if ((item_data = itemdb->search_name(item_name)) != NULL ||
+	    (item_data = itemdb->exists(atoi(item_name))) != NULL)
+		item_id = item_data->nameid;
+
+	if (item_id > 0) {
+		int flag = 0;
+		int loop, get_count, i;
+		loop = 1;
+		get_count = number;
+		if( !itemdb->isstackable2(item_data) ) {
+			loop = number;
+			get_count = 1;
+		} else {
+			quality = ilvl = 0;
+		}
+		quality = cap_value(quality, 0, MAX_REFINE);
+		for (i = 0; i < loop; i++) {
+			memset(&item_tmp, 0, sizeof(item_tmp));
+			item_tmp.nameid = item_id;
+			item_tmp.identify = 1;
+			item_tmp.refine = quality;
+			item_tmp.attribute = ilvl;
+			item_tmp.card[0] = s1;
+			item_tmp.card[1] = s2;
+			item_tmp.card[2] = s3;
+			item_tmp.card[3] = s4;
+			item_tmp.rolls = rolls;
+
+			if ((flag = pc->additem(sd, &item_tmp, get_count, LOG_TYPE_COMMAND)))
+				clif->additem(sd, 0, 0, flag);
+		}
+
+		if (flag == 0)
+			clif->message(fd, msg_fd(fd,18)); // Item created.
+	} else {
+		clif->message(fd, msg_fd(fd,19)); // Invalid item ID or name.
+		return false;
+	}
+
+	return true;
+}
+
 /*==========================================
  *
  *------------------------------------------*/
@@ -9410,6 +9482,7 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(heal),
 		ACMD_DEF(item),
 		ACMD_DEF(item2),
+		ACMD_DEF(it),
 		ACMD_DEF2("itembound", item),
 		ACMD_DEF2("itembound2", item2),
 		ACMD_DEF(itemreset),

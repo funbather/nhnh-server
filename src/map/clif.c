@@ -2357,8 +2357,8 @@ void clif_additem(struct map_session_data *sd, int n, int amount, int fail) {
 		else
 			p.nameid = sd->status.inventory[n].nameid;
 
-		p.IsIdentified = 1;
-		p.IsDamaged = sd->status.inventory[n].attribute;
+		p.IsIdentified = sd->status.inventory[n].attribute;
+		p.IsDamaged = 0;
 		p.refiningLevel = sd->status.inventory[n].refine;
 		clif->addcards2(&p.slot.card[0], &sd->status.inventory[n]);
 		p.location = pc->equippoint(sd,n);
