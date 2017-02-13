@@ -5197,7 +5197,7 @@ int script_load_translation(const char *file, uint8 lang_id)
 			VECTOR_TRUNCATE(msgstr);
 			continue;
 		}
-		
+
 		if (strncasecmp(line, "msgid \"", 7) == 0) {
 			VECTOR_TRUNCATE(msgid);
 			for (i = 7; i < len - 2; i++) {
@@ -15225,6 +15225,83 @@ BUILDIN(getrefine)
 	return true;
 }
 
+/// Returns an item's Item Level (item_data->attribute)
+BUILDIN(getilvl) {
+	struct map_session_data *sd = script->rid2sd(st);
+
+	if (sd == NULL)
+		return true;
+
+	if (status->current_equip_item_index < 0)
+		script_pushint(st, 0);
+	else
+		script_pushint(st, sd->status.inventory[status->current_equip_item_index].attribute);
+	return true;
+}
+
+/// Returns the host item's enchantment roll value (00~FF) for the current slot
+BUILDIN(getroll) {
+	struct map_session_data *sd = script->rid2sd(st);
+
+	if (sd == NULL)
+		return true;
+
+	if (status->current_equip_item_index < 0)
+		script_pushint(st, 0);
+	else
+		script_pushint(st,(sd->status.inventory[status->current_equip_item_index].rolls >> (8 * status->slot_pos)) & 0xFF);
+
+	return true;
+}
+
+/// Calculate implicit stat bonuses from equipment based on ilvl, quality, etc
+BUILDIN(calcimplicit)
+{
+	int base, multiplier, quality, ilvl;
+	struct map_session_data *sd = script->rid2sd(st);
+
+	if (sd == NULL)
+		return true;
+
+	if (status->current_equip_item_index < 0) {
+		script_pushint(st, 0);
+		return true;
+	}
+
+	base = script_getnum(st,2);           //                                                            Lv1   Lv50
+	multiplier = script_getnum(st,3) - 1; // -1 to account for the base value, 15 Base/10 Multiplier -> 15  ~ 150
+	quality = sd->status.inventory[status->current_equip_item_index].refine;
+	ilvl = sd->status.inventory[status->current_equip_item_index].attribute * 2; // x2 to account for the max ilvl being 50, ilvl 50 items are at max potential
+
+	script_pushint(st,((ilvl * base * multiplier / 100) + base) * quality / 100);
+
+	return true;
+}
+
+/// Calculate explicit stat bonuses from enchantments in equipment
+/// Formula is a little different from implicits because enchantments use a randomized roll value instead of quality/ilvl
+BUILDIN(calcexplicit)
+{
+	int base, multiplier, value;
+	struct map_session_data *sd = script->rid2sd(st);
+
+	if (sd == NULL)
+		return true;
+
+	if (status->current_equip_item_index < 0) {
+		script_pushint(st, 0);
+		return true;
+	}
+
+	base = script_getnum(st,2);
+	multiplier = script_getnum(st,3) - 1;
+	value = (sd->status.inventory[status->current_equip_item_index].rolls >> (8 * status->slot_pos)) & 0xFF;
+
+	script_pushint(st,(value * (base * multiplier + 1) / 100) + base);
+
+	return true;
+}
+
 /*=======================================================
  * Day/Night controls
  *-------------------------------------------------------*/
@@ -21056,6 +21133,10 @@ void script_parse_builtin(void) {
 		BUILDIN_DEF(isequippedcnt,"i*"), // check how many items/cards are being equipped [Celest]
 		BUILDIN_DEF(cardscnt,"i*"), // check how many items/cards are being equipped in the same arm [Lupus]
 		BUILDIN_DEF(getrefine,""), // returns the refined number of the current item, or an item with index specified [celest]
+		BUILDIN_DEF(getilvl,""),
+		BUILDIN_DEF(getroll,""),
+		BUILDIN_DEF(calcimplicit,"ii"), // calculate equipment bonuses
+		BUILDIN_DEF(calcexplicit,"ii"),  // calculate enchantment bonuses
 		BUILDIN_DEF(night,""), // sets the server to night time
 		BUILDIN_DEF(day,""), // sets the server to day time
 		BUILDIN_DEF(defpattern,"iss"), // Define pattern to listen for [MouseJstr]

@@ -31,7 +31,7 @@
 /// The official walkpath disables users from taking non-clear walk paths,
 /// e.g. if they want to get around an obstacle they have to walk around it,
 /// while with OFFICIAL_WALKPATH disabled if they click to walk around a obstacle the server will do it automatically
-#define OFFICIAL_WALKPATH
+//#define OFFICIAL_WALKPATH
 
 /// leave this line uncommented to enable callfunc checks when processing scripts.
 /// while allowed, the script engine will attempt to match user-defined functions
@@ -54,7 +54,7 @@
 /// Comment to disable Hercules' console_parse
 /// CONSOLE_INPUT allows you to type commands into the server's console,
 /// Disabling it saves one thread.
-#define CONSOLE_INPUT
+//#define CONSOLE_INPUT
 /// Maximum number of characters 'CONSOLE_INPUT' will support per line.
 #define MAX_CONSOLE_INPUT 150
 
@@ -73,7 +73,7 @@
 /// Client-sided range checks are, however, are always circular.
 /// Enabling this changes all checks to circular checks, which is more realistic,
 /// - but is not the official behaviour.
-//#define CIRCULAR_AREA
+#define CIRCULAR_AREA
 
 //This is the distance at which @autoloot works,
 //if the item drops farther from the player than this,

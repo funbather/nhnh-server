@@ -53,7 +53,7 @@ struct pet_data;
  * Changing this limit requires edits to refine_db.txt
  **/
 #ifdef RENEWAL
-	#define MAX_REFINE 20
+	#define MAX_REFINE 200
 #else
 	#define MAX_REFINE 10
 #endif
@@ -2205,6 +2205,7 @@ struct status_interface {
 	/* vars */
 	int current_equip_item_index;
 	int current_equip_card_id;
+	int slot_pos;
 
 	struct s_status_dbs *dbs;
 

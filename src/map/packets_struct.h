@@ -323,11 +323,7 @@ struct NORMALITEM_INFO {
 	uint32 WearState;
 	struct EQUIPSLOTINFO slot;
 	int32 HireExpireDate;
-	struct {
-		uint8 IsIdentified : 1;
-		uint8 PlaceETCTab : 1;
-		uint8 SpareBits : 6;
-	} Flag;
+	uint8 ilvl;
 	uint32 rolls;
 } __attribute__((packed));
 
@@ -350,12 +346,8 @@ struct EQUIPITEM_INFO {
 	uint16 wItemSpriteNumber;
 	uint8 option_count;
 	struct RndOptions option_data[5];
-	struct {
-		uint8 IsIdentified : 1;
-		uint8 IsDamaged : 1;
-		uint8 PlaceETCTab : 1;
-		uint8 SpareBits : 5;
-	} Flag;
+	uint8 ilvl;
+	uint32 rolls;
 } __attribute__((packed));
 
 struct packet_authok {

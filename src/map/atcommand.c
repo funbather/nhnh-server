@@ -1283,7 +1283,7 @@ ACMD(item2)
 	    (item_data = itemdb->exists(atoi(item_name))) != NULL)
 		item_id = item_data->nameid;
 
-	if (item_id > 500) {
+	if (item_id > 0) {
 		int flag = 0;
 		int loop, get_count, i;
 		loop = 1;
@@ -1408,7 +1408,7 @@ ACMD(baselevelup)
 	pc->baselevelchanged(sd);
 	if(sd->status.party_id)
 		party->send_levelup(sd);
-	
+
 	if (level > 0 && battle_config.atcommand_levelup_events)
 		npc->script_event(sd, NPCE_BASELVUP); // Trigger OnPCBaseLvUpEvent
 

@@ -2617,6 +2617,8 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 				if(!data)
 					continue;
 
+				status->slot_pos = j; // Slot position for script->getroll()
+
 				for(k = 0; k < map->list[sd->bl.m].zone->disabled_items_count; k++) {
 					if( map->list[sd->bl.m].zone->disabled_items[k] == data->nameid ) {
 						break;
@@ -13366,6 +13368,7 @@ void status_defaults(void)
 	//to avoid cards exploits
 	status->current_equip_item_index = 0; //Contains inventory index of an equipped item. To pass it into the EQUP_SCRIPT [Lupus]
 	status->current_equip_card_id = 0;    //To prevent card-stacking (from jA) [Skotlex]
+	status->slot_pos = 0; // Slot position of enchantment
 
 	// These macros are used instead of a sum of sizeof(), to ensure that padding won't interfere with our size, and code won't rot when adding more fields
 	memset(ZEROED_BLOCK_POS(status->dbs), 0, ZEROED_BLOCK_SIZE(status->dbs));

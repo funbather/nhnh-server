@@ -1164,7 +1164,7 @@ void clif_spawn_unit(struct block_list* bl, enum send_target target) {
 	p.body = vd->body_style;
 	p.classchoices = (sd) ? sd->class_choices : 0;
 	safestrncpy(p.name, clif->get_bl_name(bl), NAME_LENGTH);
-	
+
 	if (clif->isdisguised(bl)) {
 		nullpo_retv(sd);
 		if (sd->status.class != sd->disguise)
@@ -2357,9 +2357,9 @@ void clif_additem(struct map_session_data *sd, int n, int amount, int fail) {
 		else
 			p.nameid = sd->status.inventory[n].nameid;
 
-		p.IsIdentified = sd->status.inventory[n].identify ? 1 : 0;
-		p.IsDamaged = (sd->status.inventory[n].attribute & ATTR_BROKEN) != 0 ? 1 : 0;
-		p.refiningLevel =sd->status.inventory[n].refine;
+		p.IsIdentified = 1;
+		p.IsDamaged = sd->status.inventory[n].attribute;
+		p.refiningLevel = sd->status.inventory[n].refine;
 		clif->addcards2(&p.slot.card[0], &sd->status.inventory[n]);
 		p.location = pc->equippoint(sd,n);
 		p.type = itemtype(sd->inventory_data[n]->type);
@@ -2465,17 +2465,15 @@ void clif_item_equip(short idx, struct EQUIPITEM_INFO *p, struct item *i, struct
 	p->bindOnEquipType = i->bound ? 2 : id->flag.bindonequip ? 1 : 0;
 	p->wItemSpriteNumber = (id->equip&EQP_VISIBLE) ? id->look : 0;
 
-	p->Flag.IsIdentified = i->identify ? 1 : 0;
-	p->Flag.IsDamaged    = (i->attribute & ATTR_BROKEN) != 0 ? 1 : 0;
-	p->Flag.PlaceETCTab  = i->favorite ? 1 : 0;
-	p->Flag.SpareBits    = 0;
-
 	p->option_count = 0;
 	for (j=0; j<5; j++){
 		p->option_data[j].index = 0;
 		p->option_data[j].value = 0;
 		p->option_data[j].param = 0;
 	}
+
+	p->ilvl = i->attribute;
+	p->rolls = i->rolls;
 }
 
 void clif_item_normal(short idx, struct NORMALITEM_INFO *p, struct item *i, struct item_data *id) {
@@ -2497,10 +2495,8 @@ void clif_item_normal(short idx, struct NORMALITEM_INFO *p, struct item *i, stru
 	clif->addcards2(&p->slot.card[0], i);
 
 	p->HireExpireDate = i->expire_time;
-
-	p->Flag.IsIdentified = i->identify ? 1 : 0;
-	p->Flag.PlaceETCTab  = i->favorite ? 1 : 0;
-	p->Flag.SpareBits    = 0;
+	p->ilvl = i->attribute;
+	p->rolls = i->rolls;
 }
 
 void clif_inventorylist(struct map_session_data *sd) {
@@ -6028,13 +6024,13 @@ void clif_item_skill(struct map_session_data *sd,uint16 skill_id,uint16 skill_lv
 	WFIFOW(fd, 0)=0x147;
 	WFIFOW(fd, 2)=skill_id;
 	WFIFOW(fd, 4)=skill->get_inf(skill_id);
-	
+
 	if(sd->state.autotarget &&
 		 WFIFOW(fd, 4) == INF_ATTACK_SKILL &&
 		 skill->get_range(skill_id, skill_lv) < 0 &&
 		 sd->ud.target)
 				WFIFOW(fd, 4) = INF_SELF_SKILL;
-				
+
 	WFIFOW(fd, 6)=0;
 	WFIFOW(fd, 8)=skill_lv;
 	WFIFOW(fd,10)=skill->get_sp(skill_id,skill_lv);
