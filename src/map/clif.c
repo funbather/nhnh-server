@@ -2795,7 +2795,7 @@ void clif_updatestatus(struct map_session_data *sd,int type)
 			WFIFOL(fd,4)=sd->status.skill_point;
 			break;
 		case SP_HIT: // CRITICAL HIT DAMAGE
-			WFIFOL(fd,4)=150 + sd->bonus.crit_atk_rate;
+			WFIFOL(fd,4)=sd->crit_atk_rate;
 			break;
 		case SP_FLEE1:
 			WFIFOL(fd,4)=sd->battle_status.flee;
@@ -3200,7 +3200,7 @@ void clif_initialstatus(struct map_session_data *sd) {
 	WBUFW(buf,26) = pc_rightside_def(sd);
 	WBUFW(buf,28) = pc_leftside_mdef(sd);
 	WBUFW(buf,30) = pc_rightside_mdef(sd);
-	WBUFW(buf,32) = 150 + sd->bonus.crit_atk_rate; // CRITICAL DAMAGE
+	WBUFW(buf,32) = sd->crit_atk_rate; // CRITICAL DAMAGE
 	WBUFW(buf,34) = sd->battle_status.flee;
 	WBUFW(buf,36) = ( 300 - (2*sd->battle_status.speed) ) / 3; // MOVEMENT SPEED %
 	WBUFW(buf,38) = sd->battle_status.cri;

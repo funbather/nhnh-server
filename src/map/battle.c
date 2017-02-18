@@ -4994,8 +4994,8 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 					if (sd->bonus.atk_rate)
 						ATK_ADDRATE(sd->bonus.atk_rate);
 #endif
-					if(flag.cri && sd->bonus.crit_atk_rate)
-						ATK_ADDRATE(sd->bonus.crit_atk_rate);
+					if(flag.cri && sd->crit_atk_rate)
+						ATK_ADDRATE(sd->crit_atk_rate);
 					if(flag.cri && sc && sc->data[SC_MTF_CRIDAMAGE])
 						ATK_ADDRATE(sc->data[SC_MTF_CRIDAMAGE]->val1);// temporary it should be 'bonus.crit_atk_rate'
 #ifndef RENEWAL

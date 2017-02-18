@@ -2888,7 +2888,7 @@ int pc_bonus(struct map_session_data *sd,int type,int val) {
 			break;
 		case SP_CRIT_ATK_RATE:
 			if(sd->state.lr_flag != 2)
-				sd->bonus.crit_atk_rate += val;
+				sd->crit_atk_rate += val;
 			break;
 		case SP_NO_REGEN:
 			if(sd->state.lr_flag != 2)
@@ -8209,7 +8209,7 @@ int pc_readparam(const struct map_session_data *sd, int type)
 		case SP_BREAK_ARMOR_RATE: val = sd->bonus.break_armor_rate; break;
 		case SP_ADD_STEAL_RATE:  val = sd->bonus.add_steal_rate; break;
 		case SP_DELAYRATE:       val = sd->delayrate; break;
-		case SP_CRIT_ATK_RATE:   val = sd->bonus.crit_atk_rate; break;
+		case SP_CRIT_ATK_RATE:   val = sd->crit_atk_rate; break;
 		case SP_UNSTRIPABLE_WEAPON: val = (sd->bonus.unstripable_equip&EQP_WEAPON)?1:0; break;
 		case SP_UNSTRIPABLE:
 		case SP_UNSTRIPABLE_ARMOR:

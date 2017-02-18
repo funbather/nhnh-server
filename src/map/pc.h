@@ -59,6 +59,8 @@ enum equip_index {
 	EQI_ARMOR,
 	EQI_HAND_L,
 	EQI_HAND_R,
+	EQI_GLOVES,
+	EQI_BELT,
 	EQI_COSTUME_TOP,
 	EQI_COSTUME_MID,
 	EQI_COSTUME_LOW,
@@ -369,7 +371,6 @@ BEGIN_ZEROED_BLOCK; // this block will be globally zeroed at the beginning of st
 		int short_weapon_damage_return,long_weapon_damage_return;
 		int magic_damage_return; // AppleGirl Was Here
 		int break_weapon_rate,break_armor_rate;
-		int crit_atk_rate;
 		int classchange; // [Valaris]
 		int speed_rate, speed_add_rate, aspd_add;
 		int itemhealrate2; // [Epoque] Increase heal rate of all healing items.
@@ -398,7 +399,7 @@ END_ZEROED_BLOCK;
 	int castrate,delayrate,hprate,sprate,dsprate;
 	int hprecov_rate,sprecov_rate;
 	int matk_rate;
-	int critical_rate,hit_rate,flee_rate,flee2_rate,def_rate,def2_rate,mdef_rate,mdef2_rate;
+	int critical_rate,hit_rate,flee_rate,flee2_rate,def_rate,def2_rate,mdef_rate,mdef2_rate,crit_atk_rate;
 	int itemid;
 	short itemindex; //Used item's index in sd->inventory [Skotlex]
 	short catch_target_class; // pet catching, stores a pet class to catch (short now) [zzo]
