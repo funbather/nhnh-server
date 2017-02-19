@@ -3764,10 +3764,9 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 		//Check for double attack.
 		if ( sd->bonus.double_rate > 0 )
 		{
-			//Success chance is not added, the higher one is used [Skotlex]
 			if( rnd()%100 < ( sd->bonus.double_rate ) )
 			{
-				wd.div_ = skill->get_num(TF_DOUBLE,skill_lv?skill_lv:1);
+				wd.div_ = 2;
 				wd.type = BDT_MULTIHIT;
 			}
 		}
@@ -3783,35 +3782,35 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 
 		if(tsd && tsd->bonus.critical_def)
 			cri = cri * ( 100 - tsd->bonus.critical_def ) / 100;
-		if (rnd()%1000 < cri)
+		if (rnd()%1000 < cri) {
 			flag.cri = 1;
-	}
-	if (flag.cri) {
-		wd.type = BDT_CRIT;
-		flag.hit = 1;
-	} else {
-		//Check for Perfect Hit
-		if(sd && sd->bonus.perfect_hit > 0 && rnd()%100 < sd->bonus.perfect_hit)
-			flag.hit = 1;
-		if( !flag.hit )
-			switch(skill_id)
-			{
-			//
-			}
-		if (tsc && !flag.hit && tsc->opt1 && tsc->opt1 != OPT1_STONEWAIT && tsc->opt1 != OPT1_BURNING)
-			flag.hit = 1;
+
+
+		if(wd.type == BDT_MULTIHIT)
+			wd.type = BDT_MULTICRIT;
+		else
+			wd.type = BDT_CRIT;
+		}
 	}
 
 	if (!flag.hit) {
 		//Hit/Flee calculation
 		short flee = tstatus->flee;
-		int hitrate = ((6000 + flee) * 10000) / (6000 + (flee * 12)); // Chance to hit * 10000
+		int hitrate = (int)((100.0f - flee / (flee + 700.0f) * 100.0f) * 100.0f);
 		if(rnd()%10000 >= hitrate){
 			wd.dmg_lv = ATK_FLEE;
 		}
 		else
 			flag.hit = 1;
 	} //End hit/miss calculation
+
+	if (flag.hit) { // Physical Block
+		short pblock = tstatus->def2;
+		if(rnd()%1000 <= pblock) {
+			wd.type = BDT_BLOCKED;
+			flag.hit = 0;
+		}
+	}
 
 	if (flag.hit && !flag.infdef) { //No need to do the math for plants
 		unsigned int skillratio = 100; //Skill dmg modifiers.

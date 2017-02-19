@@ -113,6 +113,11 @@ enum battle_dmg_type {
 	BDT_CRIT        = 10, // Critical hit
 	BDT_PDODGE      = 11, // Lucky dodge
 	//BDT_TOUCH       = 12, // (touch skill?)
+	BDT_MULTICRIT   = 20,
+	BDT_BLOCKED     = 21,
+	BDT_POISON      = 22,
+	BDT_BLEEDING    = 23,
+	BDT_IGNITE      = 24,
 };
 
 /**
