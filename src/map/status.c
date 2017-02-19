@@ -11401,25 +11401,13 @@ int status_get_total_mdef(struct block_list *src) { return status->get_status_da
 
 int status_get_weapon_atk(struct block_list *bl, struct weapon_atk *watk, int flag)
 {
-#ifdef RENEWAL
 	int min = 0, max = 0;
 	struct status_change *sc = status->get_sc(bl);
 
 	nullpo_ret(bl);
 	nullpo_ret(watk);
 	if (bl->type == BL_PC && watk->atk) {
-		float strdex_bonus, variance;
-		int dstr;
-		if (flag&2)
-			dstr = status_get_dex(bl);
-		else
-			dstr = status_get_str(bl);
-
-		variance = 5.0f * watk->atk *  watk->wlv / 100.0f;
-		strdex_bonus = watk->atk * dstr / 200.0f;
-
-		min = (int)(watk->atk - variance + strdex_bonus) + watk->atk2;
-		max = (int)(watk->atk + variance + strdex_bonus) + watk->atk2;
+		min = max = (int)(watk->atk);
 	} else if ((bl->type == BL_MOB || bl->type == BL_MER) && watk->atk) {
 		min = watk->atk * 80 / 100;
 		max = watk->atk * 120 / 100;
@@ -11439,26 +11427,9 @@ int status_get_weapon_atk(struct block_list *bl, struct weapon_atk *watk, int fl
 			max = min;
 	}
 
-	if ( bl->type == BL_PC && !(flag & 2) ) {
-		const struct map_session_data *sd = BL_UCCAST(BL_PC, bl);
-		short index = sd->equip_index[EQI_HAND_R], refine;
-		if ( index >= 0 && sd->inventory_data[index] && sd->inventory_data[index]->type == IT_WEAPON
-			&& (refine = sd->status.inventory[index].refine) < 16 && refine ) {
-			int r = status->dbs->refine_info[watk->wlv].randombonus_max[refine + (4 - watk->wlv)] / 100;
-			if ( r )
-				max += (rnd() % 100) % r + 1;
-		}
-
-		if (sd->charm_type == CHARM_TYPE_LAND && sd->charm_count > 0)
-			max += 10 * max * sd->charm_count / 100;
-	}
-
 	max = status->calc_watk(bl, sc, max, false);
 
 	return max;
-#else
-	return 0;
-#endif
 }
 
 /**
