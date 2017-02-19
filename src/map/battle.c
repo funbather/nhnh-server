@@ -1277,133 +1277,41 @@ int64 battle_calc_defense(int attack_type, struct block_list *src, struct block_
 			 *  def1 = equip def
 			 *  def2 = status def
 			 */
-			defType def1 = status->get_def(target); //Don't use tstatus->def1 due to skill timer reductions.
-			short def2 = tstatus->def2, vit_def;
-#ifdef RENEWAL
-			def1 = status->calc_def2(target, tsc, def1, false); // equip def(RE)
-			def2 = status->calc_def(target, tsc, def2, false); // status def(RE)
-#else
-			def1 = status->calc_def(target, tsc, def1, false); // equip def(RE)
-			def2 = status->calc_def2(target, tsc, def2, false); // status def(RE)
-#endif
+				defType def1 = status->get_def(target); //Don't use tstatus->def1 due to skill timer reductions.
 
-			if ( sd ) {
-				if ( sd->charm_type == CHARM_TYPE_LAND && sd->charm_count > 0 ) // hidden from status window
-					def1 += 10 * def1 * sd->charm_count / 100;
+				def1 = status->calc_def2(target, tsc, def1, false); // equip def(RE)
 
-				i = sd->ignore_def[is_boss(target) ? RC_BOSS : RC_NONBOSS];
-				i += sd->ignore_def[tstatus->race];
-				if ( i ) {
-					if ( i > 100 ) i = 100;
-					def1 -= def1 * i / 100;
-#ifndef RENEWAL
-					def2 -= def2 * i / 100;
-#endif
-				}
-			}
-
-			if( sc && sc->data[SC_EXPIATIO] ){
-				i = 5 * sc->data[SC_EXPIATIO]->val1; // 5% per level
-				def1 -= def1 * i / 100;
-#ifndef RENEWAL
-				def2 -= def2 * i / 100;
-#endif
-			}
-
-			if( battle_config.vit_penalty_type && battle_config.vit_penalty_target&target->type ) {
-				unsigned char target_count; //256 max targets should be a sane max
-				target_count = unit->counttargeted(target);
-				if(target_count >= battle_config.vit_penalty_count) {
-					if(battle_config.vit_penalty_type == 1) {
-						if( !tsc || !tsc->data[SC_STEELBODY] )
-							def1 = (def1 * (100 - (target_count - (battle_config.vit_penalty_count - 1))*battle_config.vit_penalty_num))/100;
-						def2 = (def2 * (100 - (target_count - (battle_config.vit_penalty_count - 1))*battle_config.vit_penalty_num))/100;
-					} else { //Assume type 2
-						if( !tsc || !tsc->data[SC_STEELBODY] )
-							def1 -= (target_count - (battle_config.vit_penalty_count - 1))*battle_config.vit_penalty_num;
-						def2 -= (target_count - (battle_config.vit_penalty_count - 1))*battle_config.vit_penalty_num;
+				if ( sd ) {
+					i = sd->ignore_def[is_boss(target) ? RC_BOSS : RC_NONBOSS];
+					i += sd->ignore_def[tstatus->race];
+					if ( i ) {
+						if ( i > 100 ) i = 100;
+						def1 -= def1 * i / 100;
 					}
 				}
-#ifndef RENEWAL
-				if(skill_id == AM_ACIDTERROR) def1 = 0; //Acid Terror ignores only armor defense. [Skotlex]
-#endif
-				if(def2 < 1) def2 = 1;
-			}
-			//Vitality reduction from rodatazone: http://rodatazone.simgaming.net/mechanics/substats.php#def
-			if (tsd) {
-				//Sd vit-eq
-#ifndef RENEWAL
-				//[VIT*0.5] + rnd([VIT*0.3], max([VIT*0.3],[VIT^2/150]-1))
-				vit_def = def2*(def2-15)/150;
-				vit_def = def2/2 + (vit_def>0?rnd()%vit_def:0);
-#else
-				vit_def = def2;
-#endif
-				if((battle->check_undead(sstatus->race,sstatus->def_ele) || sstatus->race==RC_DEMON) && //This bonus already doesn't work vs players
-					src->type == BL_MOB && (i=pc->checkskill(tsd,AL_DP)) > 0)
-					vit_def += i*(int)(3 +(tsd->status.base_level+1)*0.04);   // [orn]
-				if( src->type == BL_MOB && (i=pc->checkskill(tsd,RA_RANGERMAIN))>0 &&
-					(sstatus->race == RC_BRUTE || sstatus->race == RC_FISH || sstatus->race == RC_PLANT) )
-					vit_def += i*5;
-			}
-			else { //Mob-Pet vit-eq
-#ifndef RENEWAL
-				//VIT + rnd(0,[VIT/20]^2-1)
-				vit_def = (def2/20)*(def2/20);
-				vit_def = def2 + (vit_def>0?rnd()%vit_def:0);
-#else
-				vit_def = def2;
-#endif
-			}
 
-			if (battle_config.weapon_defense_type) {
-				vit_def += def1*battle_config.weapon_defense_type;
-				def1 = 0;
-			}
-		#ifdef RENEWAL
-			/**
-			* RE DEF Reduction
-			* Pierce defense gains 1 atk per def/2
-			**/
+				if( def1 < -399 ) // it stops at -399
+					def1 = 399; // in aegis it set to 1 but in our case it may lead to exploitation so limit it to 399
+					//return 1;
 
-			if( def1 < -399 ) // it stops at -399
-				def1 = 399; // in aegis it set to 1 but in our case it may lead to exploitation so limit it to 399
-				//return 1;
+				if( flag&2 )
+					damage += def1 >> 1;
 
-			if( flag&2 )
-				damage += def1 >> 1;
-
-			if( !(flag&1) && !(flag&2) ) {
-				if( flag&4 )
-					damage -= (def1 + vit_def);
-				else
-					damage = (int)((100.0f - def1 / (def1 + 400.0f) * 90.0f) / 100.0f * damage - vit_def);
-			}
-		#else
-				if( def1 > 100 ) def1 = 100;
-				if( !(flag&1) ){
-					if( flag&2 )
-						damage = damage * pdef * (def1+vit_def) / 100;
+				if( !(flag&1) && !(flag&2) ) {
+					if( flag&4 )
+						damage -= (def1);
 					else
-						damage = damage * (100-def1) / 100;
+						damage = (int)((100.0f - def1 / (def1 + 700.0f) * 100.0f) / 100.0f * damage);
 				}
-				if( !(flag&1 || flag&2) )
-					damage -= vit_def;
-		#endif
 			}
 			break;
 
 		case BF_MAGIC:
 		{
 			defType mdef = tstatus->mdef;
-			short mdef2= tstatus->mdef2;
-#ifdef RENEWAL
-			mdef2 = status->calc_mdef(target, tsc, mdef2, false); // status mdef(RE)
+
 			mdef = status->calc_mdef2(target, tsc, mdef, false); // equip mde(RE)
-#else
-			mdef2 = status->calc_mdef2(target, tsc, mdef2, false); // status mdef(RE)
-			mdef = status->calc_mdef(target, tsc, mdef, false); // equip mde(RE)
-#endif
+
 			if( flag&1 )
 				mdef = 0;
 
@@ -1414,10 +1322,9 @@ int64 battle_calc_defense(int attack_type, struct block_list *src, struct block_
 				{
 					if (i > 100) i = 100;
 					mdef -= mdef * i/100;
-					//mdef2-= mdef2* i/100;
 				}
 			}
-		#ifdef RENEWAL
+
 			/**
 			 * RE MDEF Reduction
 			 **/
@@ -1425,13 +1332,7 @@ int64 battle_calc_defense(int attack_type, struct block_list *src, struct block_
 				mdef = 99; // in aegis it set to 1 but in our case it may lead to exploitation so limit it to 99
 				//return 1;
 
-			damage = (int)((100.0f - mdef / (mdef + 100.0f) * 90.0f) / 100.0f * damage - mdef2);
-		#else
-			if(battle_config.magic_defense_type)
-				damage = damage - mdef*battle_config.magic_defense_type - mdef2;
-			else
-				damage = damage * (100-mdef)/100 - mdef2;
-		#endif
+			damage = (int)((100.0f - mdef / (mdef + 700.0f) * 100.0f) / 100.0f * damage);
 		}
 			break;
 	}
