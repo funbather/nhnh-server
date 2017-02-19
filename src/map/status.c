@@ -2822,8 +2822,6 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 
 	// ----- CLIENT-SIDE REFRESH -----
 
-	clif->updatestatus(sd,SP_FLEE2); // Recalculate movespeed
-
 	if(!sd->bl.prev) {
 		//Will update on LoadEndAck
 		calculating = 0;
@@ -3602,35 +3600,16 @@ void status_calc_bl_main(struct block_list *bl, /*enum scb_flag*/int flag)
 			st->adelay = st->amotion;
 		} else if ( bl->type&BL_PC ) {
 			amotion = status->base_amotion_pc(sd, st);
-#ifndef RENEWAL_ASPD
-			st->aspd_rate = status->calc_aspd_rate(bl, sc, bst->aspd_rate);
-#endif
 			if ( st->aspd_rate != 1000 ) // absolute percentage modifier
-				amotion = amotion * st->aspd_rate / 1000;
-			if (sd && sd->ud.skilltimer != INVALID_TIMER) {
-				if (pc->checkskill(sd, SA_FREECAST) > 0) {
-					amotion = amotion * 5 * (pc->checkskill(sd, SA_FREECAST) + 10) / 100;
-				} else {
-					struct unit_data *ud = unit->bl2ud(bl);
-					if (ud && (skill->get_inf2(ud->skill_id) & INF2_FREE_CAST_REDUCED) != 0) {
-						amotion = amotion * 5 * (ud->skill_lv + 10) / 100;
-					}
-				}
-			}
-#ifdef RENEWAL_ASPD
-			amotion += (max(0xc3 - amotion, 2) * (st->aspd_rate2 + status->calc_aspd(bl, sc, 2))) / 100;
-			amotion = 10 * (200 - amotion);
+				amotion = (amotion * 1000) / (st->aspd_rate);
+
+			amotion = (amotion * 1000) / (1000 + 10 * st->agi); //+1% Attacks per second per AGI
+
 			if (sd != NULL) {
 				amotion += sd->bonus.aspd_add;
 			}
-#endif
 			amotion = status->calc_fix_aspd(bl, sc, amotion);
-			if (sd != NULL) {
-				st->amotion = cap_value(amotion, ((sd->job & JOBL_THIRD) != 0 ? battle_config.max_third_aspd : battle_config.max_aspd), 2000);
-			} else {
-				st->amotion = cap_value(amotion, battle_config.max_aspd, 2000);
-			}
-
+			st->amotion = cap_value(amotion, battle_config.max_aspd, 2000);
 			st->adelay = 2 * st->amotion;
 		} else { // mercenary and mobs
 			amotion = bst->amotion;
@@ -3726,8 +3705,10 @@ void status_calc_bl_(struct block_list *bl, enum scb_flag flag, enum e_status_ca
 			clif->updatestatus(sd,SP_FLEE1);
 		if(bst.amotion != st->amotion)
 			clif->updatestatus(sd,SP_ASPD);
-		if(bst.speed != st->speed)
+		if(bst.speed != st->speed) {
 			clif->updatestatus(sd,SP_SPEED);
+			clif->updatestatus(sd,SP_FLEE2);
+		}
 
 		if(bst.rhw.atk != st->rhw.atk || bst.lhw.atk != st->lhw.atk || bst.batk != st->batk) {
 			clif->updatestatus(sd,SP_ATK1);
@@ -3875,54 +3856,11 @@ int status_check_visibility(struct block_list *src, struct block_list *target)
 int status_base_amotion_pc(struct map_session_data *sd, struct status_data *st)
 {
 	int amotion;
-#ifdef RENEWAL_ASPD /* [malufett/Hercules] */
-	float temp;
-	int skill_lv, val = 0;
 
 	nullpo_ret(sd);
 	nullpo_ret(st);
 
 	amotion = status->dbs->aspd_base[pc->class2idx(sd->status.class)][sd->weapontype1];
-	if ( sd->status.weapon > MAX_SINGLE_WEAPON_TYPE)
-		amotion += status->dbs->aspd_base[pc->class2idx(sd->status.class)][sd->weapontype2] / 4;
-	if ( sd->status.shield )
-		amotion += status->dbs->aspd_base[pc->class2idx(sd->status.class)][MAX_SINGLE_WEAPON_TYPE];
-	switch ( sd->status.weapon ) {
-		case W_BOW:
-		case W_MUSICAL:
-		case W_WHIP:
-		case W_REVOLVER:
-		case W_RIFLE:
-		case W_GATLING:
-		case W_SHOTGUN:
-		case W_GRENADE:
-			temp = st->dex * st->dex / 7.0f + st->agi * st->agi * 0.5f;
-			break;
-		default:
-			temp = st->dex * st->dex / 5.0f + st->agi * st->agi * 0.5f;
-	}
-	temp = (float)(sqrt(temp) * 0.25f) + 0xc4;
-	if ( (skill_lv = pc->checkskill(sd, SA_ADVANCEDBOOK)) > 0 && sd->status.weapon == W_BOOK )
-		val += (skill_lv - 1) / 2 + 1;
-	if ( (skill_lv = pc->checkskill(sd, GS_SINGLEACTION)) > 0 )
-		val += ((skill_lv + 1) / 2);
-	amotion = ((int)(temp + ((float)(status->calc_aspd(&sd->bl, &sd->sc, 1) + val) * st->agi / 200)) - min(amotion, 200));
-#else
-	// base weapon delay
-	amotion = (sd->status.weapon < MAX_SINGLE_WEAPON_TYPE)
-		? (status->dbs->aspd_base[pc->class2idx(sd->status.class)][sd->status.weapon]) // single weapon
-		: (status->dbs->aspd_base[pc->class2idx(sd->status.class)][sd->weapontype1] + status->dbs->aspd_base[pc->class2idx(sd->status.class)][sd->weapontype2]) * 7 / 10; // dual-wield
-
-	// percentual delay reduction from stats
-	amotion -= amotion * (4 * st->agi + st->dex) / 1000;
-
-	// raw delay adjustment from bAspd bonus
-	amotion += sd->bonus.aspd_add;
-
-	/* angra manyu disregards aspd_base and similar */
-	if ( sd->equip_index[EQI_HAND_R] >= 0 && sd->status.inventory[sd->equip_index[EQI_HAND_R]].nameid == ITEMID_ANGRA_MANYU )
-		return 0;
-#endif
 
 	return amotion;
 }
@@ -5170,169 +5108,24 @@ unsigned short status_calc_speed(struct block_list *bl, struct status_change *sc
 	if( sc == NULL || ( sd && sd->state.permanent_speed ) )
 		return (unsigned short)cap_value(speed,MIN_WALK_SPEED,MAX_WALK_SPEED);
 
-	if (sd && sd->ud.skilltimer != INVALID_TIMER)
-	{
-		if (sd->ud.skill_id == LG_EXEEDBREAK) {
-			speed_rate = 160 - 10 * sd->ud.skill_lv;
-		} else if ((skill->get_inf2(sd->ud.skill_id) & INF2_FREE_CAST_REDUCED) != 0) {
-			speed_rate = 175 - 5 * sd->ud.skill_lv;
-		} else if (pc->checkskill(sd, SA_FREECAST) > 0) {
-			speed_rate = 175 - 5 * pc->checkskill(sd,SA_FREECAST);
-		}
-	}
 	if (speed_rate == -1)
 	{
 		speed_rate = 100;
 
-		//GetMoveHasteValue2()
 		{
 			int val = 0;
 
-			if(sc->data[SC_FUSION]) {
-				val = 25;
-			} else if (sd) {
-				if (pc_isridingpeco(sd) || pc_isridingdragon(sd))
-					val = 25;//Same bonus
-				else if (sd->sc.data[SC_ALL_RIDING])
-					val = sd->sc.data[SC_ALL_RIDING]->val1;
-				else if (pc_isridingwug(sd))
-					val = 15 + 5 * pc->checkskill(sd, RA_WUGRIDER);
-				else if (pc_ismadogear(sd)) {
-					val = (- 10 * (5 - pc->checkskill(sd,NC_MADOLICENCE)));
-					if (sc->data[SC_ACCELERATION])
-						val += 25;
-				}
-			}
+			if( sd && sd->bonus.speed_rate + sd->bonus.speed_add_rate > 0 ) // permanent item-based speedup
+				val = max( val, sd->bonus.speed_rate + sd->bonus.speed_add_rate );
 
-			speed_rate -= val;
-		}
-
-		//GetMoveSlowValue()
-		{
-			int val = 0;
-
-			if ( sd && sc->data[SC_HIDING] && pc->checkskill(sd,RG_TUNNELDRIVE) > 0 ) {
-				val = 120 - 6 * pc->checkskill(sd,RG_TUNNELDRIVE);
-			} else {
-				if( sd && sc->data[SC_CHASEWALK] && sc->data[SC_CHASEWALK]->val3 < 0 )
-					val = sc->data[SC_CHASEWALK]->val3;
-				else
-				{
-					// Longing for Freedom cancels song/dance penalty
-					if( sc->data[SC_LONGING] )
-						val = max( val, 50 - 10 * sc->data[SC_LONGING]->val1 );
-					else
-						if( sd && sc->data[SC_DANCING] )
-							val = max( val, 500 - (40 + 10 * (sc->data[SC_SOULLINK] && sc->data[SC_SOULLINK]->val2 == SL_BARDDANCER)) * pc->checkskill(sd,(sd->status.sex?BA_MUSICALLESSON:DC_DANCINGLESSON)) );
-
-					if( sc->data[SC_DEC_AGI] )
-						val = max( val, 25 );
-					if( sc->data[SC_QUAGMIRE] || sc->data[SC_HALLUCINATIONWALK_POSTDELAY] )
-						val = max( val, 50 );
-					if( sc->data[SC_DONTFORGETME] )
-						val = max( val, sc->data[SC_DONTFORGETME]->val3 );
-					if( sc->data[SC_CURSE] )
-						val = max( val, 300 );
-					if( sc->data[SC_CHASEWALK] )
-						val = max( val, sc->data[SC_CHASEWALK]->val3 );
-					if( sc->data[SC_WEDDING] )
-						val = max( val, 100 );
-					if( sc->data[SC_JOINTBEAT] && sc->data[SC_JOINTBEAT]->val2&(BREAK_ANKLE|BREAK_KNEE) )
-						val = max( val, ((sc->data[SC_JOINTBEAT]->val2&BREAK_ANKLE) ? 50 : 0) + ((sc->data[SC_JOINTBEAT]->val2&BREAK_KNEE) ? 30 : 0) );
-					if( sc->data[SC_CLOAKING] && (sc->data[SC_CLOAKING]->val4&1) == 0 )
-						val = max( val, sc->data[SC_CLOAKING]->val1 < 3 ? 300 : 30 - 3 * sc->data[SC_CLOAKING]->val1 );
-					if( sc->data[SC_GOSPEL] && sc->data[SC_GOSPEL]->val4 == BCT_ENEMY )
-						val = max( val, 75 );
-					if (sc->data[SC_SLOWDOWN])
-						val = max(val, 100);
-					if (sc->data[SC_MOVESLOW_POTION]) // Used by Slow_Down_Potion [Frost]
-						val = max(val, sc->data[SC_MOVESLOW_POTION]->val1);
-					if( sc->data[SC_GS_GATLINGFEVER] )
-						val = max( val, 100 );
-					if( sc->data[SC_NJ_SUITON] )
-						val = max( val, sc->data[SC_NJ_SUITON]->val3 );
-					if( sc->data[SC_SWOO] )
-						val = max( val, 300 );
-					if( sc->data[SC_FROSTMISTY] )
-						val = max( val, 50 );
-					if( sc->data[SC_CAMOUFLAGE] && (sc->data[SC_CAMOUFLAGE]->val3&1) == 0 )
-						val = max( val, sc->data[SC_CAMOUFLAGE]->val1 < 3 ? 0 : 25 * (5 - sc->data[SC_CAMOUFLAGE]->val1) );
-					if( sc->data[SC__GROOMY] )
-						val = max( val, sc->data[SC__GROOMY]->val2);
-					if( sc->data[SC_GLOOMYDAY] )
-						val = max( val, sc->data[SC_GLOOMYDAY]->val3 ); // Should be 50 (-50% speed)
-					if( sc->data[SC_STEALTHFIELD_MASTER] )
-						val = max( val, 30 );
-					if( sc->data[SC_BANDING_DEFENCE] )
-						val = max( val, sc->data[SC_BANDING_DEFENCE]->val1 );//+90% walking speed.
-					if( sc->data[SC_ROCK_CRUSHER_ATK] )
-						val = max( val, sc->data[SC_ROCK_CRUSHER_ATK]->val2 );
-					if( sc->data[SC_POWER_OF_GAIA] )
-						val = max( val, sc->data[SC_POWER_OF_GAIA]->val2 );
-					if( sc->data[SC_MELON_BOMB] )
-						val = max( val, sc->data[SC_MELON_BOMB]->val1 );
-					if (sc->data[SC_STOMACHACHE])
-						val = max(val, sc->data[SC_STOMACHACHE]->val2);
-					if (sc->data[SC_MARSHOFABYSS]) // It stacks to other statuses so always put this at the end.
-						val = max(50, val + 10 * sc->data[SC_MARSHOFABYSS]->val1);
-					if (sc->data[SC_MOVHASTE_POTION]) { // Doesn't affect the movement speed by Quagmire, Decrease Agi, Slow Grace [Frost]
-						if (sc->data[SC_DEC_AGI] || sc->data[SC_QUAGMIRE] || sc->data[SC_DONTFORGETME])
-							return 0;
-					}
-					if (sc->data[SC_CATNIPPOWDER])
-						val = max(val, sc->data[SC_CATNIPPOWDER]->val3);
-
-					if( sd && sd->bonus.speed_rate + sd->bonus.speed_add_rate > 0 ) // permanent item-based speedup
-						val = max( val, sd->bonus.speed_rate + sd->bonus.speed_add_rate );
-				}
-			}
 			speed_rate += val;
 		}
 
-		//GetMoveHasteValue1()
 		{
 			int val = 0;
 
-			if (sc->data[SC_MOVHASTE_INFINITY]) // Used by NPC_AGIUP [Frost]
-				val = max(val, sc->data[SC_MOVHASTE_INFINITY]->val1);
-			if (sc->data[SC_MOVHASTE_POTION]) // Used by Speed_Up_Potion and Guyak_Pudding [Frost]
-				val = max(val, sc->data[SC_MOVHASTE_POTION]->val1);
-			if( sc->data[SC_INC_AGI] )
-				val = max( val, 25 );
-			if( sc->data[SC_WINDWALK] )
-				val = max( val, 2 * sc->data[SC_WINDWALK]->val1 );
-			if( sc->data[SC_CARTBOOST] )
-				val = max( val, 20 );
-			if (sd != NULL && (sd->job & MAPID_UPPERMASK) == MAPID_ASSASSIN && pc->checkskill(sd,TF_MISS) > 0)
-				val = max( val, 1 * pc->checkskill(sd,TF_MISS) );
-			if( sc->data[SC_CLOAKING] && (sc->data[SC_CLOAKING]->val4&1) == 1 )
-				val = max( val, sc->data[SC_CLOAKING]->val1 >= 10 ? 25 : 3 * sc->data[SC_CLOAKING]->val1 - 3 );
-			if (sc->data[SC_BERSERK])
-				val = max( val, 25 );
-			if( sc->data[SC_RUN] )
-				val = max( val, 55 );
-			if( sc->data[SC_HLIF_AVOID] )
-				val = max( val, 10 * sc->data[SC_HLIF_AVOID]->val1 );
-			if( sc->data[SC_INVINCIBLE] && !sc->data[SC_INVINCIBLEOFF] )
-				val = max( val, 75 );
-			if( sc->data[SC_CLOAKINGEXCEED] )
-				val = max( val, sc->data[SC_CLOAKINGEXCEED]->val3);
-			if( sc->data[SC_HOVERING] )
-				val = max( val, 10 );
-			if( sc->data[SC_GN_CARTBOOST] )
-				val = max( val, sc->data[SC_GN_CARTBOOST]->val2 );
-			if( sc->data[SC_SWING] )
-				val = max( val, sc->data[SC_SWING]->val3 );
-			if( sc->data[SC_WIND_STEP_OPTION] )
-				val = max( val, sc->data[SC_WIND_STEP_OPTION]->val2 );
-			if( sc->data[SC_FULL_THROTTLE] )
-				val = max( val, 25);
-			if (sc->data[SC_MOVHASTE_HORSE])
-				val = max(val, sc->data[SC_MOVHASTE_HORSE]->val1);
 			if( sd && sd->bonus.speed_rate + sd->bonus.speed_add_rate < 0 ) // permanent item-based speedup
 				val = max( val, -(sd->bonus.speed_rate + sd->bonus.speed_add_rate) );
-			if (sc->data[SC_ARCLOUSEDASH])
-				val = max(val, sc->data[SC_ARCLOUSEDASH]->val3);
 
 			speed_rate -= val;
 		}
@@ -5343,18 +5136,8 @@ unsigned short status_calc_speed(struct block_list *bl, struct status_change *sc
 
 	//GetSpeed()
 	{
-		if( sd && pc_iscarton(sd) )
-			speed += speed * (50 - 5 * pc->checkskill(sd,MC_PUSHCART)) / 100;
-		if( sc->data[SC_PARALYSE] )
-			speed += speed * 50 / 100;
-		if( sc->data[SC_REBOUND] )
-			speed += max(speed, 100);
 		if( speed_rate != 100 )
-			speed = speed * speed_rate / 100;
-		if( sc->data[SC_STEELBODY] )
-			speed = 200;
-		if( sc->data[SC_DEFENDER] )
-			speed = max(speed, 200);
+			speed = (speed * 100) / speed_rate;
 		if( sc->data[SC_WALKSPEED] && sc->data[SC_WALKSPEED]->val1 > 0 ) // ChangeSpeed
 			speed = speed * 100 / sc->data[SC_WALKSPEED]->val1;
 

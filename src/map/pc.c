@@ -2540,11 +2540,11 @@ int pc_bonus(struct map_session_data *sd,int type,int val) {
 			break;
 		case SP_SPEED_RATE: //Non stackable increase
 			if(sd->state.lr_flag != 2)
-				sd->bonus.speed_rate = min(sd->bonus.speed_rate, -val);
+				sd->bonus.speed_rate = max(sd->bonus.speed_rate, val);
 			break;
 		case SP_SPEED_ADDRATE: //Stackable increase
 			if(sd->state.lr_flag != 2)
-				sd->bonus.speed_add_rate -= val;
+				sd->bonus.speed_add_rate += val;
 			break;
 		case SP_ASPD: //Raw increase
 			if(sd->state.lr_flag != 2)
@@ -2552,11 +2552,7 @@ int pc_bonus(struct map_session_data *sd,int type,int val) {
 			break;
 		case SP_ASPD_RATE: //Stackable increase - Made it linear as per rodatazone
 			if(sd->state.lr_flag != 2)
-	#ifndef RENEWAL_ASPD
-				bst->aspd_rate -= 10*val;
-	#else
-				bst->aspd_rate2 += val;
-	#endif
+				bst->aspd_rate += val * 10;
 			break;
 		case SP_HP_RECOV_RATE:
 			if(sd->state.lr_flag != 2)
