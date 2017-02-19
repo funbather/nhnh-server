@@ -1015,7 +1015,7 @@ void clif_set_unit_idle(struct block_list* bl, struct map_session_data *tsd, enu
 	p.PacketLength = sizeof(p);
 	p.objecttype = clif->bl_type(bl);
 	p.AID = bl->id;
-	p.GID = (sd) ? sd->status.char_id : 0; // CCODE
+	p.GID = bl->id;
 	p.speed = status->get_speed(bl);
 	p.bodyState = (sc) ? sc->opt1 : 0;
 	p.healthState = (sc) ? sc->opt2 : 0;
@@ -1126,7 +1126,7 @@ void clif_spawn_unit(struct block_list* bl, enum send_target target) {
 	p.PacketLength = sizeof(p);
 	p.objecttype = clif->bl_type(bl);
 	p.AID = bl->id;
-	p.GID = (sd) ? sd->status.char_id : 0; // CCODE
+	p.GID = bl->id;
 	p.speed = status->get_speed(bl);
 	p.bodyState = (sc) ? sc->opt1 : 0;
 	p.healthState = (sc) ? sc->opt2 : 0;
@@ -1196,7 +1196,7 @@ void clif_set_unit_walking(struct block_list* bl, struct map_session_data *tsd, 
 	p.PacketLength = sizeof(p);
 	p.objecttype = clif->bl_type(bl);
 	p.AID = bl->id;
-	p.GID = (tsd) ? tsd->status.char_id : 0; // CCODE
+	p.GID = bl->id;
 	p.speed = status->get_speed(bl);
 	p.bodyState = (sc) ? sc->opt1 : 0;
 	p.healthState = (sc) ? sc->opt2 : 0;
@@ -2847,10 +2847,10 @@ void clif_updatestatus(struct map_session_data *sd,int type)
 			WFIFOL(fd,4)=sd->battle_status.cri;
 			break;
 		case SP_MATK1:
-			WFIFOL(fd,4)=pc_rightside_matk(sd);
+			WFIFOL(fd,4)=sd->battle_status.matk_max;
 			break;
 		case SP_MATK2: // TOTAL MAG
-			WFIFOL(fd,4)=pc_leftside_matk(sd) + pc_rightside_matk(sd);
+			WFIFOL(fd,4)=sd->battle_status.matk_max;
 			break;
 		case SP_ZENY:
 			WFIFOW(fd,0)=0xb1;
@@ -3192,10 +3192,10 @@ void clif_initialstatus(struct map_session_data *sd) {
 	WBUFB(buf,14)=min(sd->status.luk, UINT8_MAX);
 	WBUFB(buf,15)=pc->need_status_point(sd,SP_LUK,1);
 
-	WBUFW(buf,16) = pc_leftside_atk(sd);
+	WBUFW(buf,16) = pc_leftside_atk(sd) + pc_rightside_atk(sd);
 	WBUFW(buf,18) = pc_leftside_atk(sd) + pc_rightside_atk(sd); // TOTAL ATK
-	WBUFW(buf,20) = pc_rightside_matk(sd);
-	WBUFW(buf,22) = pc_leftside_matk(sd) + pc_rightside_matk(sd); // TOTAL MAG
+	WBUFW(buf,20) = sd->battle_status.matk_max;
+	WBUFW(buf,22) = sd->battle_status.matk_max; // TOTAL MAG
 	WBUFW(buf,24) = pc_leftside_def(sd);
 	WBUFW(buf,26) = pc_rightside_def(sd);
 	WBUFW(buf,28) = pc_leftside_mdef(sd);
@@ -9968,18 +9968,24 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type, 
 	switch(action_type) {
 		case 0x00: // once attack
 		case 0x07: // continuous attack
+		ShowError("1\n");
 		{
 			struct npc_data *nd = map->id2nd(target_id);
 			if (nd != NULL) {
+				ShowError("2\n");
 				npc->click(sd, nd);
 				return;
 			}
 
-			if( pc_cant_act(sd) || pc_issit(sd) || sd->sc.option&OPTION_HIDE )
+			if( pc_cant_act(sd) || pc_issit(sd) || sd->sc.option&OPTION_HIDE ) {
+				ShowError("3\n");
 				return;
+			}
 
-			if( sd->sc.option&OPTION_COSTUME )
+			if( sd->sc.option&OPTION_COSTUME ) {
+				ShowError("4\n");
 				return;
+			}
 
 			if (!battle_config.sdelay_attack_enable && pc->checkskill(sd, SA_FREECAST) <= 0 && (skill->get_inf2(sd->ud.skill_id) & (INF2_FREE_CAST_REDUCED | INF2_FREE_CAST_NORMAL)) == 0) {
 				if (DIFF_TICK(tick, sd->ud.canact_tick) < 0) {
@@ -9987,10 +9993,11 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type, 
 					return;
 				}
 			}
-
+			ShowError("5\n");
 			pc->delinvincibletimer(sd);
 			pc->update_idle_time(sd, BCIDLE_ATTACK);
 			unit->attack(&sd->bl, target_id, action_type != 0);
+			ShowError("6\n");
 		}
 		break;
 		case 0x02: // sitdown

@@ -338,12 +338,12 @@ enum equip_pos {
 	EQP_HAND_R             = 0x000002, //2
 	EQP_HAND_L             = 0x000020, //32
 	EQP_ARMOR              = 0x000010, //16
+	EQP_GLOVES             = 0x000400, //1024
+	EQP_BELT               = 0x000800, //2048
 	EQP_SHOES              = 0x000040, //64
 	EQP_GARMENT            = 0x000004, //4
 	EQP_ACC_L              = 0x000008, //8
 	EQP_ACC_R              = 0x000080, //128
-	EQP_COSTUME_HEAD_TOP   = 0x000400, //1024
-	EQP_COSTUME_HEAD_MID   = 0x000800, //2048
 	EQP_COSTUME_HEAD_LOW   = 0x001000, //4096
 	EQP_COSTUME_GARMENT    = 0x002000, //8192
 	//UNUSED_COSTUME_FLOOR = 0x004000, //16384
@@ -354,6 +354,8 @@ enum equip_pos {
 	EQP_SHADOW_SHOES       = 0x080000, //524288
 	EQP_SHADOW_ACC_R       = 0x100000, //1048576
 	EQP_SHADOW_ACC_L       = 0x200000, //2097152
+	EQP_COSTUME_HEAD_TOP   = 0x400000,
+	EQP_COSTUME_HEAD_MID   = 0x800000,
 };
 
 struct point {

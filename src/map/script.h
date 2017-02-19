@@ -62,7 +62,7 @@ struct item_data;
 //#define SCRIPT_HASH_SDBM
 #define SCRIPT_HASH_ELF
 
-#define SCRIPT_EQUIP_TABLE_SIZE 20
+#define SCRIPT_EQUIP_TABLE_SIZE 12
 
 //#define SCRIPT_DEBUG_DISP
 //#define SCRIPT_DEBUG_DISASM

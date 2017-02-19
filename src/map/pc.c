@@ -7031,29 +7031,7 @@ int pc_gets_status_point(int level)
 /// raise the specified stat from (current value - val) to current value.
 int pc_need_status_point(struct map_session_data* sd, int type, int val)
 {
-	int low, high, sp = 0;
-
-	if ( val == 0 )
-		return 0;
-
-	low = pc->getstat(sd,type);
-
-	if ( low >= pc_maxparameter(sd) && val > 0 )
-		return 0; // Official servers show '0' when max is reached
-
-	high = low + val;
-
-	if ( val < 0 )
-		swap(low, high);
-
-	for ( ; low < high; low++ )
-#ifdef RENEWAL // renewal status point cost formula
-		sp += (low < 100) ? (2 + (low - 1) / 10) : (16 + 4 * ((low - 100) / 5));
-#else
-		sp += ( 1 + (low + 9) / 10 );
-#endif
-
-	return sp;
+	return val < 0 ? -val : val;
 }
 
 /**
@@ -7065,21 +7043,8 @@ int pc_need_status_point(struct map_session_data* sd, int type, int val)
  * @return Maximum value the stat could grow by.
  */
 int pc_maxparameterincrease(struct map_session_data* sd, int type) {
-	int base, final, status_points = sd->status.status_point;
-
-	base = final = pc->getstat(sd, type);
-
-	while (final <= pc_maxparameter(sd) && status_points >= 0) {
-#ifdef RENEWAL // renewal status point cost formula
-		status_points -= (final < 100) ? (2 + (final - 1) / 10) : (16 + 4 * ((final - 100) / 5));
-#else
-		status_points -= ( 1 + (final + 9) / 10 );
-#endif
-		final++;
-	}
-	final--;
-
-	return final > base ? final-base : 0;
+	int status_points = sd->status.status_point;
+	return status_points;
 }
 
 /**
@@ -7158,7 +7123,7 @@ int pc_statusup2(struct map_session_data* sd, int type, int val)
 	int max, need;
 	nullpo_ret(sd);
 
-	if( type < SP_STR || type > SP_LUK )
+	if( type < SP_STR || type >= SP_LUK )
 	{
 		clif->statusupack(sd,type,0,0);
 		return 0;
@@ -7411,12 +7376,12 @@ int pc_resetstate(struct map_session_data* sd)
 		sd->status.status_point+=add;
 	}
 
-	pc->setstat(sd, SP_STR, 1);
-	pc->setstat(sd, SP_AGI, 1);
-	pc->setstat(sd, SP_VIT, 1);
-	pc->setstat(sd, SP_INT, 1);
-	pc->setstat(sd, SP_DEX, 1);
-	pc->setstat(sd, SP_LUK, 1);
+	pc->setstat(sd, SP_STR, 0);
+	pc->setstat(sd, SP_AGI, 0);
+	pc->setstat(sd, SP_VIT, 0);
+	pc->setstat(sd, SP_INT, 0);
+	pc->setstat(sd, SP_DEX, 0);
+	pc->setstat(sd, SP_LUK, 0);
 
 	clif->updatestatus(sd,SP_STR);
 	clif->updatestatus(sd,SP_AGI);
@@ -7433,12 +7398,6 @@ int pc_resetstate(struct map_session_data* sd)
 	clif->updatestatus(sd,SP_ULUK); // End Addition
 
 	clif->updatestatus(sd,SP_STATUSPOINT);
-
-	if( sd->mission_mobid ) { //bugreport:2200
-		sd->mission_mobid = 0;
-		sd->mission_count = 0;
-		pc_setglobalreg(sd,script->add_str("TK_MISSION_ID"), 0);
-	}
 
 	status_calc_pc(sd,SCO_NONE);
 
@@ -9802,7 +9761,7 @@ int pc_equipitem(struct map_session_data *sd,int n,int req_pos)
 
 	if(battle_config.battle_log)
 		ShowInfo("equip %d(%d) %x:%x\n", sd->status.inventory[n].nameid, n, (unsigned int)(id ? id->equip : 0), (unsigned int)req_pos);
-	if(!pc->isequip(sd,n) || !(pos&req_pos) || sd->status.inventory[n].equip != 0 || (sd->status.inventory[n].attribute & ATTR_BROKEN) != 0 ) { // [Valaris]
+	if(!pc->isequip(sd,n) || !(pos&req_pos) || sd->status.inventory[n].equip != 0 ) { // [Valaris]
 		// FIXME: pc->isequip: equip level failure uses 2 instead of 0
 		clif->equipitemack(sd,n,0,EIA_FAIL); // fail
 		return 0;
@@ -11939,7 +11898,7 @@ void pc_defaults(void) {
 		{ SG_MOON_ANGER, SG_MOON_BLESS, SG_MOON_COMFORT, "PC_FEEL_MOON", "PC_HATE_MOB_MOON", is_day_of_moon },
 		{ SG_STAR_ANGER, SG_STAR_BLESS, SG_STAR_COMFORT, "PC_FEEL_STAR", "PC_HATE_MOB_STAR", is_day_of_star }
 	};
-	unsigned int equip_pos[EQI_MAX]={EQP_ACC_L,EQP_ACC_R,EQP_SHOES,EQP_GARMENT,EQP_HEAD_LOW,EQP_HEAD_MID,EQP_HEAD_TOP,EQP_ARMOR,EQP_HAND_L,EQP_HAND_R,EQP_COSTUME_HEAD_TOP,EQP_COSTUME_HEAD_MID,EQP_COSTUME_HEAD_LOW,EQP_COSTUME_GARMENT,EQP_AMMO, EQP_SHADOW_ARMOR, EQP_SHADOW_WEAPON, EQP_SHADOW_SHIELD, EQP_SHADOW_SHOES, EQP_SHADOW_ACC_R, EQP_SHADOW_ACC_L };
+	unsigned int equip_pos[EQI_MAX]={EQP_ACC_L,EQP_ACC_R,EQP_SHOES,EQP_GARMENT,EQP_HEAD_LOW,EQP_HEAD_MID,EQP_HEAD_TOP,EQP_ARMOR,EQP_HAND_L,EQP_HAND_R,EQP_GLOVES,EQP_BELT};
 
 	pc = &pc_s;
 

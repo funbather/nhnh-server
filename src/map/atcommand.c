@@ -1348,8 +1348,8 @@ ACMD(it)
 	memset(item_name, '\0', sizeof(item_name));
 
 	if (!*message
-		|| ( sscanf(message, "%99s %12d %12d %12d %12d %12d %12d %12d %12d %12d %12d %12d", item_name, &number, &quality, &ilvl, &s1, &s2, &s3, &s4, &r1, &r2, &r3, &r4) < 12
-		  && sscanf(message, "%99s %12d %12d %12d %12d %12d %12d %12d %12d %12d %12d %12d", item_name, &number, &quality, &ilvl, &s1, &s2, &s3, &s4, &r1, &r2, &r3, &r4) < 12
+		|| ( sscanf(message, "%99s %12d %12d %12d %12d %12d %12d %12d %12d %12d %12d %12d", item_name, &number, &quality, &ilvl, &s1, &s2, &s3, &s4, &r1, &r2, &r3, &r4) < 4
+		  && sscanf(message, "%99s %12d %12d %12d %12d %12d %12d %12d %12d %12d %12d %12d", item_name, &number, &quality, &ilvl, &s1, &s2, &s3, &s4, &r1, &r2, &r3, &r4) < 4
 	)) {
 		clif->message(fd, "USAGE: @it <id> <qty> <quality> <ilvl> <slot1>...<slot4> <roll1>...<roll4>");
 		return false;
