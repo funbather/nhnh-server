@@ -9968,22 +9968,18 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type, 
 	switch(action_type) {
 		case 0x00: // once attack
 		case 0x07: // continuous attack
-		ShowError("1\n");
 		{
 			struct npc_data *nd = map->id2nd(target_id);
 			if (nd != NULL) {
-				ShowError("2\n");
 				npc->click(sd, nd);
 				return;
 			}
 
 			if( pc_cant_act(sd) || pc_issit(sd) || sd->sc.option&OPTION_HIDE ) {
-				ShowError("3\n");
 				return;
 			}
 
 			if( sd->sc.option&OPTION_COSTUME ) {
-				ShowError("4\n");
 				return;
 			}
 
@@ -9993,11 +9989,9 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type, 
 					return;
 				}
 			}
-			ShowError("5\n");
 			pc->delinvincibletimer(sd);
 			pc->update_idle_time(sd, BCIDLE_ATTACK);
 			unit->attack(&sd->bl, target_id, action_type != 0);
-			ShowError("6\n");
 		}
 		break;
 		case 0x02: // sitdown
