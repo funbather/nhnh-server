@@ -2441,10 +2441,10 @@ int pc_bonus(struct map_session_data *sd,int type,int val) {
 			break;
 		case SP_CRITICAL:
 			if(sd->state.lr_flag != 2) {
-				bonus = bst->cri + val*10;
+				bonus = bst->cri + val;
 				bst->cri = cap_value(bonus, SHRT_MIN, SHRT_MAX);
 			} else
-				sd->bonus.arrow_cri += val*10;
+				sd->bonus.arrow_cri += val;
 			break;
 		case SP_ATKELE:
 			if(val >= ELE_MAX) {

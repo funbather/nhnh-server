@@ -4189,11 +4189,8 @@ bool map_read_npclist(const char *filename, bool imported)
 	// import should overwrite any previous configuration, so it should be called last
 	if (libconfig->lookup_string(&config, "import", &import) == CONFIG_TRUE) {
 		const char *base_npclist = NULL;
-#ifdef RENEWAL
-		base_npclist = "npc/re/scripts_main.conf";
-#else
-		base_npclist = "npc/pre-re/scripts_main.conf";
-#endif
+		base_npclist = "npc/scripts_main.conf";
+
 		if (strcmp(import, filename) == 0 || strcmp(import, base_npclist) == 0) {
 			ShowWarning("map_read_npclist: Loop detected! Skipping 'import'...\n");
 		} else {
@@ -4216,11 +4213,7 @@ void map_reloadnpc(bool clear) {
 	if (clear)
 		npc->clearsrcfile();
 
-#ifdef RENEWAL
-	map->read_npclist("npc/re/scripts_main.conf", false);
-#else
-	map->read_npclist("npc/pre-re/scripts_main.conf", false);
-#endif
+	map->read_npclist("npc/scripts_main.conf", false);
 
 	// Append extra scripts
 	for( i = 0; i < map->extra_scripts_count; i++ ) {

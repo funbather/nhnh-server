@@ -2006,7 +2006,7 @@ struct status_data {
 		amotion, adelay, dmotion;
 	uint32 mode;
 	short
-		hit, flee, cri, flee2,
+		hit, flee, cri, flee2, cdmg,
 		def2, mdef2,
 #ifdef RENEWAL_ASPD
 		aspd_rate2,

@@ -2741,13 +2741,13 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 		sd->critical_rate = 0;
 	if(sd->critical_rate != 100)
 		bstatus->cri = bstatus->cri * sd->critical_rate/100;
-	if (pc->checkskill(sd, SU_POWEROFLIFE) > 0)
-		bstatus->cri += 20;
 
 	if(sd->flee2_rate < 0)
 		sd->flee2_rate = 0;
 	if(sd->flee2_rate != 100)
 		bstatus->flee2 = bstatus->flee2 * sd->flee2_rate/100;
+
+	bstatus->cdmg = sd->crit_atk_rate;
 
 	// ----- CRIT CALCULATION -----
 
@@ -3629,6 +3629,8 @@ void status_calc_bl_(struct block_list *bl, enum scb_flag flag, enum e_status_ca
 			clif->updatestatus(sd,SP_FLEE2);
 		if(bst.cri != st->cri)
 			clif->updatestatus(sd,SP_CRITICAL);
+		if(bst.cdmg != st->cdmg)
+			clif->updatestatus(sd,SP_HIT); // Crit Damage
 
 		if(bst.matk_max != st->matk_max || bst.matk_min != st->matk_min){
 			clif->updatestatus(sd,SP_MATK1);

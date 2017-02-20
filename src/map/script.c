@@ -7831,7 +7831,7 @@ BUILDIN(getitem2)
 /// Generate an item with specific attributes
 BUILDIN(spawnitem)
 {
-	int nameid,amount,give,flag;
+	int nameid,amount,give,flag = 0;
 	int quality,ilvl,s1,s2,s3,s4,r1,r2,r3,r4;
 	unsigned int rolls = 0;
 	struct map_session_data *sd;
@@ -7893,10 +7893,7 @@ BUILDIN(spawnitem)
 		}
 
 		item_tmp.nameid=nameid;
-		if(!flag)
-			item_tmp.identify=1;
-		else if(item_data->type==IT_WEAPON || item_data->type==IT_ARMOR)
-			item_tmp.identify=1;
+		item_tmp.identify=1;
 		item_tmp.refine=quality;
 		item_tmp.attribute=ilvl;
 		item_tmp.card[0]=(short)s1;
