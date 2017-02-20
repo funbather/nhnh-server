@@ -500,7 +500,10 @@ int64 battle_calc_base_damage(struct block_list *src, struct block_list *bl, uin
 		s_ele_ = st->lhw.ele;
 	}
 
-	damage = st->batk + battle->calc_weapon_damage(src, bl, skill_id, skill_lv, &st->rhw, nk, n_ele, s_ele, s_ele_, status_get_size(bl), type, flag, flag2);
+	if (sd->weapontype1 == W_DAGGER || sd->weapontype1 == W_STAFF) // Magical weapon
+		damage = st->matk_max + battle->calc_weapon_damage(src, bl, skill_id, skill_lv, &st->rhw, nk, n_ele, s_ele, s_ele_, status_get_size(bl), type, flag, flag2);
+	else
+		damage = st->batk + battle->calc_weapon_damage(src, bl, skill_id, skill_lv, &st->rhw, nk, n_ele, s_ele, s_ele_, status_get_size(bl), type, flag, flag2);
 
 	return damage;
 }
@@ -3873,6 +3876,12 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 		}
 
 		if( sd ) {
+			if (!skill_id)
+				ATK_ADDRATE(sd->bonus.basicdamage);
+
+			if (skill_id)
+				ATK_ADDRATE(sd->bonus.skilldamage);
+
 			if (skill_id && (i = pc->skillatk_bonus(sd, skill_id)))
 				ATK_ADDRATE(i);
 

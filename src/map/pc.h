@@ -390,6 +390,11 @@ BEGIN_ZEROED_BLOCK; // this block will be globally zeroed at the beginning of st
 		int fixcastrate,varcastrate;
 		int add_fixcast,add_varcast;
 		int ematk; // matk bonus from equipment
+		int skilldamage;
+		int spelldamage;
+		int castspeed;
+		int statusresist;
+		int basicdamage;
 	} bonus;
 END_ZEROED_BLOCK;
 

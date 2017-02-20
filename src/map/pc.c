@@ -2988,6 +2988,26 @@ int pc_bonus(struct map_session_data *sd,int type,int val) {
 			if (sd->state.lr_flag != 2)
 				sd->max_weight += val;
 			break;
+		case SP_SKILLDAMAGE:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.skilldamage += val;
+			break;
+		case SP_SPELLDAMAGE:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.spelldamage += val;
+			break;
+		case SP_CASTSPEED:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.castspeed += val;
+			break;
+		case SP_STATUSRESIST:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.statusresist += val;
+			break;
+		case SP_BASICDAMAGE:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.basicdamage += val;
+			break;
 		default:
 			ShowWarning("pc_bonus: unknown type %d %d !\n",type,val);
 			Assert_report(0);
@@ -8182,10 +8202,17 @@ int pc_readparam(const struct map_session_data *sd, int type)
 		case SP_EMATK:           val = sd->bonus.ematk; break;
 		case SP_FIXCASTRATE:     val = sd->bonus.fixcastrate; break;
 		case SP_ADD_FIXEDCAST:   val = sd->bonus.add_fixcast; break;
-#ifdef RENEWAL_CAST
-		case SP_VARCASTRATE:     val = sd->bonus.varcastrate; break;
-		case SP_ADD_VARIABLECAST:val = sd->bonus.add_varcast; break;
-#endif
+		case SP_STR2:            val = sd->battle_status.str; break;
+		case SP_AGI2:            val = sd->battle_status.agi; break;
+		case SP_VIT2:            val = sd->battle_status.vit; break;
+		case SP_INT2:            val = sd->battle_status.int_; break;
+		case SP_DEX2:            val = sd->battle_status.dex; break;
+		case SP_LUK2:            val = sd->battle_status.luk; break;
+		case SP_SKILLDAMAGE:     val = sd->bonus.skilldamage; break;
+		case SP_SPELLDAMAGE:     val = sd->bonus.spelldamage; break;
+		case SP_CASTSPEED:       val = sd->bonus.castspeed; break;
+		case SP_STATUSRESIST:    val = sd->bonus.statusresist; break;
+		case SP_BASICDAMAGE:     val = sd->bonus.basicdamage; break;
 	}
 
 	return val;
