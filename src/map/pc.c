@@ -3008,6 +3008,10 @@ int pc_bonus(struct map_session_data *sd,int type,int val) {
 			if (sd->state.lr_flag != 2)
 				sd->bonus.basicdamage += val;
 			break;
+		case SP_BASEHP:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.basehp += val;
+			break;
 		default:
 			ShowWarning("pc_bonus: unknown type %d %d !\n",type,val);
 			Assert_report(0);
@@ -8213,6 +8217,7 @@ int pc_readparam(const struct map_session_data *sd, int type)
 		case SP_CASTSPEED:       val = sd->bonus.castspeed; break;
 		case SP_STATUSRESIST:    val = sd->bonus.statusresist; break;
 		case SP_BASICDAMAGE:     val = sd->bonus.basicdamage; break;
+		case SP_BASEHP:          val = sd->bonus.basehp; break;
 	}
 
 	return val;

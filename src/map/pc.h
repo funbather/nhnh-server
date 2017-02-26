@@ -395,6 +395,7 @@ BEGIN_ZEROED_BLOCK; // this block will be globally zeroed at the beginning of st
 		int castspeed;
 		int statusresist;
 		int basicdamage;
+		int basehp;
 	} bonus;
 END_ZEROED_BLOCK;
 

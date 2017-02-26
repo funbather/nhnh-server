@@ -2781,7 +2781,7 @@ int battle_calc_drain(int64 damage, int rate, int per) {
 	int64 diff = 0;
 
 	if (per && rnd()%1000 < rate) {
-		diff = (damage * per) / 100;
+		diff = (damage * per) / 1000;
 		if (diff == 0) {
 			if (per > 0)
 				diff = 1;
@@ -4513,15 +4513,6 @@ enum damage_lv battle_weapon_attack(struct block_list* src, struct block_list* t
 	if (tsc && !tsc->count)
 		tsc = NULL;
 
-	if (sd)
-	{
-		sd->state.arrow_atk = (sd->status.weapon == W_BOW || (sd->status.weapon >= W_REVOLVER && sd->status.weapon <= W_GRENADE));
-		if (sd->state.arrow_atk)
-		{
-			if (battle->check_arrows(sd) == false)
-				return ATK_NONE;
-		}
-	}
 	if (sc && sc->count) {
 		if (sc->data[SC_CLOAKING] && !(sc->data[SC_CLOAKING]->val4 & 2))
 			status_change_end(src, SC_CLOAKING, INVALID_TIMER);

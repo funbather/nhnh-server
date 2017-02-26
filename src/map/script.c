@@ -5723,6 +5723,19 @@ BUILDIN(next)
 	return true;
 }
 
+
+/// Tells the client to clear the textbox
+/// cleartext;
+BUILDIN(cleartext)
+{
+	struct map_session_data *sd = script->rid2sd(st);
+	if (sd == NULL)
+		return true;
+
+	clif->scriptcleartext(sd);
+	return true;
+}
+
 /// Ends the script and displays the button 'close' on the npc dialog.
 /// The dialog is closed when the button is pressed.
 ///
@@ -7909,15 +7922,16 @@ BUILDIN(spawnitem)
 			get_count = amount;
 
 		for (i = 0; i < amount; i += get_count) {
-			if ( !give )
+			if ( !give ) {
 				if( pc->candrop(sd,&item_tmp) )
 					map->addflooritem(&sd->bl, &item_tmp, get_count, sd->bl.m, sd->bl.x, sd->bl.y, 0, 0, 0, 0);
-			else
+			} else {
 				if ((flag = pc->additem(sd, &item_tmp, get_count, LOG_TYPE_SCRIPT))) {
 					clif->additem(sd, 0, 0, flag);
 					if( pc->candrop(sd,&item_tmp) )
 						map->addflooritem(&sd->bl, &item_tmp, get_count, sd->bl.m, sd->bl.x, sd->bl.y, 0, 0, 0, 0);
 				}
+			}
 		}
 	}
 
@@ -9168,6 +9182,54 @@ BUILDIN(getequiprefinerycnt)
 	return true;
 }
 
+//Get ilvl of item at pos
+BUILDIN(getequipilvl)
+{
+	int i = -1,num;
+	struct map_session_data *sd;
+
+	num = script_getnum(st,2);
+	sd = script->rid2sd(st);
+	if( sd == NULL )
+		return true;
+
+	if (num > 0 && num <= ARRAYLENGTH(script->equip))
+		i=pc->checkequip(sd,script->equip[num-1]);
+	if(i >= 0)
+		script_pushint(st,sd->status.inventory[i].attribute);
+	else
+		script_pushint(st,0);
+
+	return true;
+}
+
+//Get rolls of item at pos, returns only the roll in slot n if specified
+BUILDIN(getequiprolls)
+{
+	int i = -1,num,slot = -1;
+	struct map_session_data *sd;
+
+	num = script_getnum(st,2);
+	sd = script->rid2sd(st);
+	if( sd == NULL )
+		return true;
+
+	if (script_hasdata(st, 3))
+		slot = script_getnum(st, 3) * 8; // have to shift n*8 bits
+
+	if (num > 0 && num <= ARRAYLENGTH(script->equip))
+		i=pc->checkequip(sd,script->equip[num-1]);
+	if(i >= 0)
+		if(slot == -1)
+			script_pushint(st,sd->status.inventory[i].rolls);
+		else
+			script_pushint(st,(sd->status.inventory[i].rolls >> slot) & 0xFF);
+	else
+		script_pushint(st,0);
+
+	return true;
+}
+
 /*==========================================
  * Get the weapon level value at pos
  * (pos should normally only be EQI_HAND_L or EQI_HAND_R)
@@ -9225,7 +9287,7 @@ BUILDIN(getequippercentrefinery) {
  *------------------------------------------*/
 BUILDIN(successrefitem)
 {
-	int i = -1 , num, up = 1;
+	int i = -1 , num, up = 10, limit = 100;
 	struct map_session_data *sd;
 
 	num = script_getnum(st,2);
@@ -9236,6 +9298,9 @@ BUILDIN(successrefitem)
 	if (script_hasdata(st, 3))
 		up = script_getnum(st, 3);
 
+	if (script_hasdata(st, 4))
+		limit = script_getnum(st, 4);
+
 	if (num > 0 && num <= ARRAYLENGTH(script->equip))
 		i=pc->checkequip(sd,script->equip[num-1]);
 	if (i >= 0) {
@@ -9244,11 +9309,11 @@ BUILDIN(successrefitem)
 		//Logs items, got from (N)PC scripts [Lupus]
 		logs->pick_pc(sd, LOG_TYPE_SCRIPT, -1, &sd->status.inventory[i],sd->inventory_data[i]);
 
-		if (sd->status.inventory[i].refine >= MAX_REFINE)
+		if (sd->status.inventory[i].refine >= limit)
 			return true;
 
 		sd->status.inventory[i].refine += up;
-		sd->status.inventory[i].refine = cap_value( sd->status.inventory[i].refine, 0, MAX_REFINE);
+		sd->status.inventory[i].refine = cap_value( sd->status.inventory[i].refine, 0, limit);
 		pc->unequipitem(sd, i, PCUNEQUIPITEM_FORCE); // status calc will happen in pc->equipitem() below
 
 		clif->refine(sd->fd,0,i,sd->status.inventory[i].refine);
@@ -9260,22 +9325,52 @@ BUILDIN(successrefitem)
 		clif->additem(sd,i,1,0);
 		pc->equipitem(sd,i,ep);
 		clif->misceffect(&sd->bl,3);
-		if(sd->status.inventory[i].refine == 10 &&
-		   sd->status.inventory[i].card[0] == CARD0_FORGE &&
-		   sd->status.char_id == (int)MakeDWord(sd->status.inventory[i].card[2],sd->status.inventory[i].card[3])
-		  ) { // Fame point system [DracoRPG]
-			switch (sd->inventory_data[i]->wlv) {
-			case 1:
-				pc->addfame(sd, RANKTYPE_BLACKSMITH, 1); // Success to refine to +10 a lv1 weapon you forged = +1 fame point
-				break;
-			case 2:
-				pc->addfame(sd, RANKTYPE_BLACKSMITH, 25); // Success to refine to +10 a lv2 weapon you forged = +25 fame point
-				break;
-			case 3:
-				pc->addfame(sd, RANKTYPE_BLACKSMITH, 1000); // Success to refine to +10 a lv3 weapon you forged = +1000 fame point
-				break;
-			}
-		}
+	}
+
+	return true;
+}
+
+// Refining an item's level
+BUILDIN(successrefitemilvl)
+{
+	int i = -1 , num, up = 5, limit = 50;
+	struct map_session_data *sd;
+
+	num = script_getnum(st,2);
+	sd = script->rid2sd(st);
+	if (sd == NULL)
+		return true;
+
+	if (script_hasdata(st, 3))
+		up = script_getnum(st, 3);
+
+	if (script_hasdata(st, 4))
+		limit = script_getnum(st, 4);
+
+	if (num > 0 && num <= ARRAYLENGTH(script->equip))
+		i=pc->checkequip(sd,script->equip[num-1]);
+	if (i >= 0) {
+		int ep = sd->status.inventory[i].equip;
+
+		//Logs items, got from (N)PC scripts [Lupus]
+		logs->pick_pc(sd, LOG_TYPE_SCRIPT, -1, &sd->status.inventory[i],sd->inventory_data[i]);
+
+		if (sd->status.inventory[i].attribute >= limit)
+			return true;
+
+		sd->status.inventory[i].attribute += up;
+		sd->status.inventory[i].attribute = cap_value( sd->status.inventory[i].attribute, 0, limit);
+		pc->unequipitem(sd, i, PCUNEQUIPITEM_FORCE); // status calc will happen in pc->equipitem() below
+
+		clif->refine(sd->fd,0,i,sd->status.inventory[i].attribute);
+		clif->delitem(sd, i, 1, DELITEM_MATERIALCHANGE);
+
+		//Logs items, got from (N)PC scripts [Lupus]
+		logs->pick_pc(sd, LOG_TYPE_SCRIPT, 1, &sd->status.inventory[i],sd->inventory_data[i]);
+
+		clif->additem(sd,i,1,0);
+		pc->equipitem(sd,i,ep);
+		clif->misceffect(&sd->bl,3);
 	}
 
 	return true;
@@ -20973,6 +21068,7 @@ void script_parse_builtin(void) {
 		BUILDIN_DEF(mes,"s"),
 		BUILDIN_DEF(mesf,"s*"),
 		BUILDIN_DEF(next,""),
+		BUILDIN_DEF(cleartext,""),
 		BUILDIN_DEF(close,""),
 		BUILDIN_DEF(close2,""),
 		BUILDIN_DEF(menu,"sl*"),
@@ -21046,9 +21142,12 @@ void script_parse_builtin(void) {
 		BUILDIN_DEF(getequipisenableref,"i"),
 		BUILDIN_DEF(getequipisidentify,"i"),
 		BUILDIN_DEF(getequiprefinerycnt,"i"),
+		BUILDIN_DEF(getequipilvl,"i"),
+		BUILDIN_DEF(getequiprolls,"i?"),
 		BUILDIN_DEF(getequipweaponlv,"i"),
 		BUILDIN_DEF(getequippercentrefinery,"i"),
-		BUILDIN_DEF(successrefitem,"i?"),
+		BUILDIN_DEF(successrefitem,"i??"),
+		BUILDIN_DEF(successrefitemilvl,"i??"),
 		BUILDIN_DEF(failedrefitem,"i"),
 		BUILDIN_DEF(downrefitem,"i?"),
 		BUILDIN_DEF(statusup,"i"),

@@ -2279,7 +2279,7 @@ unsigned int status_get_base_maxhp(const struct map_session_data *sd, const stru
 	nullpo_ret(sd);
 	nullpo_ret(st);
 
-	val = 45 + 5 * sd->status.base_level;
+	val = 45 + 5 * sd->status.base_level + sd->bonus.basehp;
 	val += val * st->vit * 5 / 100; // VIT Bonus - +5% Base HP
 
 	return (unsigned int)cap_value(val,0,UINT_MAX);

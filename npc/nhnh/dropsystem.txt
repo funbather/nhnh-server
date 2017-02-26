@@ -95,7 +95,10 @@ function	script	RollForItem	{
 			else
 				.@quality = rand(116,125);
       
-      .@roll1 = .@roll2 = .@roll3 = .@roll4 = rand(BaseLevel,49+BaseLevel); // Enchantment roll range tied to player Base Level
+      .@roll1 = rand(BaseLevel,49+BaseLevel);
+      .@roll2 = rand(BaseLevel,49+BaseLevel);
+      .@roll3 = rand(BaseLevel,49+BaseLevel);
+      .@roll4 = rand(BaseLevel,49+BaseLevel); // Enchantment roll range tied to player Base Level
        
       // Finally, generate the item!
       // getarg(2) flags
