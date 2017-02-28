@@ -13124,15 +13124,9 @@ BUILDIN(getequipcardcnt)
 		return true;
 	}
 
-	if(itemdb_isspecial(sd->status.inventory[i].card[0]))
-	{
-		script_pushint(st,0);
-		return true;
-	}
-
 	count = 0;
-	for( j = 0; j < sd->inventory_data[i]->slot; j++ )
-		if( sd->status.inventory[i].card[j] && itemdb_type(sd->status.inventory[i].card[j]) == IT_CARD )
+	for( j = 0; j < MAX_SLOTS; j++ )
+		if( sd->status.inventory[i].card[j] )
 			count++;
 
 	script_pushint(st,count);
@@ -13921,6 +13915,7 @@ BUILDIN(getinventorylist)
 			}
 			pc->setreg(sd,reference_uid(script->add_str("@inventorylist_expire"), j),sd->status.inventory[i].expire_time);
 			pc->setreg(sd,reference_uid(script->add_str("@inventorylist_bound"), j),sd->status.inventory[i].bound);
+			pc->setreg(sd,reference_uid(script->add_str("@inventorylist_rolls"), j),sd->status.inventory[i].rolls);
 			j++;
 		}
 	}

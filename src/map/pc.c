@@ -4625,7 +4625,8 @@ int pc_additem(struct map_session_data *sd,struct item *item_data,int amount,e_l
 			    sd->status.inventory[i].bound == item_data->bound &&
 			    sd->status.inventory[i].expire_time == 0 &&
 				sd->status.inventory[i].unique_id == item_data->unique_id &&
-			    memcmp(&sd->status.inventory[i].card, &item_data->card, sizeof(item_data->card)) == 0 ) {
+			    memcmp(&sd->status.inventory[i].card, &item_data->card, sizeof(item_data->card)) &&
+			    (item_data->nameid != 802) == 0 ) { // don't stack enchanted bijous
 				if( amount > MAX_AMOUNT - sd->status.inventory[i].amount || ( data->stack.inventory && amount > data->stack.amount - sd->status.inventory[i].amount ) )
 					return 5;
 				sd->status.inventory[i].amount += amount;
