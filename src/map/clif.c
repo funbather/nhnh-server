@@ -1051,8 +1051,8 @@ void clif_set_unit_idle(struct block_list* bl, struct map_session_data *tsd, enu
 		p.HP = -1;
 		p.isBoss = 0;
 	}
-	p.body = vd->body_style;
-	p.classchoices = (sd) ? sd->class_choices : 0;
+	p.body = (sd) ? (int16) ((sd->status.class_choices >> 24) & 0xFF) : 0;
+	p.classchoices = (sd) ? sd->status.class_choices : 0;
 	safestrncpy(p.name, clif->get_bl_name(bl), NAME_LENGTH);
 
 	clif->send(&p,sizeof(p),tsd?&tsd->bl:bl,target);
@@ -1161,8 +1161,8 @@ void clif_spawn_unit(struct block_list* bl, enum send_target target) {
 		p.HP = -1;
 		p.isBoss = 0;
 	}
-	p.body = vd->body_style;
-	p.classchoices = (sd) ? sd->class_choices : 0;
+	p.body = (sd) ? (int16) ((sd->status.class_choices >> 24) & 0xFF) : 0;
+	p.classchoices = (sd) ? sd->status.class_choices : 0;
 	safestrncpy(p.name, clif->get_bl_name(bl), NAME_LENGTH);
 
 	if (clif->isdisguised(bl)) {
@@ -1232,8 +1232,8 @@ void clif_set_unit_walking(struct block_list* bl, struct map_session_data *tsd, 
 		p.HP = -1;
 		p.isBoss = 0;
 	}
-	p.body = vd->body_style;
-	p.classchoices = (sd) ? sd->class_choices : 0;
+	p.body = (sd) ? (int16) ((sd->status.class_choices >> 24) & 0xFF) : 0;
+	p.classchoices = (sd) ? sd->status.class_choices : 0;
 	safestrncpy(p.name, clif->get_bl_name(bl), NAME_LENGTH);
 
 	clif->send(&p,sizeof(p),tsd?&tsd->bl:bl,target);

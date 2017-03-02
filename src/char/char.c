@@ -468,7 +468,7 @@ int char_mmo_char_tosql(int char_id, struct mmo_charstatus* p)
 		(p->head_mid != cp->head_mid) || (p->head_bottom != cp->head_bottom) || (p->delete_date != cp->delete_date) ||
 		(p->rename != cp->rename) || (p->slotchange != cp->slotchange) || (p->robe != cp->robe) ||
 		(p->show_equip != cp->show_equip) || (p->allow_party != cp->allow_party) || (p->font != cp->font) ||
-		(p->uniqueitem_counter != cp->uniqueitem_counter) || (p->hotkey_rowshift != cp->hotkey_rowshift)
+		(p->uniqueitem_counter != cp->uniqueitem_counter) || (p->hotkey_rowshift != cp->hotkey_rowshift) || (p->class_choices != cp->class_choices)
 	) {
 		//Save status
 		unsigned int opt = 0;
@@ -486,7 +486,7 @@ int char_mmo_char_tosql(int char_id, struct mmo_charstatus* p)
 			"`weapon`='%d',`shield`='%d',`head_top`='%d',`head_mid`='%d',`head_bottom`='%d',"
 			"`last_map`='%s',`last_x`='%d',`last_y`='%d',`save_map`='%s',`save_x`='%d',`save_y`='%d', `rename`='%d',"
 			"`delete_date`='%lu',`robe`='%d',`slotchange`='%d', `char_opt`='%u', `font`='%u', `uniqueitem_counter` ='%u',"
-			"`hotkey_rowshift`='%d'"
+			"`hotkey_rowshift`='%d',`class_choices`='%u'"
 			" WHERE  `account_id`='%d' AND `char_id` = '%d'",
 			char_db, p->base_level, p->job_level,
 			p->base_exp, p->job_exp, p->zeny,
@@ -498,7 +498,7 @@ int char_mmo_char_tosql(int char_id, struct mmo_charstatus* p)
 			mapindex_id2name(p->save_point.map), p->save_point.x, p->save_point.y, p->rename,
 			(unsigned long)p->delete_date,  // FIXME: platform-dependent size
 			p->robe,p->slotchange,opt,p->font,p->uniqueitem_counter,
-			p->hotkey_rowshift,
+			p->hotkey_rowshift,(unsigned long) p->class_choices,
 			p->account_id, p->char_id) )
 		{
 			Sql_ShowDebug(inter->sql_handle);
@@ -957,7 +957,7 @@ int char_mmo_chars_fromsql(struct char_session_data* sd, uint8* buf)
 		"`str`,`agi`,`vit`,`int`,`dex`,`luk`,`max_hp`,`hp`,`max_sp`,`sp`,"
 		"`status_point`,`skill_point`,`option`,`karma`,`manner`,`hair`,`hair_color`,"
 		"`clothes_color`,`body`,`weapon`,`shield`,`head_top`,`head_mid`,`head_bottom`,`last_map`,`rename`,`delete_date`,"
-		"`robe`,`slotchange`,`unban_time`,`sex`"
+		"`robe`,`slotchange`,`unban_time`,`sex`,`class_choices`"
 		" FROM `%s` WHERE `account_id`='%d' AND `char_num` < '%d'", char_db, sd->account_id, MAX_CHARS)
 	 || SQL_ERROR == SQL->StmtExecute(stmt)
 	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 0,  SQLDT_INT,    &p.char_id, 0, NULL, NULL)
@@ -1067,7 +1067,7 @@ int char_mmo_char_fromsql(int char_id, struct mmo_charstatus* p, bool load_every
 		"`status_point`,`skill_point`,`option`,`karma`,`manner`,`party_id`,`guild_id`,`pet_id`,`homun_id`,`elemental_id`,`hair`,"
 		"`hair_color`,`clothes_color`,`body`,`weapon`,`shield`,`head_top`,`head_mid`,`head_bottom`,`last_map`,`last_x`,`last_y`,"
 		"`save_map`,`save_x`,`save_y`,`partner_id`,`father`,`mother`,`child`,`fame`,`rename`,`delete_date`,`robe`,`slotchange`,"
-		"`char_opt`,`font`,`uniqueitem_counter`,`sex`,`hotkey_rowshift`"
+		"`char_opt`,`font`,`uniqueitem_counter`,`sex`,`hotkey_rowshift`,`class_choices`"
 		" FROM `%s` WHERE `char_id`=? LIMIT 1", char_db)
 	 || SQL_ERROR == SQL->StmtBindParam(stmt, 0, SQLDT_INT, &char_id, 0)
 	 || SQL_ERROR == SQL->StmtExecute(stmt)
@@ -1130,6 +1130,7 @@ int char_mmo_char_fromsql(int char_id, struct mmo_charstatus* p, bool load_every
 	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 56, SQLDT_UINT,   &p->uniqueitem_counter, 0, NULL, NULL)
 	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 57, SQLDT_ENUM,   &sex, sizeof(sex), NULL, NULL)
 	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 58, SQLDT_UCHAR,  &p->hotkey_rowshift, 0, NULL, NULL)
+	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 59, SQLDT_UINT32, &p->class_choices, 0, NULL, NULL)
 	) {
 		SqlStmt_ShowDebug(stmt);
 		SQL->StmtFree(stmt);
@@ -1598,7 +1599,7 @@ int char_make_new_char_sql(struct char_session_data *sd, const char *name_, int 
 		Sql_ShowDebug(inter->sql_handle);
 		return -2; //No, stop the procedure!
 	}
-	
+
 	//Retrieve the newly auto-generated char id
 	char_id = (int)SQL->LastInsertId(inter->sql_handle);
 
@@ -1871,7 +1872,7 @@ int char_mmo_char_tobuf(uint8* buffer, struct mmo_charstatus* p) {
 	WBUFW(buf,54) = DEFAULT_WALK_SPEED; // p->speed;
 	WBUFW(buf,56) = p->class;
 	WBUFW(buf,58) = p->hair;
-	WBUFW(buf,60) = p->body;
+	WBUFW(buf,60) = (p->class_choices >> 24) & 0xFF;
 	WBUFW(buf,62) = p->weapon;
 	WBUFW(buf,64) = p->base_level;
 	WBUFW(buf,66) = min(p->skill_point, INT16_MAX);
@@ -1897,7 +1898,7 @@ int char_mmo_char_tobuf(uint8* buffer, struct mmo_charstatus* p) {
 	WBUFL(buf,142) = ( p->rename > 0 ) ? 1 : 0;  // (0 = disabled, otherwise displays "Add-Ons" sidebar)
 	WBUFB(buf,146) = p->sex;// sex - (0 = female, 1 = male, 99 = logindefined)
 	WBUFL(buf,147) = p->class_choices;
-	
+
 	return 151;
 }
 
@@ -4597,7 +4598,7 @@ void char_parse_char_create_new_char(int fd, struct char_session_data* sd)
 		// add new entry to the chars list
 		sd->found_char[char_dat.slot] = result; // the char_id of the new char
 	}
-	
+
 	RFIFOSKIP(fd, 44);
 }
 
