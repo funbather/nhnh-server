@@ -6601,6 +6601,15 @@ int pc_check_job_name(const char *name) {
 		{ "Oboro", JOB_OBORO },
 		{ "Rebellion", JOB_REBELLION },
 		{ "Summoner", JOB_SUMMONER },
+		{ "SWD1", 1 },
+		{ "SWD2", 2 },
+		{ "SWD3", 3 },
+		{ "THF1", 4 },
+		{ "THF2", 5 },
+		{ "THF3", 6 },
+		{ "ACO1", 7 },
+		{ "ACO2", 8 },
+		{ "ACO3", 9 },
 	};
 
 	nullpo_retr(-1, name);
