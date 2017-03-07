@@ -7366,7 +7366,7 @@ int pc_resetskill(struct map_session_data* sd, int flag)
 
 		inf2 = skill->dbs->db[i].inf2;
 
-		if( inf2&(INF2_WEDDING_SKILL|INF2_SPIRIT_SKILL) ) //Avoid reseting wedding/linker skills.
+		if( inf2&(INF2_WEDDING_SKILL|INF2_SPIRIT_SKILL|INF2_INNATE) ) //Avoid reseting wedding/linker skills.
 			continue;
 
 		skill_id = skill->dbs->db[i].nameid;
