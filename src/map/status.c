@@ -2251,6 +2251,9 @@ unsigned int status_get_base_maxhp(const struct map_session_data *sd, const stru
 	val = 45 + 5 * sd->status.base_level + sd->bonus.basehp;
 	val += val * st->vit * 5 / 100; // VIT Bonus - +5% Base HP
 
+	if ( pc->checkskill(sd,SWD_SOUL) > 0 ) // SWD_SOUL +35% Base HP
+		val += val * 35 / 100;
+
 	return (unsigned int)cap_value(val,0,UINT_MAX);
 }
 
@@ -2599,6 +2602,9 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	i = bstatus->luk + sd->status.luk + sd->param_bonus[5] + sd->param_equip[5];
 	bstatus->luk = cap_value(i,0,USHRT_MAX);
 
+	if ( pc->checkskill(sd,SWD_SOUL) > 0 )
+		bstatus->vit += bstatus->vit * 20 / 100;
+
 	// ------ BASE ATTACK CALCULATION ------
 
 	// Base batk value is set on status->calc_misc
@@ -2736,6 +2742,14 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	if(sd->def_rate != 100) {
 		i =  bstatus->def * sd->def_rate/100;
 		bstatus->def = cap_value(i, DEFTYPE_MIN, DEFTYPE_MAX);
+	}
+
+	if( (skill_lv = pc->checkskill(sd,SWD_HARDHEARTED)) > 0 ) // SWD_HARDHEARTED +skill_lv * 4% DEF
+		bstatus->def += bstatus->def * skill_lv * 4 / 100;
+
+	if( (skill_lv = pc->checkskill(sd,SWD_PAVISE)) > 0 && sd->status.shield ) { // SWD_PAVISE +skill_lv% Phys-Block, +skill_lv/2% Mag-Block
+		bstatus->def2 += skill_lv * 10;
+		bstatus->mdef2 += skill_lv * 5;
 	}
 
 	// ----- EQUIPMENT-MDEF CALCULATION -----

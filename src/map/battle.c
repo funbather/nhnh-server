@@ -1293,6 +1293,13 @@ int64 battle_calc_defense(int attack_type, struct block_list *src, struct block_
 					}
 				}
 
+				if ( tsd && pc->checkskill(tsd,SWD_DAUNTLESS) > 0 ) { // SWD_DAUNTLESS +skill_lv% DEF per attacker
+					unsigned int attackers = unit->counttargeted(&tsd->bl);
+					int skill_lv = pc->checkskill(tsd,SWD_DAUNTLESS);
+
+					def1 += def1 * attackers * skill_lv / 100;
+				}
+
 				if( def1 < -399 ) // it stops at -399
 					def1 = 399; // in aegis it set to 1 but in our case it may lead to exploitation so limit it to 399
 					//return 1;
@@ -2624,6 +2631,25 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 			damage -= damage * t_sd->special_state.no_misc_damage / 100;
 
 		if(!damage) return 0;
+	}
+
+
+	//skill-based physical damage reductions
+	if ( t_sd && (flag&BF_WEAPON) && pc->checkskill(t_sd,SWD_SOUL) ) // SWD_SOUL -10% Phys DMG
+		damage -= damage * 10 / 100;
+
+	if ( t_sd && (flag&BF_WEAPON) && pc->checkskill(t_sd,SWD_FORCEOFWILL) ) {
+		int hpr = t_sd->battle_status.hp * 100 / t_sd->battle_status.max_hp;
+		int skill_lv = pc->checkskill(t_sd,SWD_FORCEOFWILL);
+		int reduc = 0;
+
+		if      (hpr > 95) reduc = skill_lv;
+		else if (hpr > 80) reduc = skill_lv * 3 / 2;
+		else if (hpr > 60) reduc = skill_lv * 2;
+		else if (hpr > 35) reduc = skill_lv * 5 / 2;
+		else               reduc = skill_lv * 3;
+
+		damage -= damage * reduc / 100;
 	}
 
 	s_sc = status->get_sc(src);
