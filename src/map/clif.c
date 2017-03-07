@@ -4641,9 +4641,10 @@ void clif_skillinfoblock(struct map_session_data *sd)
 			safestrncpy(WFIFOP(fd,len+12), skill->get_name(id), NAME_LENGTH);
 			if( sd->status.skill[i].flag == SKILL_FLAG_PERMANENT || sd->status.skill[i].flag >= SKILL_FLAG_REPLACED_LV_0) {
 				if( sd->status.skill[i].flag >= SKILL_FLAG_REPLACED_LV_0 )
-					WFIFOB(fd,len+36) = ((sd->status.skill[i].flag - SKILL_FLAG_REPLACED_LV_0) < skill->tree_get_max(i, sd->status.class_choices))? 1:0;
-				else
-					WFIFOB(fd,len+36) = (sd->status.skill[i].lv < skill->tree_get_max(i, sd->status.class_choices))? 1:0;
+					WFIFOB(fd,len+36) = ((sd->status.skill[i].flag - SKILL_FLAG_REPLACED_LV_0) < skill->tree_get_max(id, sd->status.class_choices))? 1:0;
+				else {
+					WFIFOB(fd,len+36) = (sd->status.skill[i].lv < skill->tree_get_max(id, sd->status.class_choices))? 1:0;
+				}
 			} else
 				WFIFOB(fd,len+36) = 0;
 			len += 37;
@@ -4739,7 +4740,7 @@ void clif_skillup(struct map_session_data *sd, uint16 skill_id, int skill_lv, in
 	WFIFOW(fd, 6) = skill->get_sp(skill_id, skill_lv);
 	WFIFOW(fd, 8) = (flag)?skill->get_range2(&sd->bl, skill_id, skill_lv) : skill->get_range(skill_id, skill_lv);
 	if( flag )
-		WFIFOB(fd,10) = (skill_lv < skill->tree_get_max(skill_id, sd->status.class)) ? 1 : 0;
+		WFIFOB(fd,10) = (skill_lv < skill->tree_get_max(skill_id, sd->status.class_choices)) ? 1 : 0;
 	else
 		WFIFOB(fd,10) = 1;
 

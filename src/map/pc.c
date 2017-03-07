@@ -7074,7 +7074,7 @@ int pc_skillup(struct map_session_data *sd,uint16 skill_id) {
 	if( sd->status.skill_point > 0 &&
 		sd->status.skill[index].id &&
 		sd->status.skill[index].flag == SKILL_FLAG_PERMANENT && //Don't allow raising while you have granted skills. [Skotlex]
-		sd->status.skill[index].lv < skill->tree_get_max(skill_id, sd->status.class) )
+		sd->status.skill[index].lv < skill->tree_get_max(skill_id, sd->status.class_choices) )
 	{
 		sd->status.skill[index].lv++;
 		sd->status.skill_point--;
@@ -7148,7 +7148,7 @@ int pc_allskillup(struct map_session_data *sd)
 				continue; //Cannot be learned normally.
 
 			sd->status.skill[idx].id = id;
-			sd->status.skill[idx].lv = skill->tree_get_max(id, sd->status.class); // celest
+			sd->status.skill[idx].lv = skill->tree_get_max(id, sd->status.class_choices); // celest
 		}
 	}
 	status_calc_pc(sd,SCO_NONE);

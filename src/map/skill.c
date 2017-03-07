@@ -224,7 +224,7 @@ int skill_tree_get_max(uint16 skill_id, int class)
 	int i,j,c;
 	int classes[6] = { 0 };
 
-	if( class < 0x1000000 ) // called by an npc
+	if( class < 0xFFFF ) // called by an npc
 		return skill->get_max(skill_id);
 
 	for ( j=0; j<6; j++ ) {
@@ -233,11 +233,13 @@ int skill_tree_get_max(uint16 skill_id, int class)
 	}
 
 	for ( j=0; j<6; j++) {
-		c = classes[j] + (j*3);
-		ARR_FIND( 0, MAX_SKILL_TREE, i, pc->skill_tree[c][i].id == 0 || pc->skill_tree[c][i].id == skill_id );
+		if ( classes[j] > 0 ) {
+			c = classes[j] + (j*3);
+			ARR_FIND( 0, MAX_SKILL_TREE, i, pc->skill_tree[c][i].id == 0 || pc->skill_tree[c][i].id == skill_id );
 
-		if( i < MAX_SKILL_TREE && pc->skill_tree[c][i].id == skill_id )
-			return pc->skill_tree[c][i].max;
+			if( i < MAX_SKILL_TREE && pc->skill_tree[c][i].id == skill_id )
+				return pc->skill_tree[c][i].max;
+		}
 	}
 
 	return skill->get_max(skill_id);
