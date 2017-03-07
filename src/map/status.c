@@ -560,7 +560,6 @@ void initChangeTables(void)
 	status->set_sc( RK_FIGHTINGSPIRIT    , SC_FIGHTINGSPIRIT    , SI_FIGHTINGSPIRIT    , SCB_WATK|SCB_ASPD );
 	status->set_sc( RK_ABUNDANCE         , SC_ABUNDANCE         , SI_ABUNDANCE         , SCB_NONE );
 	status->set_sc( RK_CRUSHSTRIKE       , SC_CRUSHSTRIKE       , SI_CRUSHSTRIKE       , SCB_NONE );
-	add_sc( RK_DRAGONBREATH_WATER, SC_FROSTMISTY );
 	/**
 	* GC Guillotine Cross
 	**/
@@ -570,7 +569,6 @@ void initChangeTables(void)
 	status->set_sc( GC_CLOAKINGEXCEED    , SC_CLOAKINGEXCEED   , SI_CLOAKINGEXCEED   , SCB_SPEED );
 	status->set_sc( GC_HALLUCINATIONWALK , SC_HALLUCINATIONWALK, SI_HALLUCINATIONWALK, SCB_FLEE );
 	status->set_sc( GC_ROLLINGCUTTER     , SC_ROLLINGCUTTER    , SI_ROLLINGCUTTER    , SCB_NONE );
-	set_sc_with_vfx( GC_DARKCROW          , SC_DARKCROW         , SI_DARKCROW         , SCB_NONE );
 	/**
 	* Arch Bishop
 	**/
@@ -586,7 +584,6 @@ void initChangeTables(void)
 	status->set_sc( AB_EXPIATIO          , SC_EXPIATIO        , SI_EXPIATIO        , SCB_ATK_ELE );
 	status->set_sc( AB_DUPLELIGHT        , SC_DUPLELIGHT      , SI_DUPLELIGHT      , SCB_NONE );
 	status->set_sc( AB_SECRAMENT         , SC_SECRAMENT       , SI_SECRAMENT       , SCB_NONE );
-	status->set_sc( AB_OFFERTORIUM       , SC_OFFERTORIUM     , SI_OFFERTORIUM     , SCB_NONE );
 	/**
 	* Warlock
 	**/
@@ -595,7 +592,6 @@ void initChangeTables(void)
 	status->set_sc( WL_MARSHOFABYSS      , SC_MARSHOFABYSS    , SI_MARSHOFABYSS    , SCB_SPEED|SCB_FLEE|SCB_AGI|SCB_DEX );
 	status->set_sc(WL_RECOGNIZEDSPELL   , SC_RECOGNIZEDSPELL , SI_RECOGNIZEDSPELL , SCB_MATK);
 	status->set_sc( WL_STASIS            , SC_STASIS          , SI_STASIS          , SCB_NONE );
-	status->set_sc( WL_TELEKINESIS_INTENSE, SC_TELEKINESIS_INTENSE     , SI_TELEKINESIS_INTENSE , SCB_MATK );
 	/**
 	* Ranger
 	**/
@@ -609,7 +605,6 @@ void initChangeTables(void)
 	add_sc( RA_VERDURETRAP       , SC_ARMOR_PROPERTY );
 	add_sc( RA_FIRINGTRAP        , SC_BURNING );
 	add_sc( RA_ICEBOUNDTRAP      , SC_FROSTMISTY );
-	status->set_sc( RA_UNLIMIT           , SC_UNLIMIT         , SI_UNLIMIT         , SCB_DEF|SCB_DEF2|SCB_MDEF|SCB_MDEF2 );
 	/**
 	* Mechanic
 	**/
@@ -632,7 +627,6 @@ void initChangeTables(void)
 	status->set_sc( LG_PIETY             , SC_BENEDICTIO      , SI_BENEDICTIO      , SCB_DEF_ELE );
 	status->set_sc( LG_EARTHDRIVE        , SC_EARTHDRIVE      , SI_EARTHDRIVE      , SCB_DEF|SCB_ASPD );
 	status->set_sc( LG_INSPIRATION       , SC_INSPIRATION     , SI_INSPIRATION     , SCB_MAXHP|SCB_WATK|SCB_HIT|SCB_VIT|SCB_AGI|SCB_STR|SCB_DEX|SCB_INT|SCB_LUK);
-	status->set_sc( LG_KINGS_GRACE       , SC_KINGS_GRACE     , SI_KINGS_GRACE     , SCB_NONE );
 	/**
 	* Shadow Chaser
 	**/
@@ -667,7 +661,6 @@ void initChangeTables(void)
 	status->set_sc( SR_GENTLETOUCH_ENERGYGAIN, SC_GENTLETOUCH_ENERGYGAIN      , SI_GENTLETOUCH_ENERGYGAIN, SCB_NONE );
 	status->set_sc( SR_GENTLETOUCH_CHANGE    , SC_GENTLETOUCH_CHANGE          , SI_GENTLETOUCH_CHANGE    , SCB_ASPD|SCB_MDEF|SCB_MAXHP );
 	status->set_sc( SR_GENTLETOUCH_REVITALIZE, SC_GENTLETOUCH_REVITALIZE      , SI_GENTLETOUCH_REVITALIZE, SCB_MAXHP|SCB_DEF2|SCB_REGEN );
-	status->set_sc( SR_FLASHCOMBO            , SC_FLASHCOMBO                  , SI_FLASHCOMBO            , SCB_WATK );
 	/**
 	* Wanderer / Minstrel
 	**/
@@ -689,7 +682,6 @@ void initChangeTables(void)
 	status->set_sc( WM_MELODYOFSINK           , SC_MELODYOFSINK           , SI_MELODYOFSINK         , SCB_INT );
 	status->set_sc( WM_BEYOND_OF_WARCRY       , SC_BEYOND_OF_WARCRY       , SI_WARCRYOFBEYOND       , SCB_STR|SCB_CRI|SCB_MAXHP );
 	status->set_sc( WM_UNLIMITED_HUMMING_VOICE, SC_UNLIMITED_HUMMING_VOICE, SI_UNLIMITEDHUMMINGVOICE, SCB_NONE );
-	status->set_sc( WM_FRIGG_SONG             , SC_FRIGG_SONG             , SI_FRIGG_SONG           , SCB_MAXHP );
 
 	/**
 	* Sorcerer
@@ -707,7 +699,6 @@ void initChangeTables(void)
 	status->set_sc( SO_WATER_INSIGNIA    , SC_WATER_INSIGNIA  , SI_WATER_INSIGNIA  , SCB_WATK | SCB_ATK_ELE | SCB_REGEN );
 	status->set_sc( SO_WIND_INSIGNIA     , SC_WIND_INSIGNIA   , SI_WIND_INSIGNIA   , SCB_WATK | SCB_ATK_ELE | SCB_REGEN );
 	status->set_sc( SO_EARTH_INSIGNIA    , SC_EARTH_INSIGNIA  , SI_EARTH_INSIGNIA  , SCB_MDEF|SCB_DEF|SCB_MAXHP|SCB_MAXSP|SCB_WATK | SCB_ATK_ELE | SCB_REGEN );
-	add_sc( SO_ELEMENTAL_SHIELD  , SC_SAFETYWALL );
 	/**
 	* Genetic
 	**/
@@ -718,24 +709,6 @@ void initChangeTables(void)
 	status->set_sc( GN_FIRE_EXPANSION_SMOKE_POWDER, SC_FIRE_EXPANSION_SMOKE_POWDER , SI_FIRE_EXPANSION_SMOKE_POWDER, SCB_NONE );
 	status->set_sc( GN_FIRE_EXPANSION_TEAR_GAS    , SC_FIRE_EXPANSION_TEAR_GAS     , SI_FIRE_EXPANSION_TEAR_GAS    , SCB_NONE );
 	status->set_sc( GN_MANDRAGORA                 , SC_MANDRAGORA  , SI_MANDRAGORA                 , SCB_INT );
-
-	/**
-	 * Summoner
-	 */
-	status->set_sc(SU_HIDE, SC_SUHIDE, SI_SUHIDE, SCB_SPEED);
-	add_sc(SU_SCRATCH, SC_BLOODING);
-	status->set_sc(SU_STOOP, SC_SU_STOOP, SI_SU_STOOP, SCB_NONE);
-	status->set_sc(SU_FRESHSHRIMP, SC_FRESHSHRIMP, SI_FRESHSHRIMP, SCB_NONE);
-	add_sc(SU_SV_STEMSPEAR, SC_BLOODING);
-	status->set_sc(SU_CN_POWDERING, SC_CATNIPPOWDER, SI_CATNIPPOWDER, SCB_WATK | SCB_SPEED | SCB_REGEN);
-	add_sc(SU_CN_METEOR, SC_CURSE);
-	set_sc_with_vfx(SU_SV_ROOTTWIST, SC_SV_ROOTTWIST, SI_SV_ROOTTWIST, SCB_NONE);
-	add_sc(SU_SCAROFTAROU, SC_STUN );
-	status->set_sc(SU_SCAROFTAROU, SC_BITESCAR, SI_BITESCAR, SCB_NONE);
-	status->set_sc(SU_ARCLOUSEDASH, SC_ARCLOUSEDASH, SI_ARCLOUSEDASH, SCB_AGI | SCB_SPEED);
-	add_sc(SU_LUNATICCARROTBEAT, SC_STUN);
-	status->set_sc(SU_TUNAPARTY, SC_TUNAPARTY, SI_TUNAPARTY, SCB_NONE);
-	status->set_sc(SU_BUNCHOFSHRIMP, SC_SHRIMP, SI_SHRIMP, SCB_BATK | SCB_MATK);
 
 	// Elemental Spirit summoner's 'side' status changes.
 	status->set_sc( EL_CIRCLE_OF_FIRE  , SC_CIRCLE_OF_FIRE_OPTION, SI_CIRCLE_OF_FIRE_OPTION, SCB_NONE );
@@ -780,8 +753,6 @@ void initChangeTables(void)
 	set_sc_with_vfx( OB_AKAITSUKI, SC_AKAITSUKI      , SI_AKAITSUKI            , SCB_NONE );
 	status->set_sc( OB_OBOROGENSOU       , SC_GENSOU         , SI_GENSOU               , SCB_NONE );
 
-	status->set_sc( ALL_FULL_THROTTLE    , SC_FULL_THROTTLE  , SI_FULL_THROTTLE        , SCB_SPEED|SCB_STR|SCB_AGI|SCB_VIT|SCB_INT|SCB_DEX|SCB_LUK );
-
 	add_sc( ALL_REVERSEORCISH    , SC_ORCISH         );
 	status->set_sc( ALL_ANGEL_PROTECT    , SC_ANGEL_PROTECT  , SI_ANGEL_PROTECT        , SCB_REGEN );
 
@@ -791,8 +762,6 @@ void initChangeTables(void)
 	add_sc( NPC_WIDECOLD         , SC_COLD           );
 	add_sc( NPC_WIDE_DEEP_SLEEP  , SC_DEEP_SLEEP     );
 	add_sc( NPC_WIDESIREN        , SC_SIREN          );
-
-	set_sc_with_vfx( GN_ILLUSIONDOPING   , SC_ILLUSIONDOPING    , SI_ILLUSIONDOPING     , SCB_HIT );
 
 	// Storing the target job rather than simply SC_SOULLINK simplifies code later on.
 	status->dbs->Skill2SCTable[SL_ALCHEMIST]   = (sc_type)MAPID_ALCHEMIST,

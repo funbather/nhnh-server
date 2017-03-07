@@ -131,8 +131,8 @@ int skill_get_index (uint16 skill_id)
 			skill_id = (1077) + skill_id - 2201;
 		else if ( skill_id < 3036 ) // 2549 - 3000 are empty - 1020+57+348
 			skill_id = (1425) + skill_id - 3001;
-		else if ( skill_id < 5044 ) // 3036 - 5000 are empty - 1020+57+348+35
-			skill_id = (1460) + skill_id - 5001;
+		else if ( skill_id < 4100 ) // 3036 - 3999 are empty - 1020+57+348+35
+			skill_id = (1460) + skill_id - 4000;
 		else
 			ShowWarning("skill_get_index: skill id '%d' is not being handled!\n",skill_id);
 	}
@@ -221,14 +221,26 @@ int skill_get_fixed_cast( uint16 skill_id ,uint16 skill_lv ) {
 
 int skill_tree_get_max(uint16 skill_id, int class)
 {
-	int i;
-	int class_idx = pc->class2idx(class);
+	int i,j,c;
+	int classes[6] = { 0 };
 
-	ARR_FIND( 0, MAX_SKILL_TREE, i, pc->skill_tree[class_idx][i].id == 0 || pc->skill_tree[class_idx][i].id == skill_id );
-	if( i < MAX_SKILL_TREE && pc->skill_tree[class_idx][i].id == skill_id )
-		return pc->skill_tree[class_idx][i].max;
-	else
+	if( class < 0x1000000 ) // called by an npc
 		return skill->get_max(skill_id);
+
+	for ( j=0; j<6; j++ ) {
+		if (( class >> (j*4) & 0xF ) > 0 )
+			classes[j] = (class >> (j*4) & 0xF);
+	}
+
+	for ( j=0; j<6; j++) {
+		c = classes[j] + (j*3);
+		ARR_FIND( 0, MAX_SKILL_TREE, i, pc->skill_tree[c][i].id == 0 || pc->skill_tree[c][i].id == skill_id );
+
+		if( i < MAX_SKILL_TREE && pc->skill_tree[c][i].id == skill_id )
+			return pc->skill_tree[c][i].max;
+	}
+
+	return skill->get_max(skill_id);
 }
 
 int skill_get_casttype(uint16 skill_id)

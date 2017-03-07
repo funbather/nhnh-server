@@ -1538,8 +1538,8 @@ int pc_calc_skillpoint(struct map_session_data* sd) {
  *------------------------------------------*/
 int pc_calc_skilltree(struct map_session_data *sd)
 {
-	int i,id=0,flag;
-	int class = 0, classidx = 0;
+	int i,j,id=0;
+	int class = 0, classidx = 0, cc = 0;
 
 	nullpo_ret(sd);
 	i = pc->calc_skilltree_normalize_job(sd);
@@ -1554,18 +1554,6 @@ int pc_calc_skilltree(struct map_session_data *sd)
 	for( i = 0; i < MAX_SKILL; i++ ) {
 		if( sd->status.skill[i].flag != SKILL_FLAG_PLAGIARIZED && sd->status.skill[i].flag != SKILL_FLAG_PERM_GRANTED ) //Don't touch these
 			sd->status.skill[i].id = 0; //First clear skills.
-		/* permanent skills that must be re-checked */
-		if( sd->status.skill[i].flag == SKILL_FLAG_PERMANENT ) {
-			switch( skill->dbs->db[i].nameid ) {
-				case NV_TRICKDEAD:
-					if ((sd->job & MAPID_UPPERMASK) != MAPID_NOVICE) {
-						sd->status.skill[i].id = 0;
-						sd->status.skill[i].lv = 0;
-						sd->status.skill[i].flag = 0;
-					}
-					break;
-			}
-		}
 	}
 
 	for( i = 0; i < MAX_SKILL; i++ ) {
@@ -1574,141 +1562,23 @@ int pc_calc_skilltree(struct map_session_data *sd)
 			sd->status.skill[i].lv = (sd->status.skill[i].flag == SKILL_FLAG_TEMPORARY) ? 0 : sd->status.skill[i].flag - SKILL_FLAG_REPLACED_LV_0;
 			sd->status.skill[i].flag = SKILL_FLAG_PERMANENT;
 		}
-
-		if( sd->sc.count && sd->sc.data[SC_SOULLINK] && sd->sc.data[SC_SOULLINK]->val2 == SL_BARDDANCER && skill->dbs->db[i].nameid >= DC_HUMMING && skill->dbs->db[i].nameid <= DC_SERVICEFORYOU )
-		{ //Enable Bard/Dancer spirit linked skills.
-			if( sd->status.sex )
-			{ //Link dancer skills to bard.
-				// i can be < 8?
-				if( sd->status.skill[i-8].lv < 10 )
-					continue;
-				sd->status.skill[i].id = skill->dbs->db[i].nameid;
-				sd->status.skill[i].lv = sd->status.skill[i-8].lv; // Set the level to the same as the linking skill
-				sd->status.skill[i].flag = SKILL_FLAG_TEMPORARY; // Tag it as a non-savable, non-uppable, bonus skill
-			} else { //Link bard skills to dancer.
-				if( sd->status.skill[i].lv < 10 )
-					continue;
-				// i can be < 8?
-				sd->status.skill[i-8].id = skill->dbs->db[i-8].nameid;
-				sd->status.skill[i-8].lv = sd->status.skill[i].lv; // Set the level to the same as the linking skill
-				sd->status.skill[i-8].flag = SKILL_FLAG_TEMPORARY; // Tag it as a non-savable, non-uppable, bonus skill
-			}
-		}
 	}
 
-	if( pc_has_permission(sd, PC_PERM_ALL_SKILL) ) {
-		for( i = 0; i < MAX_SKILL; i++ ) {
-			switch(skill->dbs->db[i].nameid) {
-				/**
-				 * Dummy skills must be added here otherwise they'll be displayed in the,
-				 * skill tree and since they have no icons they'll give resource errors
-				 **/
-				case SM_SELFPROVOKE:
-				case AB_DUPLELIGHT_MELEE:
-				case AB_DUPLELIGHT_MAGIC:
-				case WL_CHAINLIGHTNING_ATK:
-				case WL_TETRAVORTEX_FIRE:
-				case WL_TETRAVORTEX_WATER:
-				case WL_TETRAVORTEX_WIND:
-				case WL_TETRAVORTEX_GROUND:
-				case WL_SUMMON_ATK_FIRE:
-				case WL_SUMMON_ATK_WIND:
-				case WL_SUMMON_ATK_WATER:
-				case WL_SUMMON_ATK_GROUND:
-				case LG_OVERBRAND_BRANDISH:
-				case LG_OVERBRAND_PLUSATK:
-					continue;
-				default:
-					break;
-			}
-			if( skill->dbs->db[i].inf2&(INF2_NPC_SKILL|INF2_GUILD_SKILL) )
-				continue; //Only skills you can't have are npc/guild ones
-			if( skill->dbs->db[i].max > 0 )
-				sd->status.skill[i].id = skill->dbs->db[i].nameid;
-		}
-		return 0;
-	}
+	// Grant skill trees for base and advanced classes
+	for( i = 0; i < 6; i++ ) { // 6 Base Classes x 3 Ranks
+		cc = (sd->status.class_choices >> (i*4) & 0xF) + (i*3);
 
-	do {
-		flag = 0;
-		for (i = 0; i < MAX_SKILL_TREE && (id = pc->skill_tree[classidx][i].id) > 0; i++) {
-			int idx = pc->skill_tree[classidx][i].idx;
-			bool satisfied = true;
-			if (sd->status.skill[idx].id > 0)
-				continue; //Skill already known.
+		if( (cc - (i*3)) > 0 ) {
+			for( j = 0; j < MAX_SKILL_TREE && (id = pc->skill_tree[cc][j].id) > 0; j++ ) {
+				int idx = pc->skill_tree[cc][j].idx;
+				if( sd->status.skill[idx].id == 0 ) {
+					sd->status.skill[idx].id = id;
+					sd->status.skill[idx].flag = SKILL_FLAG_PERMANENT;
 
-			if (!battle_config.skillfree) {
-				int j;
-				for (j = 0; j < VECTOR_LENGTH(pc->skill_tree[classidx][i].need); j++) {
-					struct skill_tree_requirement *req = &VECTOR_INDEX(pc->skill_tree[classidx][i].need, j);
-					int level;
-					if (sd->status.skill[req->idx].id == 0
-					 || sd->status.skill[req->idx].flag == SKILL_FLAG_TEMPORARY
-					 || sd->status.skill[req->idx].flag == SKILL_FLAG_PLAGIARIZED)
-						level = 0; //Not learned.
-					else if (sd->status.skill[req->idx].flag >= SKILL_FLAG_REPLACED_LV_0) //Real learned level
-						level = sd->status.skill[req->idx].flag - SKILL_FLAG_REPLACED_LV_0;
-					else
-						level = pc->checkskill2(sd, req->idx);
-					if (level < req->lv) {
-						satisfied = false;
-						break;
-					}
-				}
-				if (sd->status.job_level < (int)pc->skill_tree[classidx][i].joblv) {
-					int jobid = pc->mapid2jobid(sd->job, sd->status.sex); // need to get its own skilltree
-					if (jobid > -1) {
-						if (!pc->skill_tree[pc->class2idx(jobid)][i].inherited)
-							satisfied = false; // job level requirement wasn't satisfied
-					} else {
-						satisfied = false;
-					}
+					if(skill->dbs->db[idx].inf2&INF2_INNATE)
+						sd->status.skill[idx].lv = 1;
 				}
 			}
-			if (satisfied) {
-				int inf2 = skill->dbs->db[idx].inf2;
-
-				if(!sd->status.skill[idx].lv && (
-					(inf2&INF2_QUEST_SKILL && !battle_config.quest_skill_learn) ||
-					inf2&INF2_WEDDING_SKILL ||
-					(inf2&INF2_SPIRIT_SKILL && !sd->sc.data[SC_SOULLINK])
-				))
-					continue; //Cannot be learned via normal means. Note this check DOES allows raising already known skills.
-
-				sd->status.skill[idx].id = id;
-
-				if(inf2&INF2_SPIRIT_SKILL) { //Spirit skills cannot be learned, they will only show up on your tree when you get buffed.
-					sd->status.skill[idx].lv = 1; // need to manually specify a skill level
-					sd->status.skill[idx].flag = SKILL_FLAG_TEMPORARY; //So it is not saved, and tagged as a "bonus" skill.
-				}
-				flag = 1; // skill list has changed, perform another pass
-			}
-		}
-	} while(flag);
-
-	//
-	if (classidx > 0 && (sd->job & MAPID_UPPERMASK) == MAPID_TAEKWON
-	 && sd->status.base_level >= 90 && sd->status.skill_point == 0
-	 && pc->fame_rank(sd->status.char_id, RANKTYPE_TAEKWON) > 0) {
-		/* Taekwon Ranker Bonus Skill Tree
-		============================================
-		- Grant All Taekwon Tree, but only as Bonus Skills in case they drop from ranking.
-		- (c > 0) to avoid grant Novice Skill Tree in case of Skill Reset (need more logic)
-		- (sd->status.skill_point == 0) to wait until all skill points are asigned to avoid problems with Job Change quest. */
-
-		for (i = 0; i < MAX_SKILL_TREE && (id = pc->skill_tree[classidx][i].id) > 0; i++) {
-			int idx = pc->skill_tree[classidx][i].idx;
-			if( (skill->dbs->db[idx].inf2&(INF2_QUEST_SKILL|INF2_WEDDING_SKILL)) )
-				continue; //Do not include Quest/Wedding skills.
-
-			if( sd->status.skill[idx].id == 0 ) {
-				sd->status.skill[idx].id = id;
-				sd->status.skill[idx].flag = SKILL_FLAG_TEMPORARY; // So it is not saved, and tagged as a "bonus" skill.
-			} else if( id != NV_BASIC ) {
-				sd->status.skill[idx].flag = SKILL_FLAG_REPLACED_LV_0 + sd->status.skill[idx].lv; // Remember original level
-			}
-
-			sd->status.skill[idx].lv = skill->tree_get_max(id, sd->status.class);
 		}
 	}
 
@@ -1721,6 +1591,7 @@ void pc_check_skilltree(struct map_session_data *sd, int skill_id)
 	int i,id=0,flag;
 	int c=0;
 
+	return;
 	if(battle_config.skillfree)
 		return; //Function serves no purpose if this is set
 
