@@ -2461,6 +2461,11 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 			}
 		}
 
+		if ( sd && pc->checkskill(sd,THF_PICKPOCKET) ) {
+			if ( rnd()%10000 < (300 + 40 * pc->checkskill(sd,THF_PICKPOCKET)) )
+				mob->item_drop(md, dlist, mob->setdropitem(809,1,NULL), 0, 300 + 40 * pc->checkskill(sd,THF_PICKPOCKET), false);
+		}
+
 		if(sd) {
 			// process script-granted extra drop bonuses
 			int itemid = 0;

@@ -2935,6 +2935,9 @@ int skill_attack(int attack_type, struct block_list* src, struct block_list *dsr
 		skill->addtimerskill(src, tick + dmg.amotion, bl->id, 0, 0, skill_id, skill_lv, BF_MAGIC, flag|2);
 	}
 
+	if ( tsd && pc->checkskill(tsd,THF_ADRENALINERUSH) ) // trigger adrenaline rush on target regardless of damage
+		sc_start(NULL,&tsd->bl,SC_ADRRUSH,100,0,5000);
+
 	map->freeblock_unlock();
 
 	if ((flag&0x4000) && rmdamage == 1)

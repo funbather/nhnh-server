@@ -3789,12 +3789,12 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 			flag.lh=1;
 	}
 
-	if (sd && !skill_id) {
+	if ( sd && !skill_id ) {
 		//Check for double attack.
-		if ( sd->bonus.double_rate > 0 )
-		{
-			if( rnd()%100 < ( sd->bonus.double_rate ) )
-			{
+		i = pc->checkskill(sd,THF_DOUBLESTRIKE) * 4; // THF_DOUBLESTIKE +skill_lv*4% Double Strike Chance
+
+		if ( (sd->bonus.double_rate + i) > 0 ) {
+			if( rnd()%100 < ( sd->bonus.double_rate + i ) ) {
 				wd.div_ = 2;
 				wd.type = BDT_MULTIHIT;
 			}
@@ -3902,17 +3902,20 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 		}
 
 		if( sd ) {
-			if (!skill_id)
+			if ( !skill_id )
 				ATK_ADDRATE(sd->bonus.basicdamage);
 
-			if (skill_id)
+			if ( skill_id )
 				ATK_ADDRATE(sd->bonus.skilldamage);
 
-			if (skill_id && (i = pc->skillatk_bonus(sd, skill_id)))
+			if ( skill_id && (i = pc->skillatk_bonus(sd, skill_id)) )
 				ATK_ADDRATE(i);
 
-			if( wd.flag&BF_LONG )
+			if ( wd.flag&BF_LONG )
 				ATK_ADDRATE(sd->bonus.long_attack_atk_rate);
+
+			if ( pc->checkskill(sd,THF_SOUL) ) // THF_SOUL +15% Phys DMG
+				ATK_ADDRATE(15);
 
 			if (skill_id != PA_SACRIFICE && skill_id != MO_INVESTIGATE && skill_id != CR_GRANDCROSS && skill_id != NPC_GRANDDARKNESS && skill_id != PA_SHIELDCHAIN && !flag.cri) {
 				//Elemental/Racial adjustments
@@ -4538,6 +4541,9 @@ enum damage_lv battle_weapon_attack(struct block_list* src, struct block_list* t
 		sc = NULL;
 	if (tsc && !tsc->count)
 		tsc = NULL;
+
+	if ( tsd && pc->checkskill(tsd,THF_ADRENALINERUSH) ) // trigger adrenaline rush on target regardless of damage
+		sc_start(NULL,&tsd->bl,SC_ADRRUSH,100,0,5000);
 
 	if (sc && sc->count) {
 		if (sc->data[SC_CLOAKING] && !(sc->data[SC_CLOAKING]->val4 & 2))

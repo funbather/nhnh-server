@@ -1162,6 +1162,10 @@ void initChangeTables(void)
 	status->dbs->ChangeFlagTable[SC_MAGICAL_FEATHER] |= SCB_NONE;
 	status->dbs->ChangeFlagTable[SC_BLOSSOM_FLUTTERING] |= SCB_NONE;
 
+	// NHNH
+	status->dbs->ChangeFlagTable[SC_ADRRUSH] |= SCB_SPEED;
+
+
 	if( !battle_config.display_hallucination ) //Disable Hallucination.
 		status->dbs->IconChangeTable[SC_ILLUSION] = SI_BLANK;
 #undef add_sc
@@ -2605,6 +2609,9 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	if ( pc->checkskill(sd,SWD_SOUL) > 0 )
 		bstatus->vit += bstatus->vit * 20 / 100;
 
+	if ( pc->checkskill(sd,THF_SOUL) > 0 )
+		bstatus->agi += bstatus->agi * 20 / 100;
+
 	// ------ BASE ATTACK CALCULATION ------
 
 	// Base batk value is set on status->calc_misc
@@ -2683,6 +2690,12 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	// ----- MISC CALCULATION -----
 	status->calc_misc(&sd->bl, bstatus, sd->status.base_level);
 
+	// Absolute modifiers from skills
+	if ( (skill_lv = pc->checkskill(sd,THF_MERCILESS)) > 0 ) {// THF_MERCILESS +skill_lv * 0.6% to CRIT, +skill_lv * 3% CDMG
+		bstatus->cri += skill_lv * 6;
+		sd->crit_atk_rate += skill_lv * 3;
+	}
+
 	//Equipment modifiers for misc settings
 	if(sd->matk_rate < 0)
 		sd->matk_rate = 0;
@@ -2734,7 +2747,16 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	bstatus->flee += bstatus->agi;                       // AGI Bonus - +1 EVA
 	bstatus->flee += bstatus->flee * bstatus->agi / 100; //             +1% EVA
 
+	if ( (skill_lv = pc->checkskill(sd,THF_REFLEXES)) > 0 ) // THF_REFLEXES +skill_lv*3% EVA
+		bstatus->flee += bstatus->flee * skill_lv * 3 / 100;
+
 	// ----- EQUIPMENT-DEF CALCULATION -----
+
+	// Absolute modifiers from passive skills
+	if( (skill_lv = pc->checkskill(sd,SWD_PAVISE)) > 0 && sd->status.shield ) { // SWD_PAVISE +skill_lv% Phys-Block, +skill_lv/2% Mag-Block
+		bstatus->def2 += skill_lv * 10;
+		bstatus->mdef2 += skill_lv * 5;
+	}
 
 	// Apply relative modifiers from equipment
 	if(sd->def_rate < 0)
@@ -2746,11 +2768,6 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 
 	if( (skill_lv = pc->checkskill(sd,SWD_HARDHEARTED)) > 0 ) // SWD_HARDHEARTED +skill_lv * 4% DEF
 		bstatus->def += bstatus->def * skill_lv * 4 / 100;
-
-	if( (skill_lv = pc->checkskill(sd,SWD_PAVISE)) > 0 && sd->status.shield ) { // SWD_PAVISE +skill_lv% Phys-Block, +skill_lv/2% Mag-Block
-		bstatus->def2 += skill_lv * 10;
-		bstatus->mdef2 += skill_lv * 5;
-	}
 
 	// ----- EQUIPMENT-MDEF CALCULATION -----
 
@@ -3743,6 +3760,9 @@ int status_base_amotion_pc(struct map_session_data *sd, struct status_data *st)
 	nullpo_ret(st);
 
 	amotion = status->dbs->aspd_base[pc->class2idx(sd->status.class)][sd->weapontype1];
+
+	if ( sd && pc->checkskill(sd,THF_SOUL) ) // THF_SOUL +0.2 attacks per second
+		amotion = 50000 / ((50000 / amotion) + 20);
 
 	return amotion;
 }
@@ -4990,15 +5010,21 @@ unsigned short status_calc_speed(struct block_list *bl, struct status_change *sc
 	if( sc == NULL || ( sd && sd->state.permanent_speed ) )
 		return (unsigned short)cap_value(speed,MIN_WALK_SPEED,MAX_WALK_SPEED);
 
-	if (speed_rate == -1)
-	{
+	if (speed_rate == -1) {
 		speed_rate = 100;
 
 		{
 			int val = 0;
 
-			if( sd && sd->bonus.speed_rate + sd->bonus.speed_add_rate > 0 ) // permanent item-based speedup
+			if ( sd && sd->bonus.speed_rate + sd->bonus.speed_add_rate > 0 ) // permanent item-based speedup
 				val = max( val, sd->bonus.speed_rate + sd->bonus.speed_add_rate );
+
+			if ( sd && pc->checkskill(sd,THF_ADRENALINERUSH) ) { // THF_ADRENALINERUSH +skill_lv*1.5% MSPD, doubled if in combat (SC_ADRRUSH)
+				if ( sc && sc->data[SC_ADRRUSH] )
+					val += pc->checkskill(sd,THF_ADRENALINERUSH) * 3;
+				else
+					val += pc->checkskill(sd,THF_ADRENALINERUSH) * 3 / 2;
+			}
 
 			speed_rate += val;
 		}
