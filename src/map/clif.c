@@ -5081,38 +5081,30 @@ int clif_skill_nodamage(struct block_list *src, struct block_list *dst, uint16 s
 {
 	unsigned char buf[32];
 	short offset = 0;
-#if PACKETVER < 20131223
-	short cmd = 0x11a;
-#else
 	short cmd = 0x9cb;
-#endif
+
 	int len = packet_len(cmd);
 
 	nullpo_ret(dst);
 
 	WBUFW(buf, 0) = cmd;
 	WBUFW(buf, 2) = skill_id;
-#if PACKETVER < 20131223
-	WBUFW(buf, 4) = min(heal, INT16_MAX);
-#else
 	WBUFL(buf, 4) = min(heal, INT_MAX);
-	offset += 2;
-#endif
-	WBUFL(buf, 6 + offset) = dst->id;
-	WBUFL(buf, 10 + offset) = src ? src->id : 0;
-	WBUFB(buf, 14 + offset) = fail;
+	WBUFL(buf, 8) = dst->id;
+	WBUFL(buf, 12) = src ? src->id : 0;
+	WBUFB(buf, 16) = fail;
 
 	if (clif->isdisguised(dst)) {
 		clif->send(buf, len, dst, AREA_WOS);
-		WBUFL(buf, 6 + offset) = -dst->id;
+		WBUFL(buf, 8) = -dst->id;
 		clif->send(buf, len, dst, SELF);
 	} else
 		clif->send(buf, len, dst, AREA);
 
 	if (src && clif->isdisguised(src)) {
-		WBUFL(buf, 10 + offset) = -src->id;
+		WBUFL(buf, 12) = -src->id;
 		if (clif->isdisguised(dst))
-			WBUFL(buf, 6 + offset) = dst->id;
+			WBUFL(buf, 8) = dst->id;
 		clif->send(buf, len, src, SELF);
 	}
 

@@ -1415,13 +1415,13 @@ int unit_skilluse_id2(struct block_list *src, int target_id, uint16 skill_id, ui
 	}
 
 	if (sd) {
-		/* temporarily disabled, awaiting for kenpachi to detail this so we can make it work properly */
-#if 0
-		if (sd->skillitem != skill_id && !skill->check_condition_castbegin(sd, skill_id, skill_lv))
-#else
-		if (!skill->check_condition_castbegin(sd, skill_id, skill_lv))
-#endif
-			return 0;
+		if ( pc->checkskill(sd,ACO_BENEVOLENCE) && (src != target) && (skill->get_inf(skill_id)&INF_SUPPORT_SKILL) ) { // ACO_BENEVOLENCE sp cost reduction when casting support spells on others
+				if (!skill->check_condition_castbegin(sd, skill_id + 10000, skill_lv)) // skill_id + 10000 signals the skill was cast on an ally
+					return 0;                                                          // I'll figure out a better way to do it later :^)
+		} else {
+				if (!skill->check_condition_castbegin(sd, skill_id, skill_lv))
+					return 0;
+		}
 	}
 
 	if (src->type == BL_MOB) {

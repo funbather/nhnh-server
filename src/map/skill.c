@@ -379,51 +379,16 @@ int skill_calc_heal(struct block_list *src, struct block_list *target, uint16 sk
 
 	nullpo_ret(src);
 
-	switch (skill_id) {
-		case SU_TUNABELLY:
-			hp = status_get_max_hp(target) * ((20 * skill_lv) - 10) / 100;
-			break;
-		case BA_APPLEIDUN:
-#ifdef RENEWAL
-			hp = 100+5*skill_lv+5*(status_get_vit(src)/10); // HP recovery
-#else // not RENEWAL
-			hp = 30+5*skill_lv+5*(status_get_vit(src)/10); // HP recovery
-#endif // RENEWAL
-			if( sd )
-				hp += 5*pc->checkskill(sd,BA_MUSICALLESSON);
-			break;
-		case PR_SANCTUARY:
-			hp = (skill_lv>6)?777:skill_lv*100;
-			break;
-		case NPC_EVILLAND:
-			hp = (skill_lv>6)?666:skill_lv*100;
-			break;
-		default:
-			if (skill_lv >= battle_config.max_heal_lv)
-				return battle_config.max_heal;
-#ifdef RENEWAL
-			/**
-			 * Renewal Heal Formula
-			 * Formula: ( [(Base Level + INT) / 5] ? 30 ) ? (Heal Level / 10) ? (Modifiers) + MATK
-			 **/
-			hp = (status->get_lv(src) + status_get_int(src)) / 5 * 30  * skill_lv / 10;
-#else // not RENEWAL
-			hp = ( status->get_lv(src) + status_get_int(src) ) / 8 * (4 + ( skill_id == AB_HIGHNESSHEAL ? ( sd ? pc->checkskill(sd,AL_HEAL) : 10 ) : skill_lv ) * 8);
-#endif // RENEWAL
-			if (sd && (skill2_lv = pc->checkskill(sd, HP_MEDITATIO)) > 0)
-				hp += hp * skill2_lv * 2 / 100;
-			else if (src->type == BL_HOM && (skill2_lv = homun->checkskill(BL_UCAST(BL_HOM, src), HLIF_BRAIN)) > 0)
-				hp += hp * skill2_lv * 2 / 100;
-			if (sd != NULL && ((skill2_lv = pc->checkskill(sd, SU_POWEROFSEA)) > 0)) {
-				hp += hp * 10 / 100;
-				if (pc->checkskill(sd, SU_TUNABELLY) == 5 && pc->checkskill(sd, SU_TUNAPARTY) == 5 && pc->checkskill(sd, SU_BUNCHOFSHRIMP) == 5 && pc->checkskill(sd, SU_FRESHSHRIMP) == 5)
-					hp += hp * 20 / 100;
-			}
-			break;
-	}
+	if (skill_lv >= battle_config.max_heal_lv)
+		return battle_config.max_heal;
 
-	if( ( (target && target->type == BL_MER) || !heal ) && skill_id != NPC_EVILLAND )
-		hp >>= 1;
+	/**
+	 * Renewal Heal Formula
+	 * Formula: ( [(Base Level + INT) / 5] ? 30 ) ? (Heal Level / 10) ? (Modifiers) + MATK
+	 **/
+	hp = (status->get_lv(src) + status_get_int(src)) / 5 * 30  * skill_lv / 10;
+
+	hp += status->get_matk(src, 3);
 
 	if (sd && (skill2_lv = pc->skillheal_bonus(sd, skill_id)) != 0)
 		hp += hp*skill2_lv/100;
@@ -432,36 +397,12 @@ int skill_calc_heal(struct block_list *src, struct block_list *target, uint16 sk
 		hp += hp*skill2_lv/100;
 
 	sc = status->get_sc(src);
-	if( sc && sc->count && sc->data[SC_OFFERTORIUM] ) {
-		if( skill_id == AB_HIGHNESSHEAL || skill_id == AB_CHEAL || skill_id == PR_SANCTUARY || skill_id == AL_HEAL )
-			hp += hp * sc->data[SC_OFFERTORIUM]->val2 / 100;
-	}
 	sc = status->get_sc(target);
 	if (sc && sc->count) {
 		if(sc->data[SC_CRITICALWOUND] && heal) // Critical Wound has no effect on offensive heal. [Inkfish]
 			hp -= hp * sc->data[SC_CRITICALWOUND]->val2/100;
-		if(sc->data[SC_DEATHHURT] && heal)
-			hp -= hp * 20/100;
-		if(sc->data[SC_HEALPLUS] && skill_id != NPC_EVILLAND && skill_id != BA_APPLEIDUN)
-			hp += hp * sc->data[SC_HEALPLUS]->val1/100; // Only affects Heal, Sanctuary and PotionPitcher.(like bHealPower) [Inkfish]
-		if(sc->data[SC_WATER_INSIGNIA] && sc->data[SC_WATER_INSIGNIA]->val1 == 2)
-			hp += hp / 10;
-		if (sc->data[SC_VITALITYACTIVATION])
-			hp = hp * 150 / 100;
 	}
 
-#ifdef RENEWAL
-	// MATK part of the RE heal formula [malufett]
-	// Note: in this part matk bonuses from items or skills are not applied
-	switch( skill_id ) {
-		case BA_APPLEIDUN:
-		case PR_SANCTUARY:
-		case NPC_EVILLAND:
-			break;
-		default:
-			hp += status->get_matk(src, 3);
-	}
-#endif // RENEWAL
 	return hp;
 }
 
@@ -2936,7 +2877,7 @@ int skill_attack(int attack_type, struct block_list* src, struct block_list *dsr
 	}
 
 	if ( tsd && pc->checkskill(tsd,THF_ADRENALINERUSH) ) // trigger adrenaline rush on target regardless of damage
-		sc_start(NULL,&tsd->bl,SC_ADRRUSH,100,0,5000);
+		sc_start(&tsd->bl,&tsd->bl,SC_ADRRUSH,100,0,5000);
 
 	map->freeblock_unlock();
 
@@ -5227,8 +5168,12 @@ int skill_castend_id(int tid, int64 tick, int id, intptr_t data)
 		{
 			if( !skill->check_condition_castend(sd, ud->skill_id, ud->skill_lv) )
 				break;
-			else
-				skill->consume_requirement(sd,ud->skill_id,ud->skill_lv,1);
+			else {
+				if ( pc->checkskill(sd,ACO_BENEVOLENCE) && (src != target) && (skill->get_inf(ud->skill_id)&INF_SUPPORT_SKILL) )
+					skill->consume_requirement(sd,ud->skill_id + 10000,ud->skill_lv,1);
+				else
+					skill->consume_requirement(sd,ud->skill_id,ud->skill_lv,1);
+			}
 		}
 #ifdef OFFICIAL_WALKPATH
 		if( !path->search_long(NULL, src, src->m, src->x, src->y, target->x, target->y, CELL_CHKWALL) )
@@ -5616,6 +5561,14 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 					status_change_end(bl, SC_BITESCAR, INVALID_TIMER);
 				}
 				clif->skill_nodamage (src, bl, skill_id, heal, 1);
+
+				if ( sd && (src != bl) && pc->checkskill(sd,ACO_LIFELINK) ) { // ACO_LIFELINK heal yourself for a smaller amount when healing others
+					int skl = 10 + 2 * pc->checkskill(sd,ACO_LIFELINK);       // TODO: check skill_id == ACO_CURE, not implemented yet
+					int selfheal = heal * skl / 100;
+
+					clif->skill_nodamage (src, src, skill_id, selfheal, 1);
+				}
+
 				if( tsc && tsc->data[SC_AKAITSUKI] && heal && skill_id != HLIF_HEAL )
 					heal = ~heal + 1;
 				heal_get_jobexp = status->heal(bl,heal,0,0);
@@ -13444,8 +13397,14 @@ int skill_check_condition_castbegin(struct map_session_data* sd, uint16 skill_id
 	struct status_data *st;
 	struct status_change *sc;
 	struct skill_condition require;
+	int benevolence = 0;
 
 	nullpo_ret(sd);
+
+	if ( skill_id > 10000 ) { // ids above 10k signal ACO_BENEVOLENCE bonus, there shouldn't be any skills with ids > 10k.... right??
+		benevolence = pc->checkskill(sd,ACO_BENEVOLENCE);
+		skill_id = skill_id % 10000;
+	}
 
 	if (sd->chat_id != 0)
 		return 0;
@@ -13506,11 +13465,6 @@ int skill_check_condition_castbegin(struct map_session_data* sd, uint16 skill_id
 				pc->delitem(sd, i, 1, 0, DELITEM_NORMAL, LOG_TYPE_CONSUME);
 		}
 		return 1;
-	}
-
-	if( pc_is90overweight(sd) ) {
-		clif->skill_fail(sd,skill_id,USESKILL_FAIL_WEIGHTOVER,0);
-		return 0;
 	}
 
 	if( sc && ( sc->data[SC__SHADOWFORM] || sc->data[SC__IGNORANCE] ) )
@@ -14357,6 +14311,13 @@ int skill_check_condition_castbegin(struct map_session_data* sd, uint16 skill_id
 			break;
 	}
 
+	if ( (benevolence > 0) && (require.sp > 0) ) {
+		require.sp = require.sp * (100 - (benevolence * 5) ) / 100;
+
+		if ( require.sp < 0 ) // this shouldn't happen, but it doesn't hurt to check
+			require.sp = 0;
+	}
+
 	if(require.mhp > 0 && get_percentage(st->hp, st->max_hp) > require.mhp) {
 		//mhp is the max-hp-requirement, that is,
 		//you must have this % or less of HP to cast it.
@@ -14461,10 +14422,6 @@ int skill_check_condition_castend(struct map_session_data* sd, uint16 skill_id, 
 #endif
 	if( sd->skillitem == skill_id )
 		return 1;
-	if( pc_is90overweight(sd) ) {
-		clif->skill_fail(sd,skill_id,USESKILL_FAIL_WEIGHTOVER,0);
-		return 0;
-	}
 
 	// perform skill-specific checks (and actions)
 	switch( skill_id ) {
@@ -14629,8 +14586,14 @@ void skill_check_condition_castend_unknown(struct map_session_data* sd, uint16 *
 int skill_consume_requirement(struct map_session_data *sd, uint16 skill_id, uint16 skill_lv, short type)
 {
 	struct skill_condition req;
+	int benevolence = 0;
 
 	nullpo_ret(sd);
+
+	if ( skill_id > 10000 ) {
+		benevolence = pc->checkskill(sd,ACO_BENEVOLENCE);
+		skill_id = skill_id % 10000;
+	}
 
 	req = skill->get_requirement(sd,skill_id,skill_lv);
 
@@ -14644,6 +14607,13 @@ int skill_consume_requirement(struct map_session_data *sd, uint16 skill_id, uint
 				if( sd->state.autocast )
 					req.sp = 0;
 				break;
+		}
+
+		if ( (benevolence > 0) && (req.sp > 0) ) {
+			req.sp = req.sp * (100 - (benevolence * 5) ) / 100;
+
+			if ( req.sp < 0 )
+				req.sp = 0;
 		}
 
 		if(req.hp || req.sp)

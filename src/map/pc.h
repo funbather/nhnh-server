@@ -406,6 +406,7 @@ END_ZEROED_BLOCK;
 	int hprecov_rate,sprecov_rate;
 	int matk_rate;
 	int critical_rate,hit_rate,flee_rate,flee2_rate,def_rate,def2_rate,mdef_rate,mdef2_rate,crit_atk_rate;
+	int buffself_rate,buffother_rate,debuffself_rate,debuffother_rate;
 	int itemid;
 	short itemindex; //Used item's index in sd->inventory [Skotlex]
 	short catch_target_class; // pet catching, stores a pet class to catch (short now) [zzo]

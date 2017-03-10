@@ -2329,6 +2329,7 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	sd->critical_rate = sd->hit_rate = sd->flee_rate = sd->flee2_rate = 100;
 	sd->def_rate = sd->def2_rate = sd->mdef_rate = sd->mdef2_rate = 100;
 	sd->crit_atk_rate = 150;
+	sd->buffself_rate = sd->buffother_rate = sd->debuffself_rate = sd->debuffother_rate = 100;
 	sd->regen.state.block = 0;
 
 	// zeroed arrays
@@ -2612,6 +2613,9 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	if ( pc->checkskill(sd,THF_SOUL) > 0 )
 		bstatus->agi += bstatus->agi * 20 / 100;
 
+	if ( pc->checkskill(sd,ACO_SOUL) > 0 )
+		bstatus->dex += bstatus->dex * 20 / 100;
+
 	// ------ BASE ATTACK CALCULATION ------
 
 	// Base batk value is set on status->calc_misc
@@ -2737,6 +2741,15 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 
 	bstatus->cdmg = sd->crit_atk_rate;
 
+	if ( (skill_lv = pc->checkskill(sd,ACO_SOUL)) > 0 ) // ACO_SOUL +25% duration on buffs you apply
+		sd->buffother_rate += 25;
+
+	if ( (skill_lv = pc->checkskill(sd,ACO_SOUL)) > 0 ) // ACO_SPIRITWARD -10 + skill_lv*2% duration on debuffs applied to you
+		sd->debuffself_rate -= 10 + skill_lv * 2;
+
+	if ( (skill_lv = pc->checkskill(sd,ACO_LIFELINK)) > 0 ) //ACO_LIFELINK heal power +skill_lv*6%
+		sd->bonus.add_heal_rate += skill_lv * 6;
+
 	// ----- CRIT CALCULATION -----
 
 
@@ -2804,7 +2817,12 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	// Weight
 	sd->cart_weight_max = battle_config.max_cart_weight;
 
-	// Skill SP cost
+
+	// Regen
+	if ( pc->checkskill(sd,ACO_SOUL) > 0 ) {
+		sd->hprecov_rate += 35;
+		sd->sprecov_rate += 35;
+	}
 
 	//Underflow protections.
 	if(sd->dsprate < 0)
@@ -6595,7 +6613,7 @@ void status_display_remove(struct map_session_data *sd, enum sc_type type)
  */
 int status_change_start(struct block_list *src, struct block_list *bl, enum sc_type type, int rate, int val1, int val2, int val3, int val4, int tick, int flag)
 {
-	struct map_session_data *sd = NULL;
+	struct map_session_data *sd = NULL, *src_sd = NULL;
 	struct status_change* sc;
 	struct status_change_entry* sce;
 	struct status_data *st;
@@ -6696,10 +6714,74 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 	}
 
 	sd = BL_CAST(BL_PC, bl);
+	src_sd = BL_CAST(BL_PC, src);
 
 	//Adjust tick according to status resistances
 	if( !(flag&(SCFLAG_NOAVOID|SCFLAG_LOADED)) ) {
-		tick = status->get_sc_def(src, bl, type, rate, tick, flag);
+		//tick = status->get_sc_def(src, bl, type, rate, tick, flag);
+
+		// buff/debuff modifiers on target
+		if ( sd ) {
+			// Some SCs (SC_BROWBEAT, etc) are infinite or fixed duration, leave them out!!
+			switch (type) { // BUFFS
+				//case SC_SECONDWIND:
+				//case SC_ENDURE_:
+				case SC_ADRRUSH:
+				//case SC_CAMOUFLAGE:
+				//case SC_DOUBLETEAM:
+				//case SC_FORCEARMOR:
+				//case SC_GODSSTRENGTH:
+					tick = tick * sd->buffself_rate / 100;
+					break;
+			}
+
+			switch (type) { // DEBUFFS
+				case SC_STUN: // Common SCs
+				case SC_FREEZE:
+				case SC_BLIND:
+				case SC_SILENCE:
+				case SC_SLEEP:
+				case SC_POISON:
+				case SC_BLOODING:
+				//case SC_IGNITE:
+
+				//case SC_SWASHBUCKLING:
+				//case SC_SWAGGER:
+					tick = tick * sd->debuffself_rate / 100;
+					break;
+			}
+		}
+
+		// buff/debuff modifiers from source
+		if ( src_sd ) {
+			switch (type) { // BUFFS
+				//case SC_SECONDWIND:
+				//case SC_ENDURE_:
+				case SC_ADRRUSH:
+				//case SC_CAMOUFLAGE:
+				//case SC_DOUBLETEAM:
+				//case SC_FORCEARMOR:
+				//case SC_GODSSTRENGTH:
+					tick = tick * sd->buffother_rate / 100;
+					break;
+			}
+
+			switch (type) { // DEBUFFS
+				case SC_STUN: // Common SCs
+				case SC_FREEZE:
+				case SC_BLIND:
+				case SC_SILENCE:
+				case SC_SLEEP:
+				case SC_POISON:
+				case SC_BLOODING:
+				//case SC_IGNITE:
+
+				//case SC_SWASHBUCKLING:
+				//case SC_SWAGGER:
+					tick = tick * sd->debuffother_rate / 100;
+					break;
+			}
+		}
 		if( !tick ) return 0;
 	}
 

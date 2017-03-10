@@ -4543,7 +4543,7 @@ enum damage_lv battle_weapon_attack(struct block_list* src, struct block_list* t
 		tsc = NULL;
 
 	if ( tsd && pc->checkskill(tsd,THF_ADRENALINERUSH) ) // trigger adrenaline rush on target regardless of damage
-		sc_start(NULL,&tsd->bl,SC_ADRRUSH,100,0,5000);
+		sc_start(&tsd->bl,&tsd->bl,SC_ADRRUSH,100,0,5000);
 
 	if (sc && sc->count) {
 		if (sc->data[SC_CLOAKING] && !(sc->data[SC_CLOAKING]->val4 & 2))
