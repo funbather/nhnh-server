@@ -5582,6 +5582,58 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 			}
 			break;
 
+		case SWD_SWASHBUCKLING:
+			if ( flag&1 ) {
+				sc_start(src, bl, type, 100, (15 + (status_get_dex(src) / 4)) + skill_lv * 3, skill->get_time(skill_id,skill_lv));
+			} else {
+				skill->area_temp[2] = 0;
+				clif->skill_nodamage(src,bl,skill_id,skill_lv,1);
+				map->foreachinrange(skill->area_sub, bl,
+									skill->get_splash(skill_id, skill_lv),BL_CHAR,
+									src,skill_id,skill_lv,tick, flag|BCT_ENEMY|SD_PREAMBLE|1,
+									skill->castend_nodamage_id);
+			}
+
+			if( dstmd ) {
+				dstmd->state.provoke_flag = src->id;
+				mob->target(dstmd, src, 15);
+			}
+		break;
+
+		case SWD_SECONDWIND:
+			if( sd && pc_iscritical(sd) ) {
+				sc_start(src, bl, type, 100, ((40 + 6 * skill_lv) * (100 + status_get_dex(src))) * status_get_max_hp(src), skill->get_time(skill_id, skill_lv));
+
+				status_change_end(bl, SC_POISON, INVALID_TIMER);
+				status_change_end(bl, SC_IGNITE, INVALID_TIMER);
+				status_change_end(bl, SC_BLOODING, INVALID_TIMER);
+				status_change_end(bl, SC_BLIND, INVALID_TIMER);
+
+				skill->blockpc_start(sd, skill_id, skill_get_time2(skill_id, skill_lv)); // only apply cooldown on successful cast
+				clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
+			} else
+				clif->skill_fail(sd,skill_id,USESKILL_FAIL_LEVEL,0);
+		break;
+
+		case SWD_SWAGGER:
+			status_change_end(src, SC_SWAGGER, INVALID_TIMER);
+			sc_start2(src, src, SC_SWAGGER, 100, 10 + 6 * skill_lv, bl->id, skill->get_time(skill_id, skill_lv) * (100 + status_get_dex(src)) / 100);
+
+			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
+
+			if( dstmd ) {
+				dstmd->state.provoke_flag = src->id;
+				mob->target(dstmd, src, 15);
+			}
+		break;
+
+		case SWD_ENDURE:
+			status_change_end(bl, SC_ENDURE_, INVALID_TIMER);
+			sc_start(src, bl, SC_ENDURE_, 100, status_get_max_hp(src) * (15 + 3 * skill_lv) / 100, skill->get_time(skill_id, skill_lv));
+
+			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
+		break;
+
 		case PR_REDEMPTIO:
 			if (sd && !(flag&1)) {
 				if (sd->status.party_id == 0) {
@@ -15117,7 +15169,7 @@ int skill_vfcastfix(struct block_list *bl, double time, uint16 skill_id, uint16 
 #ifdef RENEWAL_CAST
 	struct status_change *sc = status->get_sc(bl);
 	struct map_session_data *sd = BL_CAST(BL_PC,bl);
-	int fixed = skill->get_fixed_cast(skill_id, skill_lv), fixcast_r = 0, varcast_r = 0, i = 0;
+	int fixed = skill->get_fixed_cast(skill_id, skill_lv), fixcast_r = 0, varcast_r = 0, i = 0, castspeed = 0;
 
 	if( time < 0 )
 		return 0;
@@ -15127,8 +15179,8 @@ int skill_vfcastfix(struct block_list *bl, double time, uint16 skill_id, uint16 
 		return (int)time;
 
 	if( fixed == 0 ){
-		fixed = (int)time * 20 / 100; // fixed time
-		time = time * 80 / 100; // variable time
+		fixed = (int)time * 10 / 100; // fixed time
+		time = time * 90 / 100; // variable time
 	}else if( fixed < 0 ) // no fixed cast time
 		fixed = 0;
 
@@ -15242,10 +15294,16 @@ int skill_vfcastfix(struct block_list *bl, double time, uint16 skill_id, uint16 
 			}
 	}
 
+	castspeed = 100 + status_get_agi(bl); // +1% cast speed per agi
+
+	if ( sd )
+		castspeed += sd->bonus.castspeed; // +cast speed from items
+
 	if( varcast_r < 0 ) // now compute overall factors
 		time = time * (1 - (float)varcast_r / 100);
-	if( !(skill->get_castnodex(skill_id, skill_lv)&1) )// reduction from status point
-		time = (1 - sqrt( ((float)(status_get_dex(bl)*2 + status_get_int(bl)) / battle_config.vcast_stat_scale) )) * time;
+	if( !(skill->get_castnodex(skill_id, skill_lv)&1) )
+		time = time * 100 / castspeed;
+
 	// underflow checking/capping
 	time = max(time, 0) + (1 - (float)min(fixcast_r, 100) / 100) * max(fixed,0);
 #endif

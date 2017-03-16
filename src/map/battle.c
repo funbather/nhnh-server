@@ -2658,9 +2658,23 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 	if( sc && sc->data[SC_INVINCIBLE] && !sc->data[SC_INVINCIBLEOFF] )
 		return 1;
 
-	if( sc && sc->count )
-	{
-		// STATUS EFFECTS
+	if( sc && sc->count ) {
+		if ( (sce = sc->data[SC_ENDURE_]) && damage > 0 ) {
+			if ( t_sd ) {
+				damage -= damage * 25 * status_get_dex(bl) / 10000; // endure mastery bonus -> -0.25% damage/MST
+				damage = ( damage >= 0 ) ? damage : 0;
+			}
+
+			sce->val1 -= (int) cap_value(damage,INT_MIN,INT_MAX);
+
+			if ( sce->val1 >= 0 )
+				damage = 0;
+			else
+				damage = -sce->val1; // damage = barrier overkill damage
+
+			if ( sce->val1 <= 0 )
+				status_change_end(bl, SC_ENDURE_, INVALID_TIMER);
+		}
 	}
 
 	if (s_sc && s_sc->count) {
@@ -3822,20 +3836,25 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 		}
 	}
 
-	if (!flag.hit) {
+	if ( !flag.hit ) {
 		//Hit/Flee calculation
 		short flee = tstatus->flee;
 		int hitrate = (int)((100.0f - flee / (flee + 700.0f) * 100.0f) * 100.0f);
-		if(rnd()%10000 >= hitrate){
+		if( rnd()%10000 >= hitrate ){
 			wd.dmg_lv = ATK_FLEE;
 		}
 		else
 			flag.hit = 1;
 	} //End hit/miss calculation
 
-	if (flag.hit) { // Physical Block
+	if ( flag.hit ) { // Physical Block
 		short pblock = tstatus->def2;
-		if(rnd()%1000 <= pblock) {
+
+		if ( tsc && tsc->data[SC_SWAGGER] && tsc->data[SC_SWAGGER]->val2 == src->id ) {
+			pblock += pblock * tsc->data[SC_SWAGGER]->val1 / 100;
+		}
+
+		if ( rnd()%1000 <= pblock ) {
 			wd.type = BDT_BLOCKED;
 			flag.hit = 0;
 		}

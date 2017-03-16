@@ -842,7 +842,12 @@ typedef enum sc_type {
 	SC_FRESHSHRIMP,
 
 	// NHNH
+	SC_IGNITE,
 	SC_ADRRUSH,
+	SC_SWASHBUCKLING,
+	SC_SECONDWIND,
+	SC_SWAGGER,
+	SC_ENDURE_,
 #ifndef SC_MAX
 	SC_MAX, //Automatically updated max, used in for's to check we are within bounds.
 #endif
@@ -1752,7 +1757,7 @@ enum si_type {
 	//SI_BODYSTATE_STONECURSE_ING            = 880,
 	//SI_BODYSTATE_BURNNING                  = 881,
 	//SI_BODYSTATE_IMPRISON                  = 882,
-	//SI_HEALTHSTATE_POISON                  = 883,
+	SI_HEALTHSTATE_POISON                  = 883,
 	//SI_HEALTHSTATE_CURSE                   = 884,
 	//SI_HEALTHSTATE_SILENCE                 = 885,
 	//SI_HEALTHSTATE_CONFUSION               = 886,
@@ -1811,6 +1816,12 @@ enum si_type {
 	//SI_EP16_2_BUFF_SS                      = 963,
 	//SI_EP16_2_BUFF_SC                      = 964,
 	//SI_EP16_2_BUFF_AC                      = 965,
+	SI_IGNITE                              = 966,
+	SI_SHATTER                             = 967,
+	SI_SWASHBUCKLING                       = 968,
+	SI_SECONDWIND                          = 969,
+	SI_SWAGGER                             = 970,
+	SI_ENDURE_                             = 971,
 #ifndef SI_MAX
 	SI_MAX,
 #endif

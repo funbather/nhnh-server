@@ -634,6 +634,7 @@ END_ZEROED_BLOCK;
 #define pc_ischasewalk(sd)    ( (sd)->sc.option&OPTION_CHASEWALK )
 #define pc_ismuted(sc,type)   ( (sc)->data[SC_NOCHAT] && (sc)->data[SC_NOCHAT]->val1&(type) )
 #define pc_incombat(sd)       ( DIFF_TICK(timer->gettick(),(sd)->canlog_tick) > 5000 )
+#define pc_iscritical(sd)     ( ( (sd)->battle_status.hp * 100 / (sd)->battle_status.max_hp ) <= 35 )
 
 #ifdef NEW_CARTS
 	#define pc_iscarton(sd)       ( (sd)->sc.data[SC_PUSH_CART] )

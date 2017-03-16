@@ -763,6 +763,12 @@ void initChangeTables(void)
 	add_sc( NPC_WIDE_DEEP_SLEEP  , SC_DEEP_SLEEP     );
 	add_sc( NPC_WIDESIREN        , SC_SIREN          );
 
+	// NHNH
+	add_sc( SWD_SWASHBUCKLING , SC_SWASHBUCKLING );
+	status->set_sc( SWD_SECONDWIND , SC_SECONDWIND , SI_SECONDWIND , SCB_NONE );
+	status->set_sc( SWD_SWAGGER , SC_SWAGGER , SI_SWAGGER , SCB_DEF2 );
+	status->set_sc( SWD_ENDURE , SC_ENDURE_ , SI_ENDURE_ , SCB_NONE );
+
 	// Storing the target job rather than simply SC_SOULLINK simplifies code later on.
 	status->dbs->Skill2SCTable[SL_ALCHEMIST]   = (sc_type)MAPID_ALCHEMIST,
 	status->dbs->Skill2SCTable[SL_MONK]        = (sc_type)MAPID_MONK,
@@ -1164,6 +1170,7 @@ void initChangeTables(void)
 
 	// NHNH
 	status->dbs->ChangeFlagTable[SC_ADRRUSH] |= SCB_SPEED;
+	status->dbs->ChangeFlagTable[SC_SWASHBUCKLING] |= SCB_BATK;
 
 
 	if( !battle_config.display_hallucination ) //Disable Hallucination.
@@ -3067,7 +3074,7 @@ void status_calc_regen(struct block_list *bl, struct status_data *st, struct reg
 		return;
 
 	sd = BL_CAST(BL_PC,bl);
-	val = (st->max_hp/20) * (100 + st->vit) / 100; // BASE HP REGEN - 5% of Max HP per second, increased by 1% per VIT
+	val = (st->max_hp * (100 + st->vit)) / 5000; // BASE HP REGEN - 2% of Max HP per second, increased by 1% per VIT
 
 	if( sd && sd->hprecov_rate != 100 )
 		val = val*sd->hprecov_rate/100;
@@ -3515,10 +3522,11 @@ void status_calc_bl_main(struct block_list *bl, /*enum scb_flag*/int flag)
 			st->adelay = st->amotion;
 		} else if ( bl->type&BL_PC ) {
 			amotion = status->base_amotion_pc(sd, st);
+
+			st->aspd_rate += 10 * st->agi; // +1% ASPD per agi
+
 			if ( st->aspd_rate != 1000 ) // absolute percentage modifier
 				amotion = (amotion * 1000) / (st->aspd_rate);
-
-			amotion = (amotion * 1000) / (1000 + 10 * st->agi); //+1% Attacks per second per AGI
 
 			if (sd != NULL) {
 				amotion += sd->bonus.aspd_add;
@@ -4349,6 +4357,8 @@ unsigned short status_calc_batk(struct block_list *bl, struct status_change *sc,
 
 	if (sc->data[SC_SHRIMP])
 		batk += batk * sc->data[SC_SHRIMP]->val2 / 100;
+	if (sc->data[SC_SWASHBUCKLING])
+		batk -= batk * sc->data[SC_SWASHBUCKLING]->val1 / 100;
 
 	return (unsigned short)cap_value(batk,0,USHRT_MAX);
 }
@@ -6724,8 +6734,8 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 		if ( sd ) {
 			// Some SCs (SC_BROWBEAT, etc) are infinite or fixed duration, leave them out!!
 			switch (type) { // BUFFS
-				//case SC_SECONDWIND:
-				//case SC_ENDURE_:
+				case SC_ENDURE_:
+				case SC_SWAGGER:
 				case SC_ADRRUSH:
 				//case SC_CAMOUFLAGE:
 				//case SC_DOUBLETEAM:
@@ -6743,10 +6753,9 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				case SC_SLEEP:
 				case SC_POISON:
 				case SC_BLOODING:
-				//case SC_IGNITE:
+				case SC_IGNITE:
 
-				//case SC_SWASHBUCKLING:
-				//case SC_SWAGGER:
+				case SC_SWASHBUCKLING:
 					tick = tick * sd->debuffself_rate / 100;
 					break;
 			}
@@ -6755,14 +6764,14 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 		// buff/debuff modifiers from source
 		if ( src_sd ) {
 			switch (type) { // BUFFS
-				//case SC_SECONDWIND:
-				//case SC_ENDURE_:
+				case SC_ENDURE_:
+				case SC_SWAGGER:
 				case SC_ADRRUSH:
 				//case SC_CAMOUFLAGE:
 				//case SC_DOUBLETEAM:
 				//case SC_FORCEARMOR:
 				//case SC_GODSSTRENGTH:
-					tick = tick * sd->buffother_rate / 100;
+					tick = tick * src_sd->buffother_rate / 100;
 					break;
 			}
 
@@ -6774,11 +6783,10 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				case SC_SLEEP:
 				case SC_POISON:
 				case SC_BLOODING:
-				//case SC_IGNITE:
+				case SC_IGNITE:
 
-				//case SC_SWASHBUCKLING:
-				//case SC_SWAGGER:
-					tick = tick * sd->debuffother_rate / 100;
+				case SC_SWASHBUCKLING:
+					tick = tick * src_sd->debuffother_rate / 100;
 					break;
 			}
 		}
@@ -7502,6 +7510,15 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 	calc_flag = status->dbs->ChangeFlagTable[type];
 	if(!(flag&SCFLAG_LOADED)) { // Do not parse val settings when loading SCs
 		switch(type) {
+			case SC_SECONDWIND:
+				val2 = tick / 250; // 4 ticks per second
+				if(val2 < 1) val2 = 1;
+
+				val3 = ( val1 / val2 ) / 10000; // hp/tick = heal total / # ticks
+
+				ShowError("TOTAL %d, TICKS %d, PERTICK %d\n",val1,val2,val3);
+				tick_time = 100;
+				break;
 			case SC_ADORAMUS:
 				sc_start(src,bl,SC_BLIND,100,val1,skill->get_time(status->sc2skill(type),val1));
 				// Fall through to SC_INC_AGI
@@ -10577,6 +10594,13 @@ int status_change_timer(int tid, int64 tick, int id, intptr_t data)
 } while(0)
 
 	switch(type) {
+		case SC_SECONDWIND:
+			if (sd && --(sce->val2) >= 0) {
+				status->heal(bl, sce->val3, 0, 2);
+				sc_timer_next(250 + tick, status->change_timer, bl->id, data);
+				return 0;
+			}
+			break;
 		case SC_MAXIMIZEPOWER:
 		case SC_CLOAKING:
 			if(!status->charge(bl, 0, 1))
@@ -11915,11 +11939,6 @@ int status_natural_heal(struct block_list* bl, va_list args)
 				}
 			}
 		}
-	}
-
-	// SC_TENSIONRELAX allows HP to be recovered even when overweight. [csnv]
-	if (flag && regen->state.overweight && (sc == NULL || sc->data[SC_TENSIONRELAX] == NULL)) {
-		flag = 0;
 	}
 
 	ud = unit->bl2ud(bl);
