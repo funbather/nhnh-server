@@ -2873,7 +2873,7 @@ int pc_bonus(struct map_session_data *sd,int type,int val) {
 			break;
 		case SP_STATUSRESIST:
 			if (sd->state.lr_flag != 2)
-				sd->bonus.statusresist += val;
+				sd->debuffself_rate += val;
 			break;
 		case SP_BASICDAMAGE:
 			if (sd->state.lr_flag != 2)

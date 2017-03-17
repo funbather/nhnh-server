@@ -3807,7 +3807,7 @@ unsigned short status_base_atk(const struct block_list *bl, const struct status_
 	else if (bl->type == BL_MOB)
 		str = 10 + BL_UCCAST(BL_MOB, bl)->level;
 
-	str += str * st->str * 4 / 100;
+	str += str * st->str * 2 / 100;
 
 	return cap_value(str, 0, USHRT_MAX);
 }

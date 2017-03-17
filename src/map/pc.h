@@ -393,7 +393,6 @@ BEGIN_ZEROED_BLOCK; // this block will be globally zeroed at the beginning of st
 		int skilldamage;
 		int spelldamage;
 		int castspeed;
-		int statusresist;
 		int basicdamage;
 		int basehp;
 	} bonus;
