@@ -473,7 +473,7 @@ END_ZEROED_BLOCK;
 	int duel_group; // duel vars [LuzZza]
 	int duel_invite;
 
-	int killerrid, killedrid;
+	int killerrid, killedrid, extraitem;
 
 	int cashPoints, kafraPoints;
 	int rental_timer;

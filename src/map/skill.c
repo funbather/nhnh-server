@@ -379,16 +379,17 @@ int skill_calc_heal(struct block_list *src, struct block_list *target, uint16 sk
 
 	nullpo_ret(src);
 
-	if (skill_lv >= battle_config.max_heal_lv)
-		return battle_config.max_heal;
-
-	/**
-	 * Renewal Heal Formula
-	 * Formula: ( [(Base Level + INT) / 5] ? 30 ) ? (Heal Level / 10) ? (Modifiers) + MATK
-	 **/
-	hp = (status->get_lv(src) + status_get_int(src)) / 5 * 30  * skill_lv / 10;
-
-	hp += status->get_matk(src, 3);
+	switch ( skill_id ) {
+		case ACO_PURIFY:
+			hp = status->get_matk(src, 2) * (50 + 10 * skill_lv) * (100 + status_get_dex(src)) / 10000; // 50 + 10*skill_lv% MAG, +1% per MST
+			break;
+		case ACO_CURE:
+			hp = status->get_matk(src, 2) * (200 + 20 * skill_lv) * (100 + status_get_dex(src)) / 10000; // 200 + 20*skill_lv% MAG, +1% per MST
+			break;
+		default:
+			hp = (status->get_lv(src) + status_get_int(src)) / 5 * 30  * skill_lv / 10;
+			hp += status->get_matk(src, 3);
+	}
 
 	if (sd && (skill2_lv = pc->skillheal_bonus(sd, skill_id)) != 0)
 		hp += hp*skill2_lv/100;
@@ -5309,6 +5310,9 @@ int skill_castend_id(int tid, int64 tick, int id, intptr_t data)
 		}
 	}
 
+	if( sc && sc->data[SC_DOUBLETEAM] ) // removed on offensive skill use
+		status_change_end(src,SC_DOUBLETEAM,INVALID_TIMER);
+
 	if( !sd || sd->skillitem != ud->skill_id || skill->get_delay(ud->skill_id,ud->skill_lv) )
 		ud->canact_tick = tick;
 	ud->skill_id = ud->skill_lv = ud->skilltarget = 0;
@@ -5369,6 +5373,7 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 		 * Skills that may be cast on dead targets
 		 **/
 		switch( skill_id ) {
+			case ACO_RAISE:
 			case NPC_WIDESOULDRAIN:
 			case PR_REDEMPTIO:
 			case ALL_RESURRECTION:
@@ -5518,6 +5523,7 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 
 	map->freeblock_lock();
 	switch(skill_id) {
+		case ACO_CURE:
 		case HLIF_HEAL: // [orn]
 		case AL_HEAL:
 		/**
@@ -5529,7 +5535,7 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 		 */
 		case SU_TUNABELLY:
 			{
-				int heal = skill->calc_heal(src, bl, (skill_id == AB_HIGHNESSHEAL)?AL_HEAL:skill_id, (skill_id == AB_HIGHNESSHEAL)?10:skill_lv, true);
+				int heal = skill->calc_heal(src, bl, skill_id, skill_lv, true);
 				int heal_get_jobexp;
 				//Highness Heal: starts at 1.7 boost + 0.3 for each level
 				if (skill_id == AB_HIGHNESSHEAL) {
@@ -5562,8 +5568,8 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 				}
 				clif->skill_nodamage (src, bl, skill_id, heal, 1);
 
-				if ( sd && (src != bl) && pc->checkskill(sd,ACO_LIFELINK) ) { // ACO_LIFELINK heal yourself for a smaller amount when healing others
-					int skl = 10 + 2 * pc->checkskill(sd,ACO_LIFELINK);       // TODO: check skill_id == ACO_CURE, not implemented yet
+				if ( sd && (src != bl) && pc->checkskill(sd,ACO_LIFELINK) && skill_id == ACO_CURE ) { // ACO_LIFELINK heal yourself for a smaller amount when healing others
+					int skl = 10 + 2 * pc->checkskill(sd,ACO_LIFELINK);
 					int selfheal = heal * skl / 100;
 
 					clif->skill_nodamage (src, src, skill_id, selfheal, 1);
@@ -5617,7 +5623,7 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 
 		case SWD_SWAGGER:
 			status_change_end(src, SC_SWAGGER, INVALID_TIMER);
-			sc_start2(src, src, SC_SWAGGER, 100, 10 + 6 * skill_lv, bl->id, skill->get_time(skill_id, skill_lv) * (100 + status_get_dex(src)) / 100);
+			sc_start4(src, bl, type, 100, 10 + 4 * skill_lv, bl->id, status_get_dex(src), 0, skill->get_time(skill_id, skill_lv));
 
 			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
 
@@ -5629,8 +5635,58 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 
 		case SWD_ENDURE:
 			status_change_end(bl, SC_ENDURE_, INVALID_TIMER);
-			sc_start(src, bl, SC_ENDURE_, 100, status_get_max_hp(src) * (15 + 3 * skill_lv) / 100, skill->get_time(skill_id, skill_lv));
+			sc_start(src, bl, type, 100, status_get_max_hp(src) * (15 + 3 * skill_lv) / 100, skill->get_time(skill_id, skill_lv));
 
+			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
+		break;
+
+		case THF_CAMOUFLAGE:
+			sc_start2(src, bl, type, 100, 150 + 30 * skill_lv, status_get_dex(src) * 2, skill->get_time(skill_id, skill_lv));
+
+			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
+		break;
+
+		case THF_DOUBLETEAM:
+			sc_start2(src, bl, type, 100, 50 + 10 * skill_lv, status_get_dex(src) / 2, skill->get_time(skill_id, skill_lv));
+
+			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
+		break;
+
+		case THF_BROWBEAT:
+			sc_start(src, bl, type, 100, (20 + 2 * skill_lv) * (100 + status_get_dex(src)) / 100, -1); // infinite duration
+			ShowError("%d\n",(20 + 2 * skill_lv) * (100 + status_get_dex(src)) / 100);
+
+			if( dstmd )
+				mob->unlocktarget(dstmd, tick);
+
+			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
+		break;
+
+		case ACO_PURIFY: {
+			int hp = skill->calc_heal(src, bl, skill_id, skill_lv, true);
+
+			if ( tsc && tsc->count ) { // make sure there are even any statuses to remove
+				status_change_end(bl, SC_POISON, INVALID_TIMER);
+				status_change_end(bl, SC_IGNITE, INVALID_TIMER);
+				status_change_end(bl, SC_BLOODING, INVALID_TIMER);
+				status_change_end(bl, SC_BLIND, INVALID_TIMER);
+				status_change_end(bl, SC_STUN, INVALID_TIMER);
+				status_change_end(bl, SC_FREEZE, INVALID_TIMER);
+				status_change_end(bl, SC_SILENCE, INVALID_TIMER);
+			}
+
+			sc_start(src, bl, type, 100, hp, skill->get_time(skill_id, skill_lv));
+			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
+		}
+		break;
+
+		case ACO_FORCEARMOR:
+			sc_start2(src, bl, type, 100, 10 + 2 * skill_lv, status_get_dex(src), skill->get_time(skill_id, skill_lv));
+			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
+		break;
+
+		case ACO_GODSSTRENGTH:
+			sc_start2(src, bl, type, 100, 10 + 2 * skill_lv, status_get_dex(src), skill->get_time(skill_id, skill_lv));
 			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
 		break;
 
@@ -5664,6 +5720,24 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 				skill_lv = 3; //Resurrection level 3 is used
 			} else //Invalid target, skip resurrection.
 				break;
+
+		case ACO_RAISE:
+			if (!status->isdead(bl))
+				break;
+			{
+				int per = 0, sper = 0;
+
+				per = 15 + 5 * skill_lv;
+
+				if(dstsd && dstsd->special_state.restart_full_recover)
+					per = sper = 100;
+
+				if (status->revive(bl, per, sper)) {
+					clif->skill_nodamage(src,bl,skill_id,skill_lv,1);
+					sc_start(src,bl,type,100,skill_lv,skill->get_time(skill_id,skill_lv));
+				}
+			}
+			break;
 
 		case ALL_RESURRECTION:
 			if(sd && (map_flag_gvg2(bl->m) || map->list[bl->m].flag.battleground)) {

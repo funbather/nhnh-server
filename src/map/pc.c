@@ -8096,9 +8096,10 @@ int pc_readparam(const struct map_session_data *sd, int type)
 		case SP_SKILLDAMAGE:     val = sd->bonus.skilldamage; break;
 		case SP_SPELLDAMAGE:     val = sd->bonus.spelldamage; break;
 		case SP_CASTSPEED:       val = sd->bonus.castspeed; break;
-		case SP_STATUSRESIST:    val = sd->bonus.statusresist; break;
+		case SP_STATUSRESIST:    val = sd->debuffself_rate; break;
 		case SP_BASICDAMAGE:     val = sd->bonus.basicdamage; break;
 		case SP_BASEHP:          val = sd->bonus.basehp; break;
+		case SP_EXTRAITEM:       val = sd->extraitem; break;
 	}
 
 	return val;
@@ -8258,6 +8259,10 @@ int pc_setparam(struct map_session_data *sd,int type,int val)
 	case SP_MOD_DEATH:
 		sd->status.mod_death = val;
 		return 1;
+	case SP_EXTRAITEM:
+		sd->extraitem = val;
+		return 1;
+		break;
 	default:
 		ShowError("pc_setparam: Attempted to set unknown parameter '%d'.\n", type);
 		return 0;

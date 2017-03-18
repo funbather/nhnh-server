@@ -843,11 +843,20 @@ typedef enum sc_type {
 
 	// NHNH
 	SC_IGNITE,
+	SC_SHATTER,
+	SC_MARKED,
 	SC_ADRRUSH,
 	SC_SWASHBUCKLING,
 	SC_SECONDWIND,
 	SC_SWAGGER,
 	SC_ENDURE_,
+	SC_CAMO,
+	SC_DOUBLETEAM,
+	SC_BROWBEAT,
+	SC_PURIFY,
+	SC_RAISE,
+	SC_FORCEARMOR,
+	SC_GODSSTRENGTH,
 #ifndef SC_MAX
 	SC_MAX, //Automatically updated max, used in for's to check we are within bounds.
 #endif
@@ -1822,6 +1831,12 @@ enum si_type {
 	SI_SECONDWIND                          = 969,
 	SI_SWAGGER                             = 970,
 	SI_ENDURE_                             = 971,
+	SI_CAMO                                = 972,
+	SI_DOUBLETEAM                          = 973,
+	SI_PURIFY                              = 974,
+	SI_RAISE                               = 975,
+	SI_FORCEARMOR                          = 976,
+	SI_GODSSTRENGTH                        = 977,
 #ifndef SI_MAX
 	SI_MAX,
 #endif
@@ -1895,6 +1910,12 @@ enum {
 	OPT2_BLEEDING     = 0x0040,
 	OPT2_DPOISON      = 0x0080,
 	OPT2_FEAR         = 0x0100,
+	OPT2_IGNITE       = 0x0200,
+	OPT2_MARKED       = 0x0400,
+	OPT2_SHATTER      = 0x0800,
+	OPT2_CAMO         = 0x1000,
+	OPT2_FORCEARMOR   = 0x2000,
+	OPT2_GODSSTRENGTH = 0x4000,
 };
 
 //opt3: (SHOW_EFST_*)

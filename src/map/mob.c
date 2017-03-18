@@ -2661,6 +2661,10 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 				npc->event_do(md->npc_event);
 		} else if( mvp_sd && !md->state.npc_killmonster ) {
 			pc->setparam(mvp_sd, SP_KILLEDRID, md->class_);
+
+			if ( md->sc.data[SC_BROWBEAT] )
+				pc->setparam(sd, SP_EXTRAITEM, md->sc.data[SC_BROWBEAT]->val1);
+
 			npc->script_event(mvp_sd, NPCE_KILLNPC); // PCKillNPC [Lance]
 		}
 

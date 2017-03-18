@@ -2655,8 +2655,8 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 	s_sc = status->get_sc(src);
 	sc = status->get_sc(bl);
 
-	if( sc && sc->data[SC_INVINCIBLE] && !sc->data[SC_INVINCIBLEOFF] )
-		return 1;
+	if( sc && sc->data[SC_RAISE] )
+		return 0;
 
 	if( sc && sc->count ) {
 		if ( (sce = sc->data[SC_ENDURE_]) && damage > 0 ) {
@@ -2675,10 +2675,14 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 			if ( sce->val1 <= 0 )
 				status_change_end(bl, SC_ENDURE_, INVALID_TIMER);
 		}
+
+		if ( (sce = sc->data[SC_FORCEARMOR]) && damage > 0 )
+			damage -= damage * sce->val1 / 100;
 	}
 
 	if (s_sc && s_sc->count) {
-		// STATUS EFFECTS (CASTER)
+		if ( (sce = s_sc->data[SC_GODSSTRENGTH]) )
+			damage += damage * sce->val1 / 100;
 	}
 
 	/* no data claims these settings affect anything other than players */
@@ -3806,6 +3810,8 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 	if ( sd && !skill_id ) {
 		//Check for double attack.
 		i = pc->checkskill(sd,THF_DOUBLESTRIKE) * 4; // THF_DOUBLESTIKE +skill_lv*4% Double Strike Chance
+		if ( sc && sc->data[SC_DOUBLETEAM] )
+			i = 100; // 100% chance while SC_DOUBLETEAM active
 
 		if ( (sd->bonus.double_rate + i) > 0 ) {
 			if( rnd()%100 < ( sd->bonus.double_rate + i ) ) {
@@ -3850,13 +3856,22 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 	if ( flag.hit ) { // Physical Block
 		short pblock = tstatus->def2;
 
-		if ( tsc && tsc->data[SC_SWAGGER] && tsc->data[SC_SWAGGER]->val2 == src->id ) {
-			pblock += pblock * tsc->data[SC_SWAGGER]->val1 / 100;
+		if ( sc && sc->data[SC_SWAGGER] && sc->data[SC_SWAGGER]->val2 == target->id ) {
+			pblock += pblock * sc->data[SC_SWAGGER]->val3 / 100;
 		}
 
 		if ( rnd()%1000 <= pblock ) {
 			wd.type = BDT_BLOCKED;
 			flag.hit = 0;
+		}
+	}
+
+	if ( flag.hit ) { // SC_SWAGGER
+		if ( sc && sc->data[SC_SWAGGER] && sc->data[SC_SWAGGER]->val2 == target->id ) {
+			if ( rnd()%100 < sc->data[SC_SWAGGER]->val1 ) { // val1 - chance to miss
+				wd.dmg_lv = ATK_FLEE;
+				flag.hit = 0;
+			}
 		}
 	}
 
@@ -3920,7 +3935,12 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 		//
 		}
 
-		if( sd ) {
+		if ( sc ) {
+			if ( sc->data[SC_DOUBLETEAM] )
+				ATK_ADDRATE(sc->data[SC_DOUBLETEAM]->val2);
+		}
+
+		if ( sd ) {
 			if ( !skill_id )
 				ATK_ADDRATE(sd->bonus.basicdamage);
 

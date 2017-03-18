@@ -768,6 +768,13 @@ void initChangeTables(void)
 	status->set_sc( SWD_SECONDWIND , SC_SECONDWIND , SI_SECONDWIND , SCB_NONE );
 	status->set_sc( SWD_SWAGGER , SC_SWAGGER , SI_SWAGGER , SCB_DEF2 );
 	status->set_sc( SWD_ENDURE , SC_ENDURE_ , SI_ENDURE_ , SCB_NONE );
+	status->set_sc( THF_CAMOUFLAGE , SC_CAMO , SI_CAMO , SCB_FLEE|SCB_SPEED );
+	status->set_sc( THF_DOUBLETEAM , SC_DOUBLETEAM , SI_DOUBLETEAM , SCB_ASPD );
+	add_sc( THF_BROWBEAT , SC_BROWBEAT );
+	status->set_sc( ACO_PURIFY , SC_PURIFY , SI_PURIFY , SCB_NONE );
+	status->set_sc( ACO_RAISE , SC_RAISE , SI_RAISE , SCB_NONE );
+	status->set_sc( ACO_FORCEARMOR , SC_FORCEARMOR , SI_FORCEARMOR , SCB_DEF );
+	status->set_sc( ACO_GODSSTRENGTH , SC_GODSSTRENGTH , SI_GODSSTRENGTH , SCB_BATK );
 
 	// Storing the target job rather than simply SC_SOULLINK simplifies code later on.
 	status->dbs->Skill2SCTable[SL_ALCHEMIST]   = (sc_type)MAPID_ALCHEMIST,
@@ -3522,6 +3529,7 @@ void status_calc_bl_main(struct block_list *bl, /*enum scb_flag*/int flag)
 			st->adelay = st->amotion;
 		} else if ( bl->type&BL_PC ) {
 			amotion = status->base_amotion_pc(sd, st);
+			st->aspd_rate = status->calc_aspd_rate(bl, sc, bst->aspd_rate);
 
 			st->aspd_rate += 10 * st->agi; // +1% ASPD per agi
 
@@ -4274,6 +4282,10 @@ unsigned short status_calc_batk(struct block_list *bl, struct status_change *sc,
 			batk += sc->data[SC_PLUSATTACKPOWER]->val1;
 		return (unsigned short)cap_value(batk,0,USHRT_MAX);
 	}
+
+	if(sc->data[SC_GODSSTRENGTH])
+		batk += batk * sc->data[SC_GODSSTRENGTH]->val2 / 100;
+
 #ifndef RENEWAL
 	if(sc->data[SC_PLUSATTACKPOWER])
 		batk += sc->data[SC_PLUSATTACKPOWER]->val1;
@@ -4667,6 +4679,10 @@ signed short status_calc_flee(struct block_list *bl, struct status_change *sc, i
 		return (short)cap_value(flee, 1, SHRT_MAX);
 	}
 
+	if (sc->data[SC_CAMO]) {
+		flee += sc->data[SC_CAMO]->val2;
+		flee += flee * sc->data[SC_CAMO]->val1 / 100;
+	}
 	if (sc->data[SC_INCFLEE])
 		flee += sc->data[SC_INCFLEE]->val1;
 	if (sc->data[SC_MTF_HITFLEE])
@@ -4801,6 +4817,9 @@ defType status_calc_def(struct block_list *bl, struct status_change *sc, int def
 	if (sc->data[SC_STEELBODY])
 		return 90;
 #endif
+
+	if (sc->data[SC_FORCEARMOR])
+		def += def * sc->data[SC_FORCEARMOR]->val2 / 100;
 
 	if (sc->data[SC_STONEHARDSKIN])
 		def += sc->data[SC_STONEHARDSKIN]->val1;
@@ -5054,6 +5073,9 @@ unsigned short status_calc_speed(struct block_list *bl, struct status_change *sc
 					val += pc->checkskill(sd,THF_ADRENALINERUSH) * 3 / 2;
 			}
 
+			if ( sc && sc->data[SC_CAMO] )
+				val += 20;
+
 			speed_rate += val;
 		}
 
@@ -5243,6 +5265,9 @@ short status_calc_aspd_rate(struct block_list *bl, struct status_change *sc, int
 	nullpo_ret(bl);
 	if(!sc || !sc->count)
 		return cap_value(aspd_rate,0,SHRT_MAX);
+
+	if ( sc->data[SC_DOUBLETEAM] )
+		aspd_rate += sc->data[SC_DOUBLETEAM]->val1;
 
 	if( !sc->data[SC_QUAGMIRE] ){
 		int max = 0;
@@ -6727,7 +6752,7 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 	src_sd = BL_CAST(BL_PC, src);
 
 	//Adjust tick according to status resistances
-	if( !(flag&(SCFLAG_NOAVOID|SCFLAG_LOADED)) ) {
+	if( !(flag&(SCFLAG_NOAVOID|SCFLAG_LOADED)) && tick > 0 ) {
 		//tick = status->get_sc_def(src, bl, type, rate, tick, flag);
 
 		// buff/debuff modifiers on target
@@ -6737,8 +6762,8 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				case SC_ENDURE_:
 				case SC_SWAGGER:
 				case SC_ADRRUSH:
-				//case SC_CAMOUFLAGE:
-				//case SC_DOUBLETEAM:
+				case SC_CAMOUFLAGE:
+				case SC_DOUBLETEAM:
 				//case SC_FORCEARMOR:
 				//case SC_GODSSTRENGTH:
 					tick = tick * sd->buffself_rate / 100;
@@ -6754,6 +6779,8 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				case SC_POISON:
 				case SC_BLOODING:
 				case SC_IGNITE:
+				case SC_MARKED:
+				case SC_SHATTER:
 
 				case SC_SWASHBUCKLING:
 					tick = tick * sd->debuffself_rate / 100;
@@ -6767,8 +6794,8 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				case SC_ENDURE_:
 				case SC_SWAGGER:
 				case SC_ADRRUSH:
-				//case SC_CAMOUFLAGE:
-				//case SC_DOUBLETEAM:
+				case SC_CAMOUFLAGE:
+				case SC_DOUBLETEAM:
 				//case SC_FORCEARMOR:
 				//case SC_GODSSTRENGTH:
 					tick = tick * src_sd->buffother_rate / 100;
@@ -6784,6 +6811,8 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				case SC_POISON:
 				case SC_BLOODING:
 				case SC_IGNITE:
+				case SC_MARKED:
+				case SC_SHATTER:
 
 				case SC_SWASHBUCKLING:
 					tick = tick * src_sd->debuffother_rate / 100;
@@ -7516,7 +7545,14 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 
 				val3 = ( val1 / val2 ) / 10000; // hp/tick = heal total / # ticks
 
-				ShowError("TOTAL %d, TICKS %d, PERTICK %d\n",val1,val2,val3);
+				tick_time = 100;
+				break;
+			case SC_PURIFY:
+				val2 = tick / 500;
+				if(val2 < 1) val2 = 1;
+
+				val3 = val1 / val2;
+
 				tick_time = 100;
 				break;
 			case SC_ADORAMUS:
@@ -9401,6 +9437,12 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 		case SC_ANGELUS:      sc->opt2 |= OPT2_ANGELUS;      break;
 		case SC_BLOODING:     sc->opt2 |= OPT2_BLEEDING;     break;
 		case SC_DPOISON:      sc->opt2 |= OPT2_DPOISON;      break;
+		case SC_IGNITE:       sc->opt2 |= OPT2_IGNITE;       break;
+		case SC_MARKED:       sc->opt2 |= OPT2_MARKED;       break;
+		case SC_SHATTER:      sc->opt2 |= OPT2_SHATTER;      break;
+		case SC_CAMO:         sc->opt2 |= OPT2_CAMO;         break;
+		case SC_FORCEARMOR:   sc->opt2 |= OPT2_FORCEARMOR;   break;
+		case SC_GODSSTRENGTH: sc->opt2 |= OPT2_GODSSTRENGTH; break;
 		//OPT3
 		case SC_TWOHANDQUICKEN:
 		case SC_ONEHANDQUICKEN:
@@ -10310,6 +10352,24 @@ int status_change_end_(struct block_list* bl, enum sc_type type, int tid, const 
 		case SC__CHAOS:
 			sc->opt2 &= ~OPT2_SIGNUMCRUCIS;
 			break;
+		case SC_CAMO:
+			sc->opt2 &= ~OPT2_CAMO;
+			break;
+		case SC_IGNITE:
+			sc->opt2 &= ~OPT2_IGNITE;
+			break;
+		case SC_MARKED:
+			sc->opt2 &= ~OPT2_MARKED;
+			break;
+		case SC_SHATTER:
+			sc->opt2 &= ~OPT2_SHATTER;
+			break;
+		case SC_FORCEARMOR:
+			sc->opt2 &= ~OPT2_FORCEARMOR;
+			break;
+		case SC_GODSSTRENGTH:
+			sc->opt2 &= ~OPT2_GODSSTRENGTH;
+			break;
 
 		case SC_HIDING:
 			sc->option &= ~OPTION_HIDE;
@@ -10596,8 +10656,15 @@ int status_change_timer(int tid, int64 tick, int id, intptr_t data)
 	switch(type) {
 		case SC_SECONDWIND:
 			if (sd && --(sce->val2) >= 0) {
-				status->heal(bl, sce->val3, 0, 2);
+				status->heal(bl, sce->val3, 0, 3);
 				sc_timer_next(250 + tick, status->change_timer, bl->id, data);
+				return 0;
+			}
+			break;
+		case SC_PURIFY:
+			if (sd && --(sce->val2) >= 0) {
+				status->heal(bl, sce->val3, 0, 3);
+				sc_timer_next(500 + tick, status->change_timer, bl->id, data);
 				return 0;
 			}
 			break;

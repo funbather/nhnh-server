@@ -1358,6 +1358,7 @@ int unit_skilluse_id2(struct block_list *src, int target_id, uint16 skill_id, ui
 		 * Skills that may be cast on dead targets
 		 **/
 		switch( skill_id ) {
+			case ACO_RAISE:
 			case NPC_WIDESOULDRAIN:
 			case PR_REDEMPTIO:
 			case ALL_RESURRECTION:
