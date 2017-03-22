@@ -2699,6 +2699,11 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 
 	}
 
+	if( sd ) {
+		if ( pc->checkskill(sd,THF_SONICSTRIKE) )
+			skill->blockpc_start(sd, THF_SONICSTRIKE, -1); // Refresh THF_SONICSTRIKE cooldown on kill
+	}
+
 	if(!md->spawn) //Tell status->damage to remove it from memory.
 		return 5; // Note: Actually, it's 4. Oh well...
 

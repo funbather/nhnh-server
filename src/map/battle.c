@@ -1386,6 +1386,12 @@ int battle_calc_skillratio(int attack_type, struct block_list *src, struct block
 	switch(attack_type){
 		case BF_MAGIC:
 			switch(skill_id){
+				case ACO_HALLOWEDBOLT:
+					skillratio += 200 + 40 * skill_lv;
+					break;
+				case ACO_HEAVENLYBLOW:
+					skillratio += 125 + 25 * skill_lv;
+					break;
 				case MG_NAPALMBEAT:
 					skillratio += skill_lv * 10 - 30;
 					break;
@@ -1774,6 +1780,37 @@ int battle_calc_skillratio(int attack_type, struct block_list *src, struct block
 		case BF_WEAPON:
 			switch( skill_id )
 			{
+				case SWD_UMBOBLOW:
+					skillratio += 150 + 30 * skill_lv;
+					break;
+				case SWD_METEORMASH:
+					skillratio += 200 + 40 * skill_lv;
+					break;
+				case SWD_SHIELDBOOMERANG:
+					skillratio += 25 * skill_lv;
+					break;
+				case SWD_SKULLCRACK:
+					skillratio += 200 + 40 * skill_lv;
+					break;
+				case SWD_SLEDGEHAMMER:
+					skillratio += 200 + 60 * skill_lv;
+					break;
+				case THF_SONICSTRIKE:
+					skillratio += 50 + 30 * skill_lv;
+					break;
+				case THF_BONECUTTER:
+					skillratio += 150 + 30 * skill_lv;
+					break;
+				case THF_BLADEFLOURISH:
+					skillratio += 200 + 60 * skill_lv;
+					break;
+				case THF_PUNCTURE:
+					skillratio += 25 * skill_lv;
+					break;
+				case ACO_HEAVENLYBLOW:
+					skillratio += 125 + 25 * skill_lv;
+					break;
+
 				case SM_BASH:
 				case MS_BASH:
 					skillratio += 30 * skill_lv;
@@ -2918,6 +2955,7 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 	int nk;
 	short s_ele = 0;
 	struct map_session_data *sd = NULL;
+	struct map_session_data *tsd = NULL;
 	struct status_change *sc;
 	struct Damage ad;
 	struct status_data *sstatus = status->get_status_data(src);
@@ -2925,6 +2963,8 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 	struct {
 		unsigned imdef : 2;
 		unsigned infdef : 1;
+		unsigned cri : 1;
+		unsigned blocked : 1;
 	} flag;
 
 	memset(&ad,0,sizeof(ad));
@@ -2945,6 +2985,7 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 	flag.imdef = (nk&NK_IGNORE_DEF)? 1 : 0;
 
 	sd = BL_CAST(BL_PC, src);
+	tsd = BL_CAST(BL_PC, target);
 
 	sc = status->get_sc(src);
 
@@ -3011,6 +3052,19 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 			flag.imdef = 2;
 			break;
 #endif
+	}
+
+	if ( !flag.blocked ) { // Magical Block
+		short mblock = tstatus->mdef2;
+
+		if ( sc && sc->data[SC_SWAGGER] && sc->data[SC_SWAGGER]->val2 == target->id ) {
+			mblock += mblock * sc->data[SC_SWAGGER]->val3 / 100;
+		}
+
+		if ( rnd()%1000 < mblock ) {
+			ad.type = BDT_BLOCKED;
+			flag.blocked = 1;
+		}
 	}
 
 	if (!flag.infdef) //No need to do the math for plants
@@ -3088,25 +3142,49 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 						ShowError("0 enemies targeted by %d:%s, divide per 0 avoided!\n", skill_id, skill->get_name(skill_id));
 				}
 
-				if (sc){
-					if( sc->data[SC_TELEKINESIS_INTENSE] && s_ele == ELE_GHOST )
-						ad.damage += sc->data[SC_TELEKINESIS_INTENSE]->val3;
-				}
 				switch(skill_id){
-					case MG_FIREBOLT:
-					case MG_COLDBOLT:
-					case MG_LIGHTNINGBOLT:
-						if ( sc && sc->data[SC_SPELLFIST] && mflag&BF_SHORT )  {
-							skillratio = sc->data[SC_SPELLFIST]->val2 * 50 + sc->data[SC_SPELLFIST]->val4 * 100;// val4 = used bolt level, val2 = used spellfist level. [Rytech]
-							ad.div_ = 1;// ad mods, to make it work similar to regular hits [Xazax]
-							ad.flag = BF_WEAPON|BF_SHORT;
-							ad.type = BDT_NORMAL;
-						}
-					/* Fall through */
 					default:
 						MATK_RATE(battle->calc_skillratio(BF_MAGIC, src, target, skill_id, skill_lv, skillratio, mflag));
 				}
+
+				if ( sd ) { // player-specific bonuses
+					MATK_ADDRATE(sd->bonus.spelldamage);
+				}
+
+				//Check for critical
+				if ( !flag.cri && sstatus->cri ) {
+					short cri = sstatus->cri;
+					if (sd != NULL) {
+						cri += sd->critaddrace[tstatus->race];
+					}
+
+					if( tsd && tsd->bonus.critical_def )
+						cri = cri * ( 100 - tsd->bonus.critical_def ) / 100;
+					if ( rnd()%1000 < cri ) {
+						flag.cri = 1;
+
+
+						if( ad.type == BDT_MULTIHIT )
+							ad.type = BDT_MULTICRIT;
+						else
+							ad.type = BDT_CRIT;
+					}
+				}
+
+				if( flag.cri && sd->crit_atk_rate )
+					MATK_RATE(sd->crit_atk_rate);
+
 				//Constant/misc additions from skills
+
+				if (skill_id == ACO_HEAVENLYBLOW) {
+					struct Damage wd = battle->calc_weapon_attack(src,target,skill_id,skill_lv,mflag);
+					if(!flag.infdef && ad.damage > 1)
+						ad.damage += wd.damage;
+
+					MATK_ADDRATE(status_get_dex(src) * 2);
+				}
+				if (skill_id == ACO_HALLOWEDBOLT)
+					MATK_ADDRATE(status_get_dex(src));
 				if (skill_id == WZ_FIREPILLAR)
 					MATK_ADD(100+50*skill_lv);
 				if (sd != NULL && (sd->job & MAPID_THIRDMASK) == MAPID_ARCH_BISHOP) {
@@ -3179,6 +3257,7 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 		}
 
 		ad.damage = battle->calc_defense(BF_MAGIC, src, target, skill_id, skill_lv, ad.damage, flag.imdef, 0);
+		if ( flag.blocked ) { ad.damage = 0; ad.type = BDT_BLOCKED; }; // damage blocked
 
 		if(ad.damage<1)
 			ad.damage=1;
@@ -3238,7 +3317,6 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 				ad.damage += wd.damage;
 			break;
 		}
-		//case HM_ERASER_CUTTER:
 	}
 
 	return ad;
@@ -3731,6 +3809,7 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 	wd.type = BDT_NORMAL;
 	wd.div_ = skill_id ? skill->get_num(skill_id,skill_lv) : 1;
 	wd.amotion=(skill_id && skill->get_inf(skill_id)&INF_GROUND_SKILL)?0:sstatus->amotion; //Amotion should be 0 for ground skills.
+	wd.amotion = skill_id ? sstatus->amotion * 150 / 100 : sstatus->amotion; // amotion x1.5 for skills
 	wd.dmotion=tstatus->dmotion;
 	wd.blewcount = skill_id ? skill->get_blewcount(skill_id,skill_lv) : 0;
 	wd.flag = BF_WEAPON; //Initial Flag
@@ -3807,7 +3886,7 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 			flag.lh=1;
 	}
 
-	if ( sd && !skill_id ) {
+	if ( sd && (!skill_id || skill_id == THF_BONECUTTER) ) {
 		//Check for double attack.
 		i = pc->checkskill(sd,THF_DOUBLESTRIKE) * 4; // THF_DOUBLESTIKE +skill_lv*4% Double Strike Chance
 		if ( sc && sc->data[SC_DOUBLETEAM] )
@@ -3860,7 +3939,7 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 			pblock += pblock * sc->data[SC_SWAGGER]->val3 / 100;
 		}
 
-		if ( rnd()%1000 <= pblock ) {
+		if ( rnd()%1000 < pblock ) {
 			wd.type = BDT_BLOCKED;
 			flag.hit = 0;
 		}
@@ -3926,13 +4005,14 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 		} //End switch(skill_id)
 
 		switch(skill_id){
+			case SWD_UMBOBLOW:
+				skillratio += (sstatus->def2 * (400 + 80 * skill_lv) / 1000);
 			default:
 				ATK_RATE(battle->calc_skillratio(BF_WEAPON, src, target, skill_id, skill_lv, skillratio, wflag));
 		}
 
 		//Constant/misc additions from skills
 		switch (skill_id) {
-		//
 		}
 
 		if ( sc ) {

@@ -1019,7 +1019,7 @@ void clif_set_unit_idle(struct block_list* bl, struct map_session_data *tsd, enu
 	p.speed = status->get_speed(bl);
 	p.bodyState = (sc) ? sc->opt1 : 0;
 	p.healthState = (sc) ? sc->opt2 : 0;
-	p.effectState = (sc != NULL) ? sc->option : ((bl->type == BL_NPC) ? BL_UCCAST(BL_NPC, bl)->option : 0);
+	p.effectState = (sc) ? sc->option : 0;//(sc != NULL) ? sc->option : ((bl->type == BL_NPC) ? BL_UCCAST(BL_NPC, bl)->option : 0);
 	p.job = vd->class;
 	p.head = vd->hair_style;
 	p.weapon = vd->weapon;
@@ -1130,7 +1130,7 @@ void clif_spawn_unit(struct block_list* bl, enum send_target target) {
 	p.speed = status->get_speed(bl);
 	p.bodyState = (sc) ? sc->opt1 : 0;
 	p.healthState = (sc) ? sc->opt2 : 0;
-	p.effectState = (sc != NULL) ? sc->option : ((bl->type == BL_NPC) ? BL_UCCAST(BL_NPC, bl)->option : 0);
+	p.effectState = (sc) ? sc->option : 0;//(sc != NULL) ? sc->option : ((bl->type == BL_NPC) ? BL_UCCAST(BL_NPC, bl)->option : 0);
 	p.job = vd->class;
 	p.head = vd->hair_style;
 	p.weapon = vd->weapon;
@@ -1200,7 +1200,7 @@ void clif_set_unit_walking(struct block_list* bl, struct map_session_data *tsd, 
 	p.speed = status->get_speed(bl);
 	p.bodyState = (sc) ? sc->opt1 : 0;
 	p.healthState = (sc) ? sc->opt2 : 0;
-	p.effectState = (sc != NULL) ? sc->option : ((bl->type == BL_NPC) ? BL_UCCAST(BL_NPC, bl)->option : 0);
+	p.effectState = (sc) ? sc->option : 0; //(sc != NULL) ? sc->option : ((bl->type == BL_NPC) ? BL_UCCAST(BL_NPC, bl)->option : 0);
 	p.job = vd->class;
 	p.head = vd->hair_style;
 	p.weapon = vd->weapon;
@@ -1650,7 +1650,7 @@ void clif_move2(struct block_list *bl, struct view_data *vd, struct unit_data *u
 		clif->refreshlook(bl,bl->id,LOOK_BODY2,vd->body_style,AREA_WOS);
 
 	switch(bl->type) {
-		case BL_PC:
+		/*case BL_PC:
 		{
 			struct map_session_data *sd = BL_UCAST(BL_PC, bl);
 			//clif_movepc(sd);
@@ -1668,7 +1668,7 @@ void clif_move2(struct block_list *bl, struct view_data *vd, struct unit_data *u
 			else if (md->special_state.size == SZ_MEDIUM)
 				clif->specialeffect(&md->bl,421,AREA);
 		}
-			break;
+			break;*/
 		case BL_PET:
 			if( vd->head_bottom ) // needed to display pet equip properly
 				clif->send_petdata(NULL, BL_UCAST(BL_PET, bl), 3, vd->head_bottom);
@@ -4116,10 +4116,10 @@ void clif_getareachar_unit(struct map_session_data* sd,struct block_list *bl) {
 		case BL_MOB:
 		{
 			struct mob_data *md = BL_UCAST(BL_MOB, bl);
-			if (md->special_state.size == SZ_BIG) // tiny/big mobs [Valaris]
+			/*if (md->special_state.size == SZ_BIG) // tiny/big mobs [Valaris]
 				clif->specialeffect_single(bl,423,sd->fd);
 			else if (md->special_state.size == SZ_MEDIUM)
-				clif->specialeffect_single(bl,421,sd->fd);
+				clif->specialeffect_single(bl,421,sd->fd);*/
 #if (PACKETVER >= 20120404 && PACKETVER < 20131223)
 			if (battle_config.show_monster_hp_bar && !(md->status.mode&MD_BOSS)) {
 				int i;

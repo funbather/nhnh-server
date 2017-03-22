@@ -824,6 +824,31 @@ int skill_additional_effect(struct block_list* src, struct block_list *bl, uint1
 		}
 			break;
 
+		case SWD_METEORMASH:
+			sc_start(src,bl,SC_SQUASHED,100,skill_lv,skill->get_time(skill_id,skill_lv));
+
+			if( dstmd ) {
+				dstmd->state.provoke_flag = src->id;
+				mob->target(dstmd, src, 15);
+			}
+
+			break;
+
+		case SWD_SHIELDBOOMERANG:
+			if( dstmd ) {
+				dstmd->state.provoke_flag = src->id;
+				mob->target(dstmd, src, 15);
+			}
+			break;
+
+		case SWD_SKULLCRACK:
+			sc_start(src,bl,SC_STUN,35,skill_lv,skill->get_time(skill_id,skill_lv));
+			break;
+
+		case THF_PUNCTURE:
+			sc_start(src,bl,SC_BLOODING,100,skill_lv,skill->get_time(skill_id,skill_lv));
+			break;
+
 		case SM_BASH:
 			if( sd && skill_lv > 5 && pc->checkskill(sd,SM_FATALBLOW)>0 )
 				status->change_start(src,bl,SC_STUN,500*(skill_lv-5)*sd->status.base_level/50,
@@ -2360,7 +2385,7 @@ int skill_attack(int attack_type, struct block_list* src, struct block_list *dsr
 	}
 
 	//Skill hit type
-	type=(skill_id==0)?BDT_SPLASH:skill->get_hit(skill_id);
+	type=dmg.type;
 
 	if(damage < dmg.div_
 		//Only skills that knockback even when they miss. [Skotlex]
@@ -2909,8 +2934,8 @@ void skill_attack_display_unknown(int *attack_type, struct block_list* src, stru
 	nullpo_retv(skill_lv);
 	nullpo_retv(type);
 
-	if (*flag & SD_ANIMATION && dmg->div_ < 2) //Disabling skill animation doesn't works on multi-hit.
-		*type = BDT_SPLASH;
+	//if (*flag & SD_ANIMATION && dmg->div_ < 2) //Disabling skill animation doesn't works on multi-hit.
+	//	*type = BDT_SPLASH;
 	if (bl->type == BL_SKILL) {
 		struct skill_unit *su = BL_UCAST(BL_SKILL, bl);
 		if (su->group && skill->get_inf2(su->group->skill_id) & INF2_TRAP)  // show damage on trap targets
@@ -3661,6 +3686,11 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 	map->freeblock_lock();
 
 	switch(skill_id) {
+		case SWD_UMBOBLOW:
+		case SWD_SHIELDBOOMERANG:
+		case SWD_SKULLCRACK:
+		case THF_BONECUTTER:
+		case THF_PUNCTURE:
 		case MER_CRASH:
 		case SM_BASH:
 		case MS_BASH:
@@ -3841,6 +3871,21 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 					unit->setdir(src, (dir+4)%8);
 				}
 
+			}
+			break;
+
+		case THF_SONICSTRIKE: {
+				bool path_exists = path->search_long(NULL, src, src->m, src->x, src->y, bl->x, bl->y,CELL_CHKWALL);
+				unsigned int dist = distance_bl(src, bl);
+				uint8 dir = map->calc_dir(bl, src->x, src->y);
+
+				if( unit->movepos(src, bl->x, bl->y, 0, 1) )
+					clif->slide(src, bl->x, bl->y);
+
+				if( path_exists ) {
+					skill->attack(BF_WEAPON, src, src, bl, skill_id, skill_lv, tick, dist);
+					unit->setdir(src, (dir+4)%8);
+				}
 			}
 			break;
 
@@ -4025,6 +4070,9 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 		case MH_XENO_SLASHER:
 		case SU_SCRATCH:
 		case SU_LUNATICCARROTBEAT:
+		case SWD_METEORMASH:
+		case SWD_SLEDGEHAMMER:
+		case THF_BLADEFLOURISH:
 			if (flag&1) { //Recursive invocation
 				// skill->area_temp[0] holds number of targets in area
 				// skill->area_temp[1] holds the id of the original target
@@ -4243,6 +4291,8 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 			skill->attack(BF_MAGIC,src,src,bl,skill_id,skill_lv,tick,flag);
 			break;
 
+		case ACO_HALLOWEDBOLT:
+		case ACO_HEAVENLYBLOW:
 		case MG_SOULSTRIKE:
 		case NPC_DARKSTRIKE:
 		case MG_COLDBOLT:
@@ -4945,6 +4995,9 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 	if( sc && sc->data[SC_CURSEDCIRCLE_ATKER] ) //Should only remove after the skill has been casted.
 		status_change_end(src,SC_CURSEDCIRCLE_ATKER,INVALID_TIMER);
 
+	if( sc && sc->data[SC_DOUBLETEAM] ) // removed on offensive skill use
+		status_change_end(src,SC_DOUBLETEAM,INVALID_TIMER);
+
 	map->freeblock_unlock();
 
 	if( sd && !(flag&1) )
@@ -5310,9 +5363,6 @@ int skill_castend_id(int tid, int64 tick, int id, intptr_t data)
 		}
 	}
 
-	if( sc && sc->data[SC_DOUBLETEAM] ) // removed on offensive skill use
-		status_change_end(src,SC_DOUBLETEAM,INVALID_TIMER);
-
 	if( !sd || sd->skillitem != ud->skill_id || skill->get_delay(ud->skill_id,ud->skill_lv) )
 		ud->canact_tick = tick;
 	ud->skill_id = ud->skill_lv = ud->skilltarget = 0;
@@ -5623,7 +5673,7 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 
 		case SWD_SWAGGER:
 			status_change_end(src, SC_SWAGGER, INVALID_TIMER);
-			sc_start4(src, bl, type, 100, 10 + 4 * skill_lv, bl->id, status_get_dex(src), 0, skill->get_time(skill_id, skill_lv));
+			sc_start4(src, bl, type, 100, 10 + 4 * skill_lv, src->id, status_get_dex(src), 0, skill->get_time(skill_id, skill_lv));
 
 			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
 
@@ -6523,6 +6573,8 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 			status_change_end(src, SC_HIDING, INVALID_TIMER);
 			break;
 
+		case SWD_METEORMASH:
+		case THF_BLADEFLOURISH:
 		case ASC_METEORASSAULT:
 		case GS_SPREADATTACK:
 		case RK_STORMBLAST:

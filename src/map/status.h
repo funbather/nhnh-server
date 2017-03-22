@@ -857,6 +857,7 @@ typedef enum sc_type {
 	SC_RAISE,
 	SC_FORCEARMOR,
 	SC_GODSSTRENGTH,
+	SC_SQUASHED,
 #ifndef SC_MAX
 	SC_MAX, //Automatically updated max, used in for's to check we are within bounds.
 #endif
@@ -1837,6 +1838,7 @@ enum si_type {
 	SI_RAISE                               = 975,
 	SI_FORCEARMOR                          = 976,
 	SI_GODSSTRENGTH                        = 977,
+	SI_SQUASHED                            = 978,
 #ifndef SI_MAX
 	SI_MAX,
 #endif
@@ -1906,7 +1908,7 @@ enum {
 	OPT2_SILENCE      = 0x0004,
 	OPT2_SIGNUMCRUCIS = 0x0008,
 	OPT2_BLIND        = 0x0010,
-	OPT2_ANGELUS      = 0x0020,
+	//OPT2_ANGELUS      = 0x0020,
 	OPT2_BLEEDING     = 0x0040,
 	OPT2_DPOISON      = 0x0080,
 	OPT2_FEAR         = 0x0100,
@@ -1916,6 +1918,7 @@ enum {
 	OPT2_CAMO         = 0x1000,
 	OPT2_FORCEARMOR   = 0x2000,
 	OPT2_GODSSTRENGTH = 0x4000,
+	OPT2_SQUASHED     = 0x0020, // causes overflow at 0x8000, fix later
 };
 
 //opt3: (SHOW_EFST_*)
