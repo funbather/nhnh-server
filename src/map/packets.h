@@ -715,7 +715,7 @@ packet(0x96e,-1,clif->ackmergeitems);
 
 //2005-04-11aSakexe
 #if PACKETVER >= 20050411
-	packet(0x0229,15);
+	packet(0x0229,17);
 	packet(0x022a,58);
 	packet(0x022b,57);
 	packet(0x022c,64);

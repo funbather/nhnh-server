@@ -149,12 +149,19 @@ int unit_walktoxy_sub(struct block_list *bl)
 
 	ud->state.change_walk_target=0;
 
+	// send fix-pos packet if unit was very recently able to move, helps with desyncs
+	if ( DIFF_TICK(timer->gettick(), ud->canmove_tick) < 500 )
+		clif->fixpos(bl);
+
 	if (bl->type == BL_PC) {
 		struct map_session_data *sd = BL_UCAST(BL_PC, bl);
 		sd->head_dir = 0;
 		clif->walkok(sd);
 	}
 	clif->move(ud);
+
+	// update dir as soon as unit begins walking
+	ud->dir = ud->walkpath.path[ud->walkpath.path_pos];
 
 	if(ud->walkpath.path_pos>=ud->walkpath.path_len)
 		i = -1;
@@ -1467,17 +1474,13 @@ int unit_skilluse_id2(struct block_list *src, int target_id, uint16 skill_id, ui
 		}
 	}
 
-	if (!temp) //Stop attack on non-combo skills [Skotlex]
-		unit->stop_attack(src);
-	else if(ud->attacktimer != INVALID_TIMER) //Else-wise, delay current attack sequence
-		ud->attackabletime = tick + status_get_adelay(src);
-
 	ud->state.skillcastcancel = castcancel;
 
 	//temp: Used to signal force cast now.
 	temp = 0;
 
 	switch(skill_id){
+	case ACO_RAISE:
 	case ALL_RESURRECTION:
 		if(battle->check_undead(tstatus->race,tstatus->def_ele)) {
 			temp = 1;
@@ -1590,6 +1593,9 @@ int unit_skilluse_id2(struct block_list *src, int target_id, uint16 skill_id, ui
 		casttime = 0;
 	}
 
+	if ( sd && pc->checkskill(sd,MGN_SOUL) ) // MGN_SOUL cast time reduced by 10 %
+		casttime = casttime * 90 / 100;
+
 	if( sc ) {
 		/**
 		 * why the if else chain: these 3 status do not stack, so its efficient that way.
@@ -1664,6 +1670,17 @@ int unit_skilluse_id2(struct block_list *src, int target_id, uint16 skill_id, ui
 		ud->skilltimer = timer->add( tick+casttime, skill->castend_id, src->id, 0 );
 		if (sd && (pc->checkskill(sd, SA_FREECAST) > 0 || skill_id == LG_EXEEDBREAK || (skill->get_inf2(ud->skill_id) & INF2_FREE_CAST_REDUCED) != 0))
 			status_calc_bl(&sd->bl, SCB_SPEED|SCB_ASPD);
+		else if( casttime <= 2000 && ud->state.attack_continue ) {
+			casttime = status_get_adelay(src) * 150 / 100; // x1.5 adelay on skills
+			if( DIFF_TICK(ud->canact_tick, tick + casttime) > 0 )
+				ud->attackabletime = ud->canact_tick + 250;
+			else
+				ud->attackabletime = tick + casttime + 250;
+			unit->stop_walking(src,STOPWALKING_FLAG_FIXPOS);
+		} else {
+			unit->stop_attack(src);
+			unit->stop_walking(src,STOPWALKING_FLAG_FIXPOS);
+		}
 	} else
 		skill->castend_id(ud->skilltimer,tick,src->id,0);
 
@@ -1756,7 +1773,7 @@ int unit_skilluse_pos2( struct block_list *src, short skill_x, short skill_y, ui
 	} else if( !battle->check_range(src, &bl, range) )
 		return 0; //Arrow-path check failed.
 
-	unit->stop_attack(src);
+	//unit->stop_attack(src);
 
 	// moved here to prevent Suffragium from ending if skill fails
 #ifndef RENEWAL_CAST
@@ -2172,6 +2189,24 @@ int unit_attack_timer_sub(struct block_list* src, int tid, int64 tick)
 			ud->attacktimer=timer->add(ud->attackabletime,unit->attack_timer,src->id,0);
 		}
 		return 1;
+	}
+
+	if ( sd && ud->skill_id && ud->skilltimer == -1 ) { // buffered skill
+		if ( DIFF_TICK(ud->canact_tick, tick) > 0 ) {
+			ud->attacktimer = timer->add(ud->canact_tick, unit->attack_timer, src->id, 0);
+			return 1;
+		}
+		if ( ud->skilltarget ) {
+			if ( !unit->skilluse_id(src, ud->skilltarget, ud->skill_id, ud->skill_lv) ) {
+				ud->skilltarget = ud->skill_id = ud->skill_lv = 0;
+			}
+		} else {
+			if ( !unit->skilluse_pos(src, ud->skillx, ud->skilly, ud->skill_id, ud->skill_lv) ) {
+				ud->skillx = ud->skilly = ud->skill_id = ud->skill_lv = 0;
+			}
+		}
+		if (ud->attacktimer != INVALID_TIMER)
+			return 1; //In case it gets reset.
 	}
 
 	sstatus = status->get_status_data(src);

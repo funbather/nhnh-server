@@ -52,7 +52,7 @@ struct status_change_entry;
 #define MAX_SKILL_IMPROVISE_DB    30
 #define MAX_SKILL_LEVEL           10
 #define MAX_SKILL_UNIT_LAYOUT     45
-#define MAX_SQUARE_LAYOUT         5 // 11*11 Placement of a maximum unit
+#define MAX_SQUARE_LAYOUT         7 // 15*15 Placement of a maximum unit
 #define MAX_SKILL_UNIT_COUNT      ((MAX_SQUARE_LAYOUT*2+1)*(MAX_SQUARE_LAYOUT*2+1))
 #define MAX_SKILLTIMERSKILL       15
 #define MAX_SKILLUNITGROUP        25
@@ -1409,6 +1409,20 @@ enum e_skill {
 	ACO_GODSSTRENGTH,
 	ACO_HALLOWEDBOLT,
 	ACO_HEAVENLYBLOW,
+	MGN_SOUL,
+	MGN_FIRELANCE,
+	MGN_INCINERATE,
+	MGN_EXPLOSION,
+	MGN_COMET,
+	MGN_ICICLEEDGE,
+	MGN_CRYSTALLIZE,
+	MGN_ICENOVA,
+	MGN_FROSTBITE,
+	MGN_LIGHTNINGBOLT,
+	MGN_IONPULSE,
+	MGN_DISCHARGE,
+	MGN_STORMLOCUS,
+	MGN_STORMLOCUS_PULSE,
 
 	GC_DARKCROW = 5001,
 	RA_UNLIMIT,
@@ -1738,6 +1752,8 @@ enum {
 
 	UNT_CATNIPPOWDER,
 	UNT_SV_ROOTTWIST,
+	UNT_IONPULSE,
+	UNT_STORMLOCUS,
 
 	/**
 	 * Guild Auras
@@ -2099,6 +2115,7 @@ struct skill_interface {
 	struct skill_unit_group *(*locate_element_field) (struct block_list *bl);
 	int (*graffitiremover) (struct block_list *bl, va_list ap);
 	int (*activate_reverberation) ( struct block_list *bl, va_list ap);
+	int (*stormlocus_pulse) ( struct block_list *bl, va_list ap);
 	int (*dance_overlap_sub) (struct block_list* bl, va_list ap);
 	int (*dance_overlap) (struct skill_unit* su, int flag);
 	struct s_skill_unit_layout *(*get_unit_layout) (uint16 skill_id, uint16 skill_lv, struct block_list* src, int x, int y);

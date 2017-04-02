@@ -495,15 +495,24 @@ int64 battle_calc_base_damage(struct block_list *src, struct block_list *bl, uin
 
 	sd = BL_CCAST(BL_PC, src);
 
-	if ( !skill_id ) {
+	if( !skill_id ) {
 		s_ele = st->rhw.ele;
 		s_ele_ = st->lhw.ele;
 	}
 
-	if (sd && (sd->weapontype1 == W_DAGGER || sd->weapontype1 == W_STAFF)) // Magical weapon
+	if( sd && (sd->weapontype1 == W_DAGGER || sd->weapontype1 == W_STAFF) ) // Magical weapon
 		damage = st->matk_max + battle->calc_weapon_damage(src, bl, skill_id, skill_lv, &st->rhw, nk, n_ele, s_ele, s_ele_, status_get_size(bl), type, flag, flag2);
 	else
 		damage = st->batk + battle->calc_weapon_damage(src, bl, skill_id, skill_lv, &st->rhw, nk, n_ele, s_ele, s_ele_, status_get_size(bl), type, flag, flag2);
+
+	if( sc ) {
+		if( sc->data[SC_DISCHARGE] ) {
+			damage += sc->data[SC_DISCHARGE]->val1;
+
+			if( !skill_id ) // SC_DISCHARGE bonus doubled for basic attacks
+				damage += sc->data[SC_DISCHARGE]->val1;
+		}
+	}
 
 	return damage;
 }
@@ -1386,6 +1395,36 @@ int battle_calc_skillratio(int attack_type, struct block_list *src, struct block
 	switch(attack_type){
 		case BF_MAGIC:
 			switch(skill_id){
+				case MGN_STORMLOCUS_PULSE:
+					skillratio += 20 * skill_lv;
+					break;
+				case MGN_IONPULSE:
+					skillratio += 150 + 30 * skill_lv;
+					break;
+				case MGN_LIGHTNINGBOLT:
+					skillratio += 200 + 40 * skill_lv;
+					break;
+				case MGN_FIRELANCE:
+					skillratio += 300 + 120 * skill_lv;
+					break;
+				case MGN_INCINERATE:
+					skillratio += 150 + 30 * skill_lv;
+					break;
+				case MGN_EXPLOSION:
+					skillratio += 1100 + 240 * skill_lv;
+					break;
+				case MGN_COMET:
+					skillratio += 1900 + 400 * skill_lv;
+					break;
+				case MGN_ICICLEEDGE:
+					skillratio += 350 + 70 * skill_lv;
+					break;
+				case MGN_ICENOVA:
+					skillratio += 300 + 60 * skill_lv;
+					break;
+				case MGN_FROSTBITE:
+					skillratio += 40 * skill_lv;
+					break;
 				case ACO_HALLOWEDBOLT:
 					skillratio += 200 + 40 * skill_lv;
 					break;
@@ -2715,6 +2754,9 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 
 		if ( (sce = sc->data[SC_FORCEARMOR]) && damage > 0 )
 			damage -= damage * sce->val1 / 100;
+
+		if ( (sce = sc->data[SC_DEEPFREEZE]) && damage > 0 )
+			damage += damage * sce->val1 / 100;
 	}
 
 	if (s_sc && s_sc->count) {
@@ -3160,9 +3202,16 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 
 					if( tsd && tsd->bonus.critical_def )
 						cri = cri * ( 100 - tsd->bonus.critical_def ) / 100;
+
+					switch( skill_id ) { // 1% more likely to crit per mst
+						case MGN_FROSTBITE:
+						case MGN_LIGHTNINGBOLT:
+						case MGN_STORMLOCUS_PULSE:
+							cri += cri * status_get_dex(src) / 100;
+					}
+
 					if ( rnd()%1000 < cri ) {
 						flag.cri = 1;
-
 
 						if( ad.type == BDT_MULTIHIT )
 							ad.type = BDT_MULTICRIT;
@@ -3925,7 +3974,7 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 		//Hit/Flee calculation
 		short flee = tstatus->flee;
 		int hitrate = (int)((100.0f - flee / (flee + 700.0f) * 100.0f) * 100.0f);
-		if( rnd()%10000 >= hitrate ){
+		if( rnd()%10000 > hitrate ){
 			wd.dmg_lv = ATK_FLEE;
 		}
 		else
@@ -4638,7 +4687,7 @@ enum damage_lv battle_weapon_attack(struct block_list* src, struct block_list* t
 	struct status_data *sstatus, *tstatus;
 	struct status_change *sc, *tsc;
 	int64 damage;
-	int skillv;
+	int skillv, discharge = 0;
 	struct Damage wd;
 
 	nullpo_retr(ATK_NONE, src);
@@ -4711,6 +4760,9 @@ enum damage_lv battle_weapon_attack(struct block_list* src, struct block_list* t
 	}
 
 	if (sc) {
+		if( sc->data[SC_DISCHARGE] )
+			discharge = 2; // splash range, sent as skill_lv to skill->castend_damage_id
+
 		if (sc->data[SC_SACRIFICE]) {
 			uint16 skill_lv = sc->data[SC_SACRIFICE]->val1;
 			damage_lv ret_val;
@@ -4778,13 +4830,14 @@ enum damage_lv battle_weapon_attack(struct block_list* src, struct block_list* t
 
 	wd.dmotion = clif->damage(src, target, wd.amotion, wd.dmotion, wd.damage, wd.div_ , wd.type, wd.damage2);
 
-	if (sd && sd->bonus.splash_range > 0 && damage > 0)
-		skill->castend_damage_id(src, target, 0, 1, tick, 0);
+	if (sd && (sd->bonus.splash_range + discharge) > 0 && damage > 0)
+		skill->castend_damage_id(src, target, 0, 1 + discharge, tick, 0);
 	if (target->type == BL_SKILL && damage > 0) {
 		struct skill_unit *su = BL_UCAST(BL_SKILL, target);
 		if (su->group && su->group->skill_id == HT_BLASTMINE)
 			skill->blown(src, target, 3, -1, 0);
 	}
+
 	map->freeblock_lock();
 
 	if( skill->check_shadowform(target, damage, wd.div_) ){

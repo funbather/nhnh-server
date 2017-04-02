@@ -3394,41 +3394,22 @@ void clif_changeoption(struct block_list* bl)
 
 	sd = BL_CAST(BL_PC, bl);
 
-#if PACKETVER >= 7
 	WBUFW(buf,0) = 0x229;
 	WBUFL(buf,2) = bl->id;
 	WBUFW(buf,6) = (sc) ? sc->opt1 : 0;
-	WBUFW(buf,8) = (sc) ? sc->opt2 : 0;
-	WBUFL(buf,10) = (sc != NULL) ? sc->option : ((bl->type == BL_NPC) ? BL_UCCAST(BL_NPC, bl)->option : 0);
-	WBUFB(buf,14) = (sd)? sd->status.karma : 0;
+	WBUFL(buf,8) = (sc) ? sc->opt2 : 0;
+	WBUFL(buf,12) = (sc != NULL) ? sc->option : ((bl->type == BL_NPC) ? BL_UCCAST(BL_NPC, bl)->option : 0);
+	WBUFB(buf,16) = (sd)? sd->status.karma : 0;
 	if (clif->isdisguised(bl)) {
 		clif->send(buf,packet_len(0x229),bl,AREA_WOS);
 		WBUFL(buf,2) = -bl->id;
 		clif->send(buf,packet_len(0x229),bl,SELF);
 		WBUFL(buf,2) = bl->id;
-		WBUFL(buf,10) = OPTION_INVISIBLE;
+		WBUFL(buf,12) = OPTION_INVISIBLE;
 		clif->send(buf,packet_len(0x229),bl,SELF);
 	} else {
 		clif->send(buf,packet_len(0x229),bl,AREA);
 	}
-#else
-	WBUFW(buf,0) = 0x119;
-	WBUFL(buf,2) = bl->id;
-	WBUFW(buf,6) = (sc) ? sc->opt1 : 0;
-	WBUFW(buf,8) = (sc) ? sc->opt2 : 0;
-	WBUFL(buf,10) = (sc != NULL) ? sc->option : ((bl->type == BL_NPC) ? BL_UCCAST(BL_NPC, bl)->option : 0);
-	WBUFB(buf,12) = (sd)? sd->status.karma : 0;
-	if (clif->isdisguised(bl)) {
-		clif->send(buf,packet_len(0x119),bl,AREA_WOS);
-		WBUFL(buf,2) = -bl->id;
-		clif->send(buf,packet_len(0x119),bl,SELF);
-		WBUFL(buf,2) = bl->id;
-		WBUFW(buf,10) = OPTION_INVISIBLE;
-		clif->send(buf,packet_len(0x119),bl,SELF);
-	} else {
-		clif->send(buf,packet_len(0x119),bl,AREA);
-	}
-#endif
 }
 
 /// Displays status change effects on NPCs/monsters (ZC_NPC_SHOWEFST_UPDATE).
@@ -4623,12 +4604,14 @@ void clif_skillinfoblock(struct map_session_data *sd)
 			WFIFOW(fd, len)   = id;
 			WFIFOL(fd, len + 2) = skill->get_inf(id);
 
-			if (sd->state.autotarget && //MouRO: Convert offensive melee skills to automatic.
+			level = sd->status.skill[i].lv;
+
+			if (sd->state.autotarget &&
 					WFIFOL(fd,len+2) == INF_ATTACK_SKILL &&
-					skill->get_range(id, sd->status.skill[i].lv) < 5)
+					level > 0 &&
+					skill->get_range(id, level) < 5)
 						WFIFOL(fd,len+2) = INF_SELF_SKILL;
 
-			level = sd->status.skill[i].lv;
 			WFIFOW(fd, len + 6) = level;
 			if (level) {
 				WFIFOW(fd, len + 8) = skill->get_sp(id, level);
@@ -6012,7 +5995,7 @@ void clif_item_skill(struct map_session_data *sd,uint16 skill_id,uint16 skill_lv
 
 	if(sd->state.autotarget &&
 		 WFIFOW(fd, 4) == INF_ATTACK_SKILL &&
-		 skill->get_range(skill_id, skill_lv) < 0 &&
+		 skill->get_range(skill_id, skill_lv) < 5 &&
 		 sd->ud.target)
 				WFIFOW(fd, 4) = INF_SELF_SKILL;
 
@@ -6028,6 +6011,9 @@ void clif_item_skill(struct map_session_data *sd,uint16 skill_id,uint16 skill_lv
 void clif_skill_use(struct map_session_data *sd,int skill_id,int skill_lv,int inf)
 {
 	int fd;
+
+	nullpo_retv(sd);
+
 	fd=sd->fd;
 	WFIFOHEAD(fd,packet_len(0x147));
 	WFIFOW(fd, 0)=0x147;
@@ -11090,9 +11076,9 @@ void clif_parse_UseSkillToId(int fd, struct map_session_data *sd)
 
 	sd->skillitem = sd->skillitemlv = 0;
 
-	if (target_id == sd->bl.id && sd->state.autotarget && tmp == INF_ATTACK_SKILL) {
+	if ( target_id == sd->bl.id && sd->state.autotarget && tmp == INF_ATTACK_SKILL ) {
 		target_id = sd->ud.target;
-		if (!target_id) {
+		if ( !target_id ) {
 			clif_skill_use(sd,skill_id,skill_lv,INF_ATTACK_SKILL);
 			return;
 		}

@@ -427,6 +427,16 @@ ACMD(send)
 #undef GET_VALUE
 }
 
+ACMD(autotarget) {
+	sd->state.autotarget^=1;
+		if(sd->state.autotarget)
+			clif->message(fd, "Offensive melee skills will automatically pick your current target.");
+		else
+			clif->message(fd, "Offensive melee skills behave normally again.");
+		clif->skillinfoblock(sd);
+		return true;
+}
+
 /*==========================================
  * @rura, @warp, @mapmove
  *------------------------------------------*/
@@ -9454,6 +9464,7 @@ void atcommand_basecommands(void) {
 	 * Command reference list, place the base of your commands here
 	 **/
 	AtCommandInfo atcommand_base[] = {
+		ACMD_DEF(autotarget),
 		ACMD_DEF2("warp", mapmove),
 		ACMD_DEF(where),
 		ACMD_DEF(jumpto),

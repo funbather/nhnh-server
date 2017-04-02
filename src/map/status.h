@@ -858,6 +858,10 @@ typedef enum sc_type {
 	SC_FORCEARMOR,
 	SC_GODSSTRENGTH,
 	SC_SQUASHED,
+	SC_CHILLED,
+	SC_DEEPFREEZE,
+	SC_WAITFREEZE,
+	SC_DISCHARGE,
 #ifndef SC_MAX
 	SC_MAX, //Automatically updated max, used in for's to check we are within bounds.
 #endif
@@ -1839,6 +1843,9 @@ enum si_type {
 	SI_FORCEARMOR                          = 976,
 	SI_GODSSTRENGTH                        = 977,
 	SI_SQUASHED                            = 978,
+	SI_CHILLED                             = 979,
+	SI_DEEPFREEZE                          = 980,
+	SI_DISCHARGE                           = 981,
 #ifndef SI_MAX
 	SI_MAX,
 #endif
@@ -1903,22 +1910,24 @@ enum {
 
 //opt2: Stackable status changes.
 enum {
-	OPT2_POISON       = 0x0001,
-	OPT2_CURSE        = 0x0002,
-	OPT2_SILENCE      = 0x0004,
-	OPT2_SIGNUMCRUCIS = 0x0008,
-	OPT2_BLIND        = 0x0010,
-	//OPT2_ANGELUS      = 0x0020,
-	OPT2_BLEEDING     = 0x0040,
-	OPT2_DPOISON      = 0x0080,
-	OPT2_FEAR         = 0x0100,
-	OPT2_IGNITE       = 0x0200,
-	OPT2_MARKED       = 0x0400,
-	OPT2_SHATTER      = 0x0800,
-	OPT2_CAMO         = 0x1000,
-	OPT2_FORCEARMOR   = 0x2000,
-	OPT2_GODSSTRENGTH = 0x4000,
-	OPT2_SQUASHED     = 0x0020, // causes overflow at 0x8000, fix later
+	OPT2_POISON       = 0x00001,
+	OPT2_CURSE        = 0x00002,
+	OPT2_SILENCE      = 0x00004,
+	OPT2_SIGNUMCRUCIS = 0x00008,
+	OPT2_BLIND        = 0x00010,
+	OPT2_ANGELUS      = 0x00020,
+	OPT2_BLEEDING     = 0x00040,
+	OPT2_DPOISON      = 0x00080,
+	OPT2_FEAR         = 0x00100,
+	OPT2_IGNITE       = 0x00200,
+	OPT2_MARKED       = 0x00400,
+	OPT2_SHATTER      = 0x00800,
+	OPT2_CAMO         = 0x01000,
+	OPT2_FORCEARMOR   = 0x02000,
+	OPT2_GODSSTRENGTH = 0x04000,
+	OPT2_SQUASHED     = 0x08000,
+	OPT2_CHILLED      = 0x10000,
+	OPT2_DEEPFREEZE   = 0x20000,
 };
 
 //opt3: (SHOW_EFST_*)
@@ -2124,7 +2133,7 @@ struct status_change {
 	unsigned int option;// effect state (bitfield)
 	unsigned int opt3;// skill state (bitfield)
 	unsigned short opt1;// body state
-	unsigned short opt2;// health state (bitfield)
+	unsigned int opt2;// health state (bitfield)
 	unsigned char count;
 	//TODO: See if it is possible to implement the following SC's without requiring extra parameters while the SC is inactive.
 	unsigned char jb_flag; //Joint Beat type flag

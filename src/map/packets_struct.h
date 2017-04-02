@@ -420,7 +420,7 @@ struct packet_idle_unit2 {
 	uint32 GID;
 	int16 speed;
 	int16 bodyState;
-	int16 healthState;
+	uint32 healthState;
 	int16 effectState;
 	int16 job;
 	int16 head;
@@ -457,7 +457,7 @@ struct packet_spawn_unit2 {
 	uint32 GID;
 	int16 speed;
 	int16 bodyState;
-	int16 healthState;
+	uint32 healthState;
 	int16 effectState;
 	int16 head;
 	int16 weapon;
@@ -487,7 +487,7 @@ struct packet_spawn_unit {
 	uint32 GID;
 	int16 speed;
 	int16 bodyState;
-	int16 healthState;
+	uint32 healthState;
 	int32 effectState;
 	int16 job;
 	int16 head;
@@ -526,7 +526,7 @@ struct packet_unit_walking {
 	uint32 GID;
 	int16 speed;
 	int16 bodyState;
-	int16 healthState;
+	uint32 healthState;
 	int32 effectState;
 	int16 job;
 	int16 head;
@@ -566,7 +566,7 @@ struct packet_idle_unit {
 	uint32 GID;
 	int16 speed;
 	int16 bodyState;
-	int16 healthState;
+	uint32 healthState;
 	int32 effectState;
 	int16 job;
 	int16 head;

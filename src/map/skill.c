@@ -849,6 +849,26 @@ int skill_additional_effect(struct block_list* src, struct block_list *bl, uint1
 			sc_start(src,bl,SC_BLOODING,100,skill_lv,skill->get_time(skill_id,skill_lv));
 			break;
 
+		case MGN_INCINERATE:
+			sc_start2(src,bl,SC_IGNITE,100,skill_lv,status_get_dex(src),skill->get_time(skill_id,skill_lv));
+			break;
+
+		case MGN_EXPLOSION:
+			status_change_end(bl, SC_IGNITE, INVALID_TIMER);
+			break;
+
+		case MGN_ICICLEEDGE:
+			sc_start(src,bl,SC_CHILLED,100,35,skill->get_time(skill_id,skill_lv));
+			break;
+
+		case MGN_ICENOVA:
+			sc_start(src,bl,SC_CHILLED,100,35,skill->get_time(skill_id,skill_lv));
+			break;
+
+		case MGN_FROSTBITE:
+			sc_start(src,bl,SC_CHILLED,100,35,skill->get_time(skill_id,skill_lv));
+			break;
+
 		case SM_BASH:
 			if( sd && skill_lv > 5 && pc->checkskill(sd,SM_FATALBLOW)>0 )
 				status->change_start(src,bl,SC_STUN,500*(skill_lv-5)*sd->status.base_level/50,
@@ -2499,6 +2519,10 @@ int skill_attack(int attack_type, struct block_list* src, struct block_list *dsr
 
 	//Display damage.
 	switch( skill_id ) {
+		case MGN_STORMLOCUS_PULSE:
+			dmg.amotion = 100 + rnd()%900; // random buffer so that hits from multiple loci are more visually distinct
+			skill->attack_display_unknown(&attack_type, src, dsrc, bl, &skill_id, &skill_lv, &tick, &flag, &type, &dmg, &damage);
+			break;
 		case PA_GOSPEL: //Should look like Holy Cross [Skotlex]
 			dmg.dmotion = clif->skill_damage(dsrc,bl,tick,dmg.amotion,dmg.dmotion, damage, dmg.div_, CR_HOLYCROSS, -1, BDT_SPLASH);
 			break;
@@ -2719,13 +2743,13 @@ int skill_attack(int attack_type, struct block_list* src, struct block_list *dsr
 		}
 	}
 
-	if (dmg.dmg_lv >= ATK_MISS && (type = skill->get_walkdelay(skill_id, skill_lv)) > 0) {
+	/*if (dmg.dmg_lv >= ATK_MISS && (type = skill->get_walkdelay(skill_id, skill_lv)) > 0) {
 		//Skills with can't walk delay also stop normal attacking for that
 		//duration when the attack connects. [Skotlex]
 		struct unit_data *ud = unit->bl2ud(src);
 		if (ud && DIFF_TICK(ud->attackabletime, tick + type) < 0)
 			ud->attackabletime = tick + type;
-	}
+	}*/
 
 	shadow_flag = skill->check_shadowform(bl, damage, dmg.div_);
 
@@ -2900,6 +2924,23 @@ int skill_attack(int attack_type, struct block_list* src, struct block_list *dsr
 	) {
 		//skill->addtimerskill(src, tick + dmg.div_*dmg.amotion, bl->id, 0, 0, skill_id, skill_lv, BF_MAGIC, flag|2);
 		skill->addtimerskill(src, tick + dmg.amotion, bl->id, 0, 0, skill_id, skill_lv, BF_MAGIC, flag|2);
+	}
+
+	if ( sd && pc->checkskill(sd,MGN_DISCHARGE) && dmg.flag&BF_SKILL && dmg.flag&BF_MAGIC ) { // MGN_DISCHARGE apply buff after every offensive spell
+		int skl = pc->checkskill(sd,MGN_DISCHARGE);
+		int ratio = 150 + 20 * skl;
+		int ias = 20 * status_get_dex(src); // val2 -> +2% IAS/MST while buff active
+
+		ratio = status->get_matk(src, 2) * ratio / 100; // val1 -> 150 + 20*skill_lv% MATK added to next physical attack as ATK
+
+		sc_start2(src,src,SC_DISCHARGE,100,ratio,ias,-1);
+	}
+
+	if ( skill_id == MGN_FROSTBITE && damage > 0 ) {
+		struct status_change *tsc = status->get_sc(bl);
+
+		if ( dmg.type == BDT_CRIT && tsc && tsc->data[SC_CHILLED] )
+			sc_start(src,bl,SC_WAITFREEZE,100,0,dmg.amotion + 100);
 	}
 
 	if ( tsd && pc->checkskill(tsd,THF_ADRENALINERUSH) ) // trigger adrenaline rush on target regardless of damage
@@ -3609,6 +3650,22 @@ int skill_activate_reverberation(struct block_list *bl, va_list ap)
 	return 0;
 }
 
+int skill_stormlocus_pulse(struct block_list *bl, va_list ap)
+{
+	struct skill_unit *su = NULL;
+	struct skill_unit_group *sg = NULL;
+
+	nullpo_ret(bl);
+	if (bl->type != BL_SKILL)
+		return 0;
+	su = BL_UCAST(BL_SKILL, bl);
+
+	if( su->alive && (sg = su->group) != NULL ) {
+		int64 tick = timer->gettick();
+		map->foreachinrange(skill->trap_splash, bl, skill->get_splash(sg->skill_id, sg->skill_lv), sg->bl_flag, bl, tick);
+	}
+	return 0;
+}
 int skill_reveal_trap(struct block_list *bl, va_list ap)
 {
 	struct skill_unit *su = NULL;
@@ -3885,6 +3942,7 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 				if( path_exists ) {
 					skill->attack(BF_WEAPON, src, src, bl, skill_id, skill_lv, tick, dist);
 					unit->setdir(src, (dir+4)%8);
+					unit->attack(src, bl->id, 1); // autotarget after successful cast
 				}
 			}
 			break;
@@ -3892,6 +3950,7 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 		case NC_FLAMELAUNCHER:
 			if (sd) pc->overheat(sd,1);
 			/* Fall through */
+		case MGN_ICICLEEDGE:
 		case SN_SHARPSHOOTING:
 		case MA_SHARPSHOOTING:
 		case NJ_KAMAITACHI:
@@ -4070,9 +4129,10 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 		case MH_XENO_SLASHER:
 		case SU_SCRATCH:
 		case SU_LUNATICCARROTBEAT:
-		case SWD_METEORMASH:
 		case SWD_SLEDGEHAMMER:
+		case SWD_METEORMASH:
 		case THF_BLADEFLOURISH:
+		case MGN_EXPLOSION:
 			if (flag&1) { //Recursive invocation
 				// skill->area_temp[0] holds number of targets in area
 				// skill->area_temp[1] holds the id of the original target
@@ -4095,6 +4155,7 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 				if (skill_id == SU_SCRATCH && status->get_lv(src) >= 30 && (rnd() % 100 < (int)(status->get_lv(src) / 30) + 10)) // TODO: Need activation chance.
 					skill->addtimerskill(src, tick + skill->get_delay(skill_id, skill_lv), bl->id, 0, 0, skill_id, skill_lv, BF_WEAPON, flag);
 			} else {
+				struct status_change *tsc = status->get_sc(bl);
 				switch ( skill_id ) {
 					case NJ_BAKUENRYU:
 					case LG_EARTHDRIVE:
@@ -4114,6 +4175,11 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 						break;
 					default:
 						break;
+				}
+
+				if( skill_id == MGN_EXPLOSION && !(tsc && tsc->data[SC_IGNITE]) ) { // break out if target isn't ignited
+					flag |= 1;
+					break;
 				}
 
 				skill->area_temp[0] = 0;
@@ -4291,6 +4357,9 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 			skill->attack(BF_MAGIC,src,src,bl,skill_id,skill_lv,tick,flag);
 			break;
 
+		case MGN_LIGHTNINGBOLT:
+		case MGN_FIRELANCE:
+		case MGN_INCINERATE:
 		case ACO_HALLOWEDBOLT:
 		case ACO_HEAVENLYBLOW:
 		case MG_SOULSTRIKE:
@@ -4317,6 +4386,10 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 		case WM_METALICSOUND:
 		case MH_ERASER_CUTTER:
 		case KO_KAIHOU:
+			skill->attack(BF_MAGIC,src,src,bl,skill_id,skill_lv,tick,flag);
+			break;
+
+		case MGN_STORMLOCUS_PULSE:
 			skill->attack(BF_MAGIC,src,src,bl,skill_id,skill_lv,tick,flag);
 			break;
 
@@ -4641,6 +4714,7 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 					clif->status_change(src, SI_POSTDELAY, 1, skill->delay_fix(src, spell_skill_id, spell_skill_lv), 0, 0, 0);
 
 					cooldown = skill->get_cooldown(spell_skill_id, spell_skill_lv);
+
 					for (i = 0; i < ARRAYLENGTH(sd->skillcooldown) && sd->skillcooldown[i].id; i++) {
 						if (sd->skillcooldown[i].id == spell_skill_id){
 							cooldown += sd->skillcooldown[i].val;
@@ -4978,7 +5052,7 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 				} else {
 					skill->area_temp[1] = bl->id;
 					map->foreachinrange(skill->area_sub, bl,
-					                    sd->bonus.splash_range, BL_CHAR,
+					                    sd->bonus.splash_range + skill_lv, BL_CHAR,
 					                    src, skill_id, skill_lv, tick, flag | BCT_ENEMY | 1,
 					                    skill->castend_damage_id);
 					flag|=1; //Set flag to 1 so ammo is not double-consumed. [Skotlex]
@@ -4997,6 +5071,18 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 
 	if( sc && sc->data[SC_DOUBLETEAM] ) // removed on offensive skill use
 		status_change_end(src,SC_DOUBLETEAM,INVALID_TIMER);
+
+
+	if( sc && sc->data[SC_DISCHARGE] && (!skill_id || skill_id == ACO_HEAVENLYBLOW || skill->get_type(skill_id) == BF_WEAPON) ) { // remove on weapon attack (and ACO_HEAVENLYBLOW)
+		if( sd )
+			map->foreachinarea(skill->stormlocus_pulse, src->m, src->x-9, src->y-9, src->x+9, src->y+9, BL_SKILL); // trigger loci
+
+		clif->specialeffect(bl, 1, AREA); // discharge effect has to be here since it's not tied to a particular skill
+		status_change_end(src, SC_DISCHARGE, INVALID_TIMER);
+	}
+
+	if( sd && skill_id && skill->get_type(skill_id) == BF_MAGIC && skill_id != MGN_STORMLOCUS_PULSE && !(flag&1) ) // trigger all nearby loci on offensive spell use (except the pulse attack itself!)
+		map->foreachinarea(skill->stormlocus_pulse, src->m, src->x-9, src->y-9, src->x+9, src->y+9, BL_SKILL);     // flag check is so this does not trigger on recursive calls (splash dmg, etc)
 
 	map->freeblock_unlock();
 
@@ -5245,10 +5331,21 @@ int skill_castend_id(int tid, int64 tick, int id, intptr_t data)
 		if (ud->walktimer != INVALID_TIMER && ud->skill_id != TK_RUN && ud->skill_id != RA_WUGDASH)
 			unit->stop_walking(src, STOPWALKING_FLAG_FIXPOS);
 
-		if( !sd || sd->skillitem != ud->skill_id || skill->get_delay(ud->skill_id,ud->skill_lv) )
+		if( !sd || sd->skillitem != ud->skill_id || skill->get_delay(ud->skill_id,ud->skill_lv) ) {
+			if( sd ) {
+				if( ud->state.attack_continue )
+					ud->attackabletime = tick + skill->delay_fix(src, ud->skill_id, ud->skill_lv) + 350; // additional 350ms delay after skill-use before attacking resumes
+			}																							 // prevents autoattacks from slipping in even while mashing skills
 			ud->canact_tick = tick + skill->delay_fix(src, ud->skill_id, ud->skill_lv); // Tests show wings don't overwrite the delay but skill scrolls do. [Inkfish]
+		}
 		if (sd) { // Cooldown application
 			int i, cooldown = skill->get_cooldown(ud->skill_id, ud->skill_lv);
+
+			if ( ud->skill_id == MGN_ICICLEEDGE ) // 1% faster cooldown expiration per mst
+				cooldown = (cooldown * 100) / (100 + status_get_dex(src));
+			if ( ud->skill_id == MGN_ICENOVA )
+				cooldown = (cooldown * 100) / (100 + status_get_dex(src));
+
 			for (i = 0; i < ARRAYLENGTH(sd->skillcooldown) && sd->skillcooldown[i].id; i++) { // Increases/Decreases cooldown of a skill by item/card bonuses.
 				if (sd->skillcooldown[i].id == ud->skill_id){
 					cooldown += sd->skillcooldown[i].val;
@@ -5640,7 +5737,7 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 
 		case SWD_SWASHBUCKLING:
 			if ( flag&1 ) {
-				sc_start(src, bl, type, 100, (15 + (status_get_dex(src) / 4)) + skill_lv * 3, skill->get_time(skill_id,skill_lv));
+				sc_start(src, bl, type, 100, 150 + status_get_dex(src) + skill_lv * 30, skill->get_time(skill_id,skill_lv));
 			} else {
 				skill->area_temp[2] = 0;
 				clif->skill_nodamage(src,bl,skill_id,skill_lv,1);
@@ -5737,6 +5834,11 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 
 		case ACO_GODSSTRENGTH:
 			sc_start2(src, bl, type, 100, 10 + 2 * skill_lv, status_get_dex(src), skill->get_time(skill_id, skill_lv));
+			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
+		break;
+
+		case MGN_CRYSTALLIZE:
+			sc_start(src, bl, type, 100, (10 + 6 * skill_lv) * (status_get_dex(src) + 100) / 100, skill->get_time(skill_id, skill_lv));
 			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
 		break;
 
@@ -6628,6 +6730,9 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 			                    skill->castend_damage_id);
 			break;
 
+		case MGN_FROSTBITE:
+		case MGN_ICENOVA: // this normally triggers from castend_damage_id, need this here for self-target aoe skills
+			map->foreachinarea(skill->stormlocus_pulse, src->m, src->x-9, src->y-9, src->x+9, src->y+9, BL_SKILL);
 		case NJ_HYOUSYOURAKU:
 		case NJ_RAIGEKISAI:
 		case WZ_FROSTNOVA:
@@ -10365,8 +10470,13 @@ int skill_castend_pos(int tid, int64 tick, int id, intptr_t data)
 		if (ud->walktimer != INVALID_TIMER)
 			unit->stop_walking(src, STOPWALKING_FLAG_FIXPOS);
 
-		if( !sd || sd->skillitem != ud->skill_id || skill->get_delay(ud->skill_id,ud->skill_lv) )
+		if( !sd || sd->skillitem != ud->skill_id || skill->get_delay(ud->skill_id,ud->skill_lv) ) {
+			if( sd ) {
+				if( ud->state.attack_continue )
+					ud->attackabletime = tick + skill->delay_fix(src, ud->skill_id, ud->skill_lv);
+			}
 			ud->canact_tick = tick + skill->delay_fix(src, ud->skill_id, ud->skill_lv);
+		}
 		if (sd) { //Cooldown application
 			int i, cooldown = skill->get_cooldown(ud->skill_id, ud->skill_lv);
 			for (i = 0; i < ARRAYLENGTH(sd->skillcooldown) && sd->skillcooldown[i].id; i++) { // Increases/Decreases cooldown of a skill by item/card bonuses.
@@ -10699,9 +10809,12 @@ int skill_castend_pos2(struct block_list* src, int x, int y, uint16 skill_id, ui
 			}
 		}
 		FALLTHROUGH
+		case MGN_IONPULSE:
+		case MGN_COMET: // normally triggered through castend_damage_id, needed here for unit-placing spells (except locus itself)
+			if( sd ) { map->foreachinarea(skill->stormlocus_pulse, src->m, src->x-9, src->y-9, src->x+9, src->y+9, BL_SKILL); }
+		case MGN_STORMLOCUS:
 		case MG_FIREWALL:
 		case MG_THUNDERSTORM:
-
 		case AL_PNEUMA:
 		case WZ_FIREPILLAR:
 		case WZ_QUAGMIRE:
@@ -11849,6 +11962,14 @@ struct skill_unit_group* skill_unitsetting(struct block_list *src, uint16 skill_
 		case SO_VACUUM_EXTREME:
 			val1 = x;
 			val2 = y;
+			break;
+		case MGN_IONPULSE:
+			val1 = x;
+			val2 = y;
+			break;
+		case MGN_STORMLOCUS:
+			val1 = skill_lv;
+			val2 = status->get_matk(src,2);
 			break;
 		case GN_WALLOFTHORN:
 			if( flag&1 )
@@ -13009,6 +13130,16 @@ int skill_unit_onplace_timer(struct skill_unit *src, struct block_list *bl, int6
 						clif->fixpos(bl);
 					}
 				}
+			}
+			break;
+
+		case UNT_IONPULSE:
+			sc_start(ss, bl, SC_STUN, 100, sg->skill_lv, skill->get_time2(sg->skill_id,sg->skill_lv) * (100 + status_get_dex(ss)) / 100);
+			skill->attack(skill->get_type(sg->skill_id),ss,&src->bl,bl,sg->skill_id,sg->skill_lv,tick,0);
+
+			if (unit->movepos(bl, sg->val1, sg->val2, 0, 0)) {
+				clif->slide(bl, sg->val1, sg->val2);
+				clif->fixpos(bl);
 			}
 			break;
 
@@ -15425,6 +15556,13 @@ int skill_vfcastfix(struct block_list *bl, double time, uint16 skill_id, uint16 
 	if ( sd )
 		castspeed += sd->bonus.castspeed; // +cast speed from items
 
+	switch( skill_id ) { // +1% more cast speed per mst
+		case ACO_RAISE:
+		case MGN_FIRELANCE:
+		case MGN_COMET:
+		castspeed = castspeed * (100 + status_get_dex(bl)) / 100;
+	}
+
 	if( varcast_r < 0 ) // now compute overall factors
 		time = time * (1 - (float)varcast_r / 100);
 	if( !(skill->get_castnodex(skill_id, skill_lv)&1) )
@@ -15524,10 +15662,9 @@ int skill_delay_fix (struct block_list *bl, uint16 skill_id, uint16 skill_lv)
 		time = time * battle_config.delay_rate / 100;
 
 	//min delay
-	time = max(time, status_get_amotion(bl)); // Delay can never be below amotion [Playtester]
+	time = max(time, status_get_amotion(bl) * 150 / 100); // capped to x1.5 amotion
 	time = max(time, battle_config.min_skill_delay_limit);
 
-//        ShowInfo("Delay delayfix = %d\n",time);
 	return time;
 }
 
@@ -16407,6 +16544,9 @@ int skill_trap_splash(struct block_list *bl, va_list ap)
 		return 0;
 
 	switch(sg->unit_id){
+		case UNT_STORMLOCUS:
+			skill->attack(BF_MAGIC,ss,src,bl,MGN_STORMLOCUS_PULSE,sg->skill_lv,tick,0);
+			break;
 		case UNT_SHOCKWAVE:
 		case UNT_SANDMAN:
 		case UNT_FLASHER:
@@ -21186,6 +21326,7 @@ void skill_defaults(void)
 	skill->locate_element_field = skill_locate_element_field;
 	skill->graffitiremover = skill_graffitiremover;
 	skill->activate_reverberation = skill_activate_reverberation;
+	skill->stormlocus_pulse = skill_stormlocus_pulse;
 	skill->dance_overlap = skill_dance_overlap;
 	skill->dance_overlap_sub = skill_dance_overlap_sub;
 	skill->get_unit_layout = skill_get_unit_layout;

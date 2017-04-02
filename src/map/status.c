@@ -778,6 +778,9 @@ void initChangeTables(void)
 	status->set_sc( SWD_METEORMASH , SC_SQUASHED , SI_SQUASHED , SCB_SPEED );
 	add_sc( SWD_SKULLCRACK , SC_STUN );
 	add_sc( THF_PUNCTURE , SC_BLOODING );
+	status->set_sc( MGN_ICICLEEDGE , SC_CHILLED , SI_CHILLED , SCB_ASPD|SCB_SPEED );
+	status->set_sc( MGN_CRYSTALLIZE , SC_DEEPFREEZE , SI_DEEPFREEZE , SCB_SPEED );
+	add_sc( MGN_IONPULSE , SC_STUN );
 
 	// Storing the target job rather than simply SC_SOULLINK simplifies code later on.
 	status->dbs->Skill2SCTable[SL_ALCHEMIST]   = (sc_type)MAPID_ALCHEMIST,
@@ -797,6 +800,7 @@ void initChangeTables(void)
 	status->dbs->Skill2SCTable[SL_SOULLINKER]  = (sc_type)MAPID_SOUL_LINKER,
 
 	// Status that don't have a skill associated.
+	status->dbs->IconChangeTable[SC_DISCHARGE] = SI_DISCHARGE;
 	status->dbs->IconChangeTable[SC_WEIGHTOVER50] = SI_WEIGHTOVER50;
 	status->dbs->IconChangeTable[SC_WEIGHTOVER90] = SI_WEIGHTOVER90;
 	status->dbs->IconChangeTable[SC_ATTHASTE_POTION1] = SI_ATTHASTE_POTION1;
@@ -1004,6 +1008,7 @@ void initChangeTables(void)
 	status->dbs->IconChangeTable[SC_SPRITEMABLE] = SI_SPRITEMABLE;
 
 	// Other SC which are not necessarily associated to skills.
+	status->dbs->ChangeFlagTable[SC_DISCHARGE] |= SCB_ASPD;
 	status->dbs->ChangeFlagTable[SC_ATTHASTE_POTION1] |= SCB_ASPD;
 	status->dbs->ChangeFlagTable[SC_ATTHASTE_POTION2] |= SCB_ASPD;
 	status->dbs->ChangeFlagTable[SC_ATTHASTE_POTION3] |= SCB_ASPD;
@@ -2633,6 +2638,9 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	if ( pc->checkskill(sd,ACO_SOUL) > 0 )
 		bstatus->dex += bstatus->dex * 20 / 100;
 
+	if ( pc->checkskill(sd,MGN_SOUL) > 0 )
+		bstatus->int_ += bstatus->int_ * 20 / 100;
+
 	// ------ BASE ATTACK CALCULATION ------
 
 	// Base batk value is set on status->calc_misc
@@ -2677,6 +2685,9 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	// Absolute modifiers from passive skills
 
 	// Apply relative modifiers from equipment
+	if ( pc->checkskill(sd,MGN_SOUL) )
+		sd->sprate += 20;
+
 	if(sd->sprate < 0)
 		sd->sprate = 0;
 	if(sd->sprate!=100)
@@ -2783,6 +2794,10 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	// ----- EQUIPMENT-DEF CALCULATION -----
 
 	// Absolute modifiers from passive skills
+
+	if( (skill_lv = pc->checkskill(sd,SWD_HARDHEARTED)) > 0 ) // SWD_HARDHEARTED +skill_lv * 4% DEF
+		bstatus->def += bstatus->def * skill_lv * 4 / 100;
+
 	if( (skill_lv = pc->checkskill(sd,SWD_PAVISE)) > 0 && sd->status.shield ) { // SWD_PAVISE +skill_lv% Phys-Block, +skill_lv/2% Mag-Block
 		bstatus->def2 += skill_lv * 10;
 		bstatus->mdef2 += skill_lv * 5;
@@ -2796,10 +2811,10 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 		bstatus->def = cap_value(i, DEFTYPE_MIN, DEFTYPE_MAX);
 	}
 
-	if( (skill_lv = pc->checkskill(sd,SWD_HARDHEARTED)) > 0 ) // SWD_HARDHEARTED +skill_lv * 4% DEF
-		bstatus->def += bstatus->def * skill_lv * 4 / 100;
-
 	// ----- EQUIPMENT-MDEF CALCULATION -----
+
+	bstatus->mdef += bstatus->int_;                       // INT Bonus - +1 MDEF
+	bstatus->mdef += bstatus->mdef * bstatus->int_ / 100; //           - +1% MDEF
 
 	// Apply relative modifiers from equipment
 	if(sd->mdef_rate < 0)
@@ -2808,9 +2823,6 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 		i =  bstatus->mdef * sd->mdef_rate/100;
 		bstatus->mdef = cap_value(i, DEFTYPE_MIN, DEFTYPE_MAX);
 	}
-
-	bstatus->mdef += bstatus->int_;                       // INT Bonus - +1 MDEF
-	bstatus->mdef += bstatus->mdef * bstatus->int_ / 100; //           - +1% MDEF
 
 	// ----- ASPD CALCULATION -----
 	// Unlike other stats, ASPD rate modifiers from skills/SCs/items/etc are first all added together, then the final modifier is applied
@@ -4367,7 +4379,7 @@ unsigned short status_calc_batk(struct block_list *bl, struct status_change *sc,
 	if (sc->data[SC_SHRIMP])
 		batk += batk * sc->data[SC_SHRIMP]->val2 / 100;
 	if (sc->data[SC_SWASHBUCKLING])
-		batk -= batk * sc->data[SC_SWASHBUCKLING]->val1 / 100;
+		batk -= batk * sc->data[SC_SWASHBUCKLING]->val1 / 1000;
 
 	return (unsigned short)cap_value(batk,0,USHRT_MAX);
 }
@@ -4836,8 +4848,6 @@ defType status_calc_def(struct block_list *bl, struct status_change *sc, int def
 #ifndef RENEWAL
 	if (sc->data[SC_STONE] && sc->opt1 == OPT1_STONE)
 		def >>=1;
-	if (sc->data[SC_FREEZE])
-		def >>=1;
 	if (sc->data[SC_INCDEFRATE])
 		def += def * sc->data[SC_INCDEFRATE]->val1/100;
 #endif
@@ -4989,8 +4999,6 @@ defType status_calc_mdef(struct block_list *bl, struct status_change *sc, int md
 		mdef += sc->data[SC_STONEHARDSKIN]->val1;
 	if(sc->data[SC_STONE] && sc->opt1 == OPT1_STONE)
 		mdef += 25*mdef/100;
-	if(sc->data[SC_FREEZE])
-		mdef += 25*mdef/100;
 	if(sc->data[SC_ANALYZE])
 		mdef -= mdef * ( 14 * sc->data[SC_ANALYZE]->val1 ) / 100;
 	if(sc->data[SC_SYMPHONY_LOVE])
@@ -5070,7 +5078,8 @@ unsigned short status_calc_speed(struct block_list *bl, struct status_change *sc
 				val += 20;
 			if ( sc && sc->data[SC_SQUASHED] )
 				val -= 50;
-
+			if ( sc && sc->data[SC_CHILLED] )
+				val -= sc->data[SC_CHILLED]->val1;
 			speed_rate += val;
 		}
 
@@ -5263,6 +5272,12 @@ short status_calc_aspd_rate(struct block_list *bl, struct status_change *sc, int
 
 	if ( sc->data[SC_DOUBLETEAM] )
 		aspd_rate += sc->data[SC_DOUBLETEAM]->val1;
+
+	if ( sc->data[SC_CHILLED] )
+		aspd_rate -= aspd_rate * sc->data[SC_CHILLED]->val1 / 100;
+
+	if ( sc->data[SC_DISCHARGE] )
+		aspd_rate += sc->data[SC_DISCHARGE]->val2;
 
 	if( !sc->data[SC_QUAGMIRE] ){
 		int max = 0;
@@ -5541,8 +5556,6 @@ unsigned char status_calc_element(struct block_list *bl, struct status_change *s
 	if(!sc || !sc->count)
 		return element;
 
-	if(sc->data[SC_FREEZE])
-		return ELE_WATER;
 	if(sc->data[SC_STONE] && sc->opt1 == OPT1_STONE)
 		return ELE_EARTH;
 	if(sc->data[SC_BENEDICTIO])
@@ -5562,8 +5575,6 @@ unsigned char status_calc_element_lv(struct block_list *bl, struct status_change
 	if(!sc || !sc->count)
 		return lv;
 
-	if(sc->data[SC_FREEZE])
-		return 1;
 	if(sc->data[SC_STONE] && sc->opt1 == OPT1_STONE)
 		return 1;
 	if(sc->data[SC_BENEDICTIO])
@@ -6784,6 +6795,8 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				case SC_SWASHBUCKLING:
 				case SC_SQUASHED:
 				case SC_SWAGGER:
+				case SC_CHILLED:
+				case SC_DEEPFREEZE:
 					tick = tick * sd->debuffself_rate / 100;
 					break;
 			}
@@ -6818,6 +6831,8 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				case SC_SWASHBUCKLING:
 				case SC_SQUASHED:
 				case SC_SWAGGER:
+				case SC_CHILLED:
+				case SC_DEEPFREEZE:
 					tick = tick * src_sd->debuffother_rate / 100;
 					break;
 			}
@@ -7836,7 +7851,8 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				tick_time = 100;
 
 				// POISON - 4% of mhp per second
-				val4 = (1 + st->max_hp / 50);
+				// val2 - bonus damage
+				val4 = (1 + st->max_hp / 50) * ( val2 + 100 ) / 100;
 				break;
 
 			case SC_IGNITE:
@@ -7846,7 +7862,8 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				tick_time = 100;
 
 				// IGNITE - 8% of mhp per second, reduced by MDEF
-				val4 = (int) ( (100.0f - st->mdef / (st->mdef + 700.0f) * 100.0f) / 100.0f * (1 + st->max_hp / 25) );
+				// val2 - bonus damage
+				val4 = (int) ( (100.0f - st->mdef / (st->mdef + 700.0f) * 100.0f) / 100.0f * (1 + st->max_hp / 25) ) * ( val2 + 100 ) / 100;
 				break;
 
 			case SC_BLOODING:
@@ -7856,7 +7873,8 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				tick_time = 100;
 
 				// BLEEDING - 8% of mhp per second, reduced by DEF
-				val4 = (int) ( (100.0f - st->def / (st->def + 700.0f) * 100.0f) / 100.0f * (1 + st->max_hp / 25) );
+				// val2 - bonus damage
+				val4 = (int) ( (100.0f - st->def / (st->def + 700.0f) * 100.0f) / 100.0f * (1 + st->max_hp / 25) ) * ( val2 + 100 ) / 100;
 				break;
 
 			case SC_CONFUSION:
@@ -9367,6 +9385,7 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 			if(!map_flag_gvg(bl->m))
 				unit->stop_walking(bl,1);
 			break;
+		case SC_DEEPFREEZE:
 		case SC_FREEZE:
 		case SC_STUN:
 		case SC_SLEEP:
@@ -9433,6 +9452,7 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 		//OPT1
 		case SC_STONE:         sc->opt1 = OPT1_STONEWAIT;  break;
 		case SC_FREEZE:        sc->opt1 = OPT1_FREEZE;     break;
+		case SC_DEEPFREEZE:    sc->opt1 = OPT1_FREEZE;     break;
 		case SC_STUN:          sc->opt1 = OPT1_STUN;       break;
 		case SC_SLEEP:         sc->opt1 = OPT1_SLEEP;      break;
 		case SC_BURNING:       sc->opt1 = OPT1_BURNING;    break; // Burning need this to be showed correctly. [pakpil]
@@ -9449,7 +9469,7 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 			break;
 
 		case SC_BLIND:        sc->opt2 |= OPT2_BLIND;        break;
-		//case SC_ANGELUS:      sc->opt2 |= OPT2_ANGELUS;      break;
+		case SC_ANGELUS:      sc->opt2 |= OPT2_ANGELUS;      break;
 		case SC_BLOODING:     sc->opt2 |= OPT2_BLEEDING;     break;
 		case SC_DPOISON:      sc->opt2 |= OPT2_DPOISON;      break;
 		case SC_IGNITE:       sc->opt2 |= OPT2_IGNITE;       break;
@@ -9459,6 +9479,7 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 		case SC_FORCEARMOR:   sc->opt2 |= OPT2_FORCEARMOR;   break;
 		case SC_GODSSTRENGTH: sc->opt2 |= OPT2_GODSSTRENGTH; break;
 		case SC_SQUASHED:     sc->opt2 |= OPT2_SQUASHED;     break;
+		case SC_CHILLED:      sc->opt2 |= OPT2_CHILLED;      break;
 		//OPT3
 		case SC_TWOHANDQUICKEN:
 		case SC_ONEHANDQUICKEN:
@@ -9911,6 +9932,9 @@ int status_change_end_(struct block_list* bl, enum sc_type type, int tid, const 
 	vd = status->get_viewdata(bl);
 	calc_flag = status->dbs->ChangeFlagTable[type];
 	switch(type) {
+		case SC_WAITFREEZE: // MGN_FROSTBITE needs a delay after dealing damage to keep the enemy frozen
+			sc_start(NULL,bl,SC_FREEZE,100,0,15000);
+			break;
 		case SC_GRANITIC_ARMOR:
 		{
 			int damage = st->max_hp*sce->val3/100;
@@ -10347,6 +10371,7 @@ int status_change_end_(struct block_list* bl, enum sc_type type, int tid, const 
 	switch(type) {
 		case SC_STONE:
 		case SC_FREEZE:
+		case SC_DEEPFREEZE:
 		case SC_STUN:
 		case SC_SLEEP:
 		case SC_BURNING:
@@ -10388,6 +10413,9 @@ int status_change_end_(struct block_list* bl, enum sc_type type, int tid, const 
 			break;
 		case SC_SQUASHED:
 			sc->opt2 &= ~OPT2_SQUASHED;
+			break;
+		case SC_CHILLED:
+			sc->opt2 &= ~OPT2_CHILLED;
 			break;
 
 		case SC_HIDING:

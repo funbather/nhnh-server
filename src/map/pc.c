@@ -6481,6 +6481,9 @@ int pc_check_job_name(const char *name) {
 		{ "ACO1", 7 },
 		{ "ACO2", 8 },
 		{ "ACO3", 9 },
+		{ "MGN1", 10 },
+		{ "MGN2", 11 },
+		{ "MGN3", 12 },
 	};
 
 	nullpo_retr(-1, name);
