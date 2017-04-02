@@ -1511,7 +1511,7 @@ int pc_reg_received(struct map_session_data *sd)
 }
 
 int pc_calc_skillpoint(struct map_session_data* sd) {
-	int  i,inf2,skill_point=0;
+	int  i,inf2,skill_point=1;
 
 	nullpo_ret(sd);
 
@@ -7174,7 +7174,7 @@ int pc_resetlvl(struct map_session_data* sd,int type)
 		pc->resetskill(sd, PCRESETSKILL_NONE);
 
 	if(type == 1) {
-		sd->status.skill_point=0;
+		sd->status.skill_point=1;
 		sd->status.base_level=1;
 		sd->status.job_level=1;
 		sd->status.base_exp=0;
@@ -7182,12 +7182,12 @@ int pc_resetlvl(struct map_session_data* sd,int type)
 		if(sd->sc.option !=0)
 			sd->sc.option = 0;
 
-		sd->status.str=1;
-		sd->status.agi=1;
-		sd->status.vit=1;
-		sd->status.int_=1;
-		sd->status.dex=1;
-		sd->status.luk=1;
+		sd->status.str=0;
+		sd->status.agi=0;
+		sd->status.vit=0;
+		sd->status.int_=0;
+		sd->status.dex=0;
+		sd->status.luk=0;
 		if (sd->status.class == JOB_NOVICE_HIGH) {
 			sd->status.status_point=100; // not 88 [celest]
 			// give platinum skills upon changing
@@ -7314,7 +7314,7 @@ int pc_resetstate(struct map_session_data* sd)
  *------------------------------------------*/
 int pc_resetskill(struct map_session_data* sd, int flag)
 {
-	int i, inf2, skill_point=0;
+	int i, inf2, skill_point=1;
 	nullpo_ret(sd);
 
 	if (flag&PCRESETSKILL_CHSEX && (sd->job & MAPID_UPPERMASK) != MAPID_BARDDANCER)

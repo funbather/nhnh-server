@@ -143,10 +143,14 @@ int start_zeny = 0;
 struct start_item_s {
 	int id;
 	int amount;
+	int ilvl;
+	int quality;
 	int loc;
 	bool stackable;
 };
 VECTOR_DECL(struct start_item_s) start_items;
+VECTOR_DECL(struct start_item_s) start_items_ST;
+VECTOR_DECL(struct start_item_s) start_items_AM;
 
 int guild_exp_rate = 100;
 
@@ -1589,10 +1593,10 @@ int char_make_new_char_sql(struct char_session_data *sd, const char *name_, int 
 		return -2; /* character account limit exceeded */
 
 	// Insert the new char entry to the database
-	if (SQL_ERROR == SQL->Query(inter->sql_handle, "INSERT INTO `%s` (`account_id`, `char_num`, `name`, `sex`, `class`, `zeny`, `status_point`,`str`, `agi`, `vit`, `int`, `dex`, `luk`, `max_hp`, `hp`,"
+	if (SQL_ERROR == SQL->Query(inter->sql_handle, "INSERT INTO `%s` (`account_id`, `char_num`, `name`, `sex`, `class`, `zeny`, `skill_point`,`str`, `agi`, `vit`, `int`, `dex`, `luk`, `max_hp`, `hp`,"
 		"`max_sp`, `sp`, `hair`, `hair_color`, `last_map`, `last_x`, `last_y`, `save_map`, `save_x`, `save_y`, `class_choices`) VALUES ("
 		"'%d', '%d', '%s', '%c', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d','%d', '%d','%d', '%d', '%s', '%d', '%d', '%s', '%d', '%d', '%d')",
-		char_db, sd->account_id , slot, esc_name, sex, starting_class, start_zeny, 0, str, agi, vit, int_, dex, luk,
+		char_db, sd->account_id , slot, esc_name, sex, starting_class, start_zeny, 1, str, agi, vit, int_, dex, luk,
 		(50 * (100 + vit * 5)/100) , (50 * (100 + vit * 5)/100),  100, 100, hair_style, hair_color,
 		mapindex_id2name(start_point.map), start_point.x, start_point.y, mapindex_id2name(start_point.map), start_point.x, start_point.y, class_choices) )
 	{
@@ -1628,13 +1632,56 @@ int char_make_new_char_sql(struct char_session_data *sd, const char *name_, int 
 			int l, loc = item->loc;
 			for (l = 0; l < item->amount; l++) {
 				if (SQL_ERROR == SQL->Query(inter->sql_handle,
-				                            "INSERT INTO `%s` (`char_id`,`nameid`, `amount`, `equip`, `identify`) VALUES ('%d', '%d', '%d', '%d', '%d')",
-				                            inventory_db, char_id, item->id, 1, loc, 1))
+				                            "INSERT INTO `%s` (`char_id`,`nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`) VALUES ('%d', '%d', '%d', '%d', '%d', '%d', '%d')",
+				                            inventory_db, char_id, item->id, 1, loc, 1, item->quality, item->ilvl))
 					Sql_ShowDebug(inter->sql_handle);
 			}
 		}
 	}
 
+	// SWD / THF starting items
+	if( (class_choices&0x1) || (class_choices&0x10) ) {
+		for (i = 0; i < VECTOR_LENGTH(start_items_ST); i++) {
+			struct start_item_s *item = &VECTOR_INDEX(start_items_ST, i);
+			if (item->stackable) {
+				if (SQL_ERROR == SQL->Query(inter->sql_handle,
+											"INSERT INTO `%s` (`char_id`,`nameid`, `amount`, `identify`) VALUES ('%d', '%d', '%d', '%d')",
+											inventory_db, char_id, item->id, item->amount, 1))
+					Sql_ShowDebug(inter->sql_handle);
+			} else {
+				// Non-stackable items should have their own entries (issue: 7279)
+				int l, loc = item->loc;
+				for (l = 0; l < item->amount; l++) {
+					if (SQL_ERROR == SQL->Query(inter->sql_handle,
+												"INSERT INTO `%s` (`char_id`,`nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`) VALUES ('%d', '%d', '%d', '%d', '%d', '%d', '%d')",
+												inventory_db, char_id, item->id, 1, loc, 1, item->quality, item->ilvl))
+						Sql_ShowDebug(inter->sql_handle);
+				}
+			}
+		}
+	}
+
+	// ACO / MGN starting items
+	if( (class_choices&0x100) || (class_choices&0x1000) ) {
+		for (i = 0; i < VECTOR_LENGTH(start_items_AM); i++) {
+			struct start_item_s *item = &VECTOR_INDEX(start_items_AM, i);
+			if (item->stackable) {
+				if (SQL_ERROR == SQL->Query(inter->sql_handle,
+											"INSERT INTO `%s` (`char_id`,`nameid`, `amount`, `identify`) VALUES ('%d', '%d', '%d', '%d')",
+											inventory_db, char_id, item->id, item->amount, 1))
+					Sql_ShowDebug(inter->sql_handle);
+			} else {
+				// Non-stackable items should have their own entries (issue: 7279)
+				int l, loc = item->loc;
+				for (l = 0; l < item->amount; l++) {
+					if (SQL_ERROR == SQL->Query(inter->sql_handle,
+												"INSERT INTO `%s` (`char_id`,`nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`) VALUES ('%d', '%d', '%d', '%d', '%d', '%d', '%d')",
+												inventory_db, char_id, item->id, 1, loc, 1, item->quality, item->ilvl))
+						Sql_ShowDebug(inter->sql_handle);
+				}
+			}
+		}
+	}
 	ShowInfo("Created char: account: %d, char: %d, slot: %d, name: %s\n", sd->account_id, char_id, slot, name);
 	return char_id;
 }
@@ -5809,17 +5856,22 @@ bool char_config_read_player_name(const char *filename, const struct config_t *c
  *
  * @param setting The already retrieved start_item setting.
  */
-void char_config_set_start_item(const struct config_setting_t *setting)
+void char_config_set_start_item(const struct config_setting_t *setting, const struct config_setting_t *settingST, const struct config_setting_t *settingAM)
 {
-	int i, count;
+	int i, count, count2, count3;
 
 	nullpo_retv(setting);
 
 	VECTOR_CLEAR(start_items);
+	VECTOR_CLEAR(start_items_ST);
+	VECTOR_CLEAR(start_items_AM);
 
 	count = libconfig->setting_length(setting);
-	if (!count)
-		return;
+	count2 = libconfig->setting_length(settingST);
+	count3 = libconfig->setting_length(settingAM);
+
+	/*if (!count)
+		return;*/
 
 	VECTOR_ENSURE(start_items, count, 1);
 
@@ -5845,7 +5897,76 @@ void char_config_set_start_item(const struct config_setting_t *setting)
 		}
 		if (libconfig->setting_lookup_int(t, "loc", &start_item.loc) != CONFIG_TRUE)
 			start_item.loc = 0;
+		if (libconfig->setting_lookup_int(t, "ilvl", &start_item.ilvl) != CONFIG_TRUE)
+			start_item.ilvl = 1;
+		if (libconfig->setting_lookup_int(t, "quality", &start_item.quality) != CONFIG_TRUE)
+			start_item.quality = 100;
+
 		VECTOR_PUSH(start_items, start_item);
+	}
+
+	VECTOR_ENSURE(start_items_ST, count2, 1);
+
+	for (i = 0; i < count2; i++) {
+		const struct config_setting_t *t = libconfig->setting_get_elem(settingST, i);
+		struct start_item_s start_item = { 0 };
+
+		if (t == NULL)
+			continue;
+
+		if (libconfig->setting_lookup_int(t, "id", &start_item.id) != CONFIG_TRUE) {
+			ShowWarning("char_config_read: entry (%d) is missing id! Ignoring...\n", i);
+			continue;
+		}
+		if (libconfig->setting_lookup_int(t, "amount", &start_item.amount) != CONFIG_TRUE) {
+			ShowWarning("char_config_read: entry (%d) is missing amount! Defaulting to 1...\n", i);
+			start_item.amount = 1;
+		}
+		if (libconfig->setting_lookup_bool_real(t, "stackable", &start_item.stackable) != CONFIG_TRUE) {
+			// Without knowing if the item is stackable or not we can't add it!
+			ShowWarning("char_config_read: entry (%d) is missing stackable! Ignoring...\n", i);
+			continue;
+		}
+		if (libconfig->setting_lookup_int(t, "loc", &start_item.loc) != CONFIG_TRUE)
+			start_item.loc = 0;
+		if (libconfig->setting_lookup_int(t, "ilvl", &start_item.ilvl) != CONFIG_TRUE)
+			start_item.ilvl = 1;
+		if (libconfig->setting_lookup_int(t, "quality", &start_item.quality) != CONFIG_TRUE)
+			start_item.quality = 100;
+
+		VECTOR_PUSH(start_items_ST, start_item);
+	}
+
+	VECTOR_ENSURE(start_items_AM, count3, 1);
+
+	for (i = 0; i < count3; i++) {
+		const struct config_setting_t *t = libconfig->setting_get_elem(settingAM, i);
+		struct start_item_s start_item = { 0 };
+
+		if (t == NULL)
+			continue;
+
+		if (libconfig->setting_lookup_int(t, "id", &start_item.id) != CONFIG_TRUE) {
+			ShowWarning("char_config_read: entry (%d) is missing id! Ignoring...\n", i);
+			continue;
+		}
+		if (libconfig->setting_lookup_int(t, "amount", &start_item.amount) != CONFIG_TRUE) {
+			ShowWarning("char_config_read: entry (%d) is missing amount! Defaulting to 1...\n", i);
+			start_item.amount = 1;
+		}
+		if (libconfig->setting_lookup_bool_real(t, "stackable", &start_item.stackable) != CONFIG_TRUE) {
+			// Without knowing if the item is stackable or not we can't add it!
+			ShowWarning("char_config_read: entry (%d) is missing stackable! Ignoring...\n", i);
+			continue;
+		}
+		if (libconfig->setting_lookup_int(t, "loc", &start_item.loc) != CONFIG_TRUE)
+			start_item.loc = 0;
+		if (libconfig->setting_lookup_int(t, "ilvl", &start_item.ilvl) != CONFIG_TRUE)
+			start_item.ilvl = 1;
+		if (libconfig->setting_lookup_int(t, "quality", &start_item.quality) != CONFIG_TRUE)
+			start_item.quality = 100;
+
+		VECTOR_PUSH(start_items_AM, start_item);
 	}
 }
 
@@ -5860,7 +5981,7 @@ void char_config_set_start_item(const struct config_setting_t *setting)
  */
 bool char_config_read_player_new(const char *filename, const struct config_t *config, bool imported)
 {
-	const struct config_setting_t *setting = NULL, *setting2 = NULL;
+	const struct config_setting_t *setting = NULL, *setting2 = NULL, *setting3 = NULL, *setting4 = NULL;
 #ifdef RENEWAL
 	const char *start_point_setting = "start_point_re";
 #else
@@ -5887,8 +6008,10 @@ bool char_config_read_player_new(const char *filename, const struct config_t *co
 		}
 	}
 
-	if ((setting2 = libconfig->setting_get_member(setting, "start_items")))
-		chr->config_set_start_item(setting2);
+	if ((setting2 = libconfig->setting_get_member(setting, "start_items")) &&    // common starting items
+		(setting3 = libconfig->setting_get_member(setting, "start_items_ST")) && // SWD / THF starting items
+		(setting4 = libconfig->setting_get_member(setting, "start_items_AM")))  // ACO / MGN starting items
+		chr->config_set_start_item(setting2,setting3,setting4);
 
 	// start_point / start_point_pre
 	if ((setting2 = libconfig->setting_get_member(setting, start_point_setting))) {
@@ -6014,6 +6137,8 @@ int do_final(void) {
 		VECTOR_CLEAR(chr->server[i].maps);
 
 	VECTOR_CLEAR(start_items);
+	VECTOR_CLEAR(start_items_ST);
+	VECTOR_CLEAR(start_items_AM);
 
 	aFree(chr->CHAR_CONF_NAME);
 	aFree(chr->NET_CONF_NAME);
@@ -6127,6 +6252,8 @@ int do_init(int argc, char **argv) {
 	chr->INTER_CONF_NAME = aStrdup("conf/common/inter-server.conf");
 
 	VECTOR_INIT(start_items);
+	VECTOR_INIT(start_items_ST);
+	VECTOR_INIT(start_items_AM);
 
 	for (i = 0; i < MAX_MAP_SERVERS; i++)
 		VECTOR_INIT(chr->server[i].maps);

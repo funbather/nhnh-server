@@ -290,7 +290,7 @@ struct char_interface {
 	bool (*config_read_player_fame) (const char *filename, const struct config_t *config, bool imported);
 	bool (*config_read_player_deletion) (const char *filename, const struct config_t *config, bool imported);
 	bool (*config_read_player_name) (const char *filename, const struct config_t *config, bool imported);
-	void (*config_set_start_item) (const struct config_setting_t *setting);
+	void (*config_set_start_item) (const struct config_setting_t *setting, const struct config_setting_t *settingST, const struct config_setting_t *settingAM);
 	bool (*config_read_player_new) (const char *filename, const struct config_t *config, bool imported);
 	bool (*config_read_player) (const char *filename, const struct config_t *config, bool imported);
 	bool (*config_read_permission) (const char *filename, const struct config_t *config, bool imported);
