@@ -3180,6 +3180,7 @@ packet(0x96e,-1,clif->ackmergeitems);
 	packet(0x0885,36,clif->pStoragePassword,0);
 	packet(0x0364,4,clif->pDull); // CZ_GANGSI_RANK
 	packet(0x086a,8,clif->pDull); // CZ_JOIN_BATTLE_FIELD
+	packet(0x0556,2,clif->pAutotarget);
 #endif
 
 /* PacketKeys: http://herc.ws/board/topic/1105-hercules-wpe-free-june-14th-patch/ */

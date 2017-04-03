@@ -1402,6 +1402,7 @@ int pc_reg_received(struct map_session_data *sd)
 	sd->change_level_2nd = pc_readglobalreg(sd,script->add_str("jobchange_level"));
 	sd->change_level_3rd = pc_readglobalreg(sd,script->add_str("jobchange_level_3rd"));
 	sd->die_counter = pc_readglobalreg(sd,script->add_str("PC_DIE_COUNTER"));
+	sd->state.autotarget = pc_readglobalreg(sd,script->add_str("AUTOTARGET"));
 
 	// Cash shop
 	sd->cashPoints = pc_readaccountreg(sd,script->add_str("#CASHPOINTS"));
@@ -1511,7 +1512,7 @@ int pc_reg_received(struct map_session_data *sd)
 }
 
 int pc_calc_skillpoint(struct map_session_data* sd) {
-	int  i,inf2,skill_point=1;
+	int  i,inf2,skill_point=0;
 
 	nullpo_ret(sd);
 

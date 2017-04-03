@@ -1013,7 +1013,7 @@ int login_mmo_auth_new(const char* userid, const char* pass, const char sex, con
 		return 1;
 
 	// check for invalid inputs
-	if( sex != 'M' && sex != 'F' )
+	if( sex != 'M' )
 		return 0; // 0 = Unregistered ID
 
 	// check if the account doesn't exist already
@@ -1091,16 +1091,15 @@ int login_mmo_auth(struct login_session_data* sd, bool isServer) {
 	// Account creation with _M/_F
 	if (login->config->new_account_flag) {
 		if (len > 2 && sd->passwd[0] != '\0' && // valid user and password lengths
-			sd->passwdenc == PWENC_NONE && // unencoded password
-			sd->userid[len-2] == '_' && memchr("FfMm", sd->userid[len-1], 4)) // _M/_F suffix
+			sd->userid[len-2] == '_' && memchr("Nn", sd->userid[len-1], 2)) // _N suffix
 		{
 			int result;
 
-			// remove the _M/_F suffix
+			// remove the _N suffix
 			len -= 2;
 			sd->userid[len] = '\0';
 
-			result = login->mmo_auth_new(sd->userid, sd->passwd, TOUPPER(sd->userid[len+1]), ip);
+			result = login->mmo_auth_new(sd->userid, sd->passwd, 'M', ip);
 			if( result != -1 )
 				return result;// Failed to make account. [Skotlex].
 		}

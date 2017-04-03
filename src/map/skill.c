@@ -5334,7 +5334,7 @@ int skill_castend_id(int tid, int64 tick, int id, intptr_t data)
 		if( !sd || sd->skillitem != ud->skill_id || skill->get_delay(ud->skill_id,ud->skill_lv) ) {
 			if( sd ) {
 				if( ud->state.attack_continue )
-					ud->attackabletime = tick + skill->delay_fix(src, ud->skill_id, ud->skill_lv) + 350; // additional 350ms delay after skill-use before attacking resumes
+					ud->attackabletime = tick + skill->delay_fix(src, ud->skill_id, ud->skill_lv) + 150; // additional 150ms delay after skill-use before attacking resumes
 			}																							 // prevents autoattacks from slipping in even while mashing skills
 			ud->canact_tick = tick + skill->delay_fix(src, ud->skill_id, ud->skill_lv); // Tests show wings don't overwrite the delay but skill scrolls do. [Inkfish]
 		}

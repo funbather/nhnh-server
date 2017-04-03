@@ -9013,6 +9013,25 @@ void clif_channel_msg2(struct channel_data *chan, char *msg)
 // ------------
 // Parses incoming (player) connection
 
+void clif_parse_autotarget(int fd, struct map_session_data* sd) __attribute__((nonnull (2)));
+/// Toggle autotarget setting for player
+/// 0556
+void clif_parse_autotarget(int fd, struct map_session_data* sd)
+{
+	if( !sd )
+		return;
+
+	sd->state.autotarget^=1;
+
+	if(sd->state.autotarget)
+		clif->message(fd, "Offensive melee skills will automatically pick your current target.");
+	else
+		clif->message(fd, "Offensive melee skills behave normally again.");
+
+	clif->skillinfoblock(sd);
+	pc_setglobalreg(sd,script->add_str("AUTOTARGET"),sd->state.autotarget);
+}
+
 /// Request to connect to map-server.
 /// 0072 <account id>.L <char id>.L <auth code>.L <client time>.L <gender>.B (CZ_ENTER)
 /// 0436 <account id>.L <char id>.L <auth code>.L <client time>.L <gender>.B (CZ_ENTER2)
@@ -11043,16 +11062,6 @@ void clif_parse_UseSkillToId(int fd, struct map_session_data *sd)
 	if( target_id < 0 && -target_id == sd->bl.id ) // for disguises [Valaris]
 		target_id = sd->bl.id;
 
-	if( sd->ud.skilltimer != INVALID_TIMER ) {
-		if( skill_id != SA_CASTCANCEL && skill_id != SO_SPELLFIST )
-			return;
-	} else if( DIFF_TICK(tick, sd->ud.canact_tick) < 0 ) {
-		if( sd->skillitem != skill_id ) {
-			clif->skill_fail(sd, skill_id, USESKILL_FAIL_SKILLINTERVAL, 0);
-			return;
-		}
-	}
-
 	if( sd->sc.option&OPTION_COSTUME )
 		return;
 
@@ -11082,6 +11091,22 @@ void clif_parse_UseSkillToId(int fd, struct map_session_data *sd)
 			clif_skill_use(sd,skill_id,skill_lv,INF_ATTACK_SKILL);
 			return;
 		}
+	}
+
+	if( !skill_lv ) return;
+
+	if( sd->ud.skilltimer != INVALID_TIMER ) {
+		return;
+	} else if (sd->ud.attacktimer != INVALID_TIMER ) {
+		sd->ud.skilltarget  = target_id;
+		sd->ud.skillx       = 0;
+		sd->ud.skilly       = 0;
+		sd->ud.skill_id     = skill_id;
+		sd->ud.skill_lv     = skill_lv;
+		return;
+	} else if( DIFF_TICK(tick, sd->ud.canact_tick) < 0 ) {
+		clif->skill_fail(sd, skill_id, 4, 0);
+		return;
 	}
 
 	if (skill_id >= GD_SKILLBASE && skill_id < GD_MAX) {
@@ -19903,4 +19928,5 @@ void clif_defaults(void) {
 	clif->dressroom_open = clif_dressroom_open;
 	clif->pOneClick_ItemIdentify = clif_parse_OneClick_ItemIdentify;
 	clif->get_bl_name = clif_get_bl_name;
+	clif->pAutotarget = clif_parse_autotarget;
 }
