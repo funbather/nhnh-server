@@ -3096,7 +3096,7 @@ void status_calc_regen(struct block_list *bl, struct status_data *st, struct reg
 		return;
 
 	sd = BL_CAST(BL_PC,bl);
-	val = (st->max_hp * (100 + st->vit)) / 5000; // BASE HP REGEN - 2% of Max HP per second, increased by 1% per VIT
+	val = max(2,(st->max_hp * (100 + st->vit)) / 5000); // BASE HP REGEN - 2% of Max HP per second, increased by 1% per VIT
 
 	if( sd && sd->hprecov_rate != 100 )
 		val = val*sd->hprecov_rate/100;
@@ -7563,7 +7563,7 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				tick_time = 100;
 				break;
 			case SC_PURIFY:
-				val2 = tick / 500;
+				val2 = tick / 1000;
 				if(val2 < 1) val2 = 1;
 
 				val3 = val1 / val2;
@@ -10711,7 +10711,7 @@ int status_change_timer(int tid, int64 tick, int id, intptr_t data)
 		case SC_PURIFY:
 			if (sd && --(sce->val2) >= 0) {
 				status->heal(bl, sce->val3, 0, 3);
-				sc_timer_next(500 + tick, status->change_timer, bl->id, data);
+				sc_timer_next(1000 + tick, status->change_timer, bl->id, data);
 				return 0;
 			}
 			break;

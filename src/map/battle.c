@@ -4831,7 +4831,7 @@ enum damage_lv battle_weapon_attack(struct block_list* src, struct block_list* t
 	wd.dmotion = clif->damage(src, target, wd.amotion, wd.dmotion, wd.damage, wd.div_ , wd.type, wd.damage2);
 
 	if (sd && (sd->bonus.splash_range + discharge) > 0 && damage > 0)
-		skill->castend_damage_id(src, target, 0, 1 + discharge, tick, 0);
+		skill->castend_damage_id(src, target, 0, discharge, tick, 0);
 	if (target->type == BL_SKILL && damage > 0) {
 		struct skill_unit *su = BL_UCAST(BL_SKILL, target);
 		if (su->group && su->group->skill_id == HT_BLASTMINE)

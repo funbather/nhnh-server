@@ -5810,7 +5810,7 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 		break;
 
 		case ACO_PURIFY: {
-			int hp = skill->calc_heal(src, bl, skill_id, skill_lv, true);
+			int hp = max(4, skill->calc_heal(src, bl, skill_id, skill_lv, true)); // minimum 1 per tick
 
 			if ( tsc && tsc->count ) { // make sure there are even any statuses to remove
 				status_change_end(bl, SC_POISON, INVALID_TIMER);
@@ -18821,8 +18821,8 @@ int skill_blockpc_start_(struct map_session_data *sd, uint16 skill_id, int tick)
 
 		if( i != cd->cursor ) {/* duplicate, update necessary */
 			// Don't do anything if there's already a tick longer than the incoming one
-			if (DIFF_TICK32(cd->entry[i]->started + cd->entry[i]->duration, now) > tick)
-				return 0;
+			/*if (DIFF_TICK32(cd->entry[i]->started + cd->entry[i]->duration, now) > tick)
+				return 0;*/
 			cd->entry[i]->duration = tick;
 #if PACKETVER >= 20120604
 			cd->entry[i]->total = tick;
@@ -18867,7 +18867,6 @@ int skill_blockpc_start_(struct map_session_data *sd, uint16 skill_id, int tick)
 	cd->entry[cd->cursor]->timer = timer->add(now+tick,skill->blockpc_end,sd->bl.id,idx);
 
 	cd->cursor++;
-
 	sd->blockskill[idx] = true;
 	return 0;
 }

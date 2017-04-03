@@ -4661,9 +4661,10 @@ void char_delete_char_failed(int fd, int flag)
 
 void char_delete_char_ok(int fd)
 {
-	WFIFOHEAD(fd,2);
+	WFIFOHEAD(fd,3);
 	WFIFOW(fd,0) = 0x6f;
-	WFIFOSET(fd,2);
+	WFIFOB(fd,2) = 1;
+	WFIFOSET(fd,3);
 }
 
 void char_parse_char_delete_char(int fd, struct char_session_data* sd, unsigned short cmd) __attribute__((nonnull (2)));
@@ -4688,11 +4689,8 @@ void char_parse_char_delete_char(int fd, struct char_session_data* sd, unsigned 
 	memcpy(email, RFIFOP(fd,6), 40);
 	RFIFOSKIP(fd,( cmd == 0x68) ? 46 : 56);
 
-	// Check if e-mail is correct
-	if (strcmpi(email, sd->email) != 0  /* emails don't match */
-	 && ( strcmp("a@a.com", sd->email) != 0 /* it's not the default email */
-	  || (strcmp("a@a.com", email) != 0 && strcmp("", email) != 0) /* sent email isn't the default */
-	)) {
+	// check if phrase is typed correctly
+	if( strcmpi(email, "This character is dead to me.") != 0 ) {
 		//Fail
 		chr->delete_char_failed(fd, 0);
 		return;

@@ -2648,6 +2648,11 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 
 			if( sd->md && src && src->type != BL_HOM && mob->db(md->class_)->lv > sd->status.base_level/2 )
 				mercenary->kills(sd->md);
+
+
+			if ( pc->checkskill(sd,THF_SONICSTRIKE) ) {
+				skill->blockpc_start(sd, THF_SONICSTRIKE, 1); // Refresh THF_SONICSTRIKE cooldown on kill
+			}
 		}
 
 		if( md->npc_event[0] && !md->state.npc_killmonster ) {
@@ -2697,11 +2702,6 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 			 **/
 			clif->clearunit_delayed(&md->bl, CLR_DEAD, tick+250);
 
-	}
-
-	if( sd ) {
-		if ( pc->checkskill(sd,THF_SONICSTRIKE) )
-			skill->blockpc_start(sd, THF_SONICSTRIKE, -1); // Refresh THF_SONICSTRIKE cooldown on kill
 	}
 
 	if(!md->spawn) //Tell status->damage to remove it from memory.

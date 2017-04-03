@@ -7175,7 +7175,7 @@ int pc_resetlvl(struct map_session_data* sd,int type)
 		pc->resetskill(sd, PCRESETSKILL_NONE);
 
 	if(type == 1) {
-		sd->status.skill_point=1;
+		sd->status.skill_point=0;
 		sd->status.base_level=1;
 		sd->status.job_level=1;
 		sd->status.base_exp=0;
@@ -7315,7 +7315,7 @@ int pc_resetstate(struct map_session_data* sd)
  *------------------------------------------*/
 int pc_resetskill(struct map_session_data* sd, int flag)
 {
-	int i, inf2, skill_point=1;
+	int i, inf2, skill_point=0;
 	nullpo_ret(sd);
 
 	if (flag&PCRESETSKILL_CHSEX && (sd->job & MAPID_UPPERMASK) != MAPID_BARDDANCER)
