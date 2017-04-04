@@ -5801,7 +5801,6 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 
 		case THF_BROWBEAT:
 			sc_start(src, bl, type, 100, (20 + 2 * skill_lv) * (100 + status_get_dex(src)) / 100, -1); // infinite duration
-			ShowError("%d\n",(20 + 2 * skill_lv) * (100 + status_get_dex(src)) / 100);
 
 			if( dstmd )
 				mob->unlocktarget(dstmd, tick);

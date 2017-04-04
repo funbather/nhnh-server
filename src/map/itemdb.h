@@ -49,6 +49,16 @@ struct hplugin_data_store;
 #define UNKNOWN_ITEM_ID 512
 
 enum item_itemid {
+	ITEMID_MYTHRIL               = 800,
+	ITEMID_ORICHALCUM            = 801,
+	ITEMID_EMPTYBIJOU            = 802,
+	ITEMID_FERVENTBIJOU          = 803,
+	ITEMID_ARCANEBIJOU           = 804,
+	ITEMID_BLESSEDBIJOU          = 805,
+	ITEMID_CAPRICIOUSBIJOU       = 806,
+	ITEMID_DISCORDANTBIJOU       = 807,
+	ITEMID_DIVINEHAMMER          = 808,
+	ITEMID_COINBAG               = 809,
 	ITEMID_RED_POTION            = 501,
 	ITEMID_YELLOW_POTION         = 503,
 	ITEMID_WHITE_POTION          = 504,

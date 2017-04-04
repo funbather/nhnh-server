@@ -106,6 +106,13 @@ enum ai {
 	AI_MAX
 };
 
+enum droptype {
+	DT_EQUIP = 0,
+	DT_CRAFT = 1,
+	DT_TAROT = 2,
+	DT_STONE = 3
+};
+
 /**
  * Acceptable values for map_session_data.state.noks
  */
@@ -532,6 +539,7 @@ struct mob_interface {
 	void (*load) (bool minimal);
 	void (*clear_spawninfo) (void);
 	void (*destroy_mob_db) (int index);
+	struct item (*generate_item) (struct mob_data *md, int flag);
 };
 
 #ifdef HERCULES_CORE

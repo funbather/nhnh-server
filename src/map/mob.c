@@ -1861,6 +1861,92 @@ struct item_drop* mob_setlootitem(struct item* item)
 	return drop;
 }
 
+struct item mob_generate_item(struct mob_data *md, int flag) {
+	struct item it;
+	int itid = 0, ilvl = 0, quality = 0, slot1 = 0, slot2 = 0, slot3 = 0, slot4 = 0, rolls = 0;
+	int shards = 19, seals = 13;
+
+	memset(&it,0,sizeof(it));
+
+	if( flag == DT_EQUIP ) { // Equipment
+		int rank1[18] = { 1,4,7,10,13,16,19,25,28,31,34,100,103,106,109,112,115,118 };
+		int rank2[18] = { 2,5,8,11,14,17,20,26,29,32,35,101,104,107,110,113,116,119 };
+		int rank3[31] = { 3,6,9,12,15,18,21,22,23,24,37,38,39,40,41,42,43,44,45,46,27,30,33,36,102,105,108,111,114,117,120 };
+		int rand = rnd()%10000; // roll for item rank -> 60% R1, 30% R2, 10% R3
+
+		if     ( rand >= 9000 ) itid = rank3[rnd()%(sizeof(rank3)/sizeof(rank3[0]))];
+		else if( rand >= 6000 ) itid = rank2[rnd()%(sizeof(rank2)/sizeof(rank2[0]))];
+		else                    itid = rank1[rnd()%(sizeof(rank1)/sizeof(rank1[0]))];
+
+		rand = rnd()%10000; // reroll for enchantments -> 5% - 4, 10% - 3, 15% - 2, 30% - 1, 40% - 0
+
+		if( rand >= 9500 ) slot4 = 600 + rnd()%seals;
+		if( rand >= 8500 ) slot3 = 500 + rnd()%shards;
+		if( rand >= 7000 ) slot2 = 500 + rnd()%shards;
+		if( rand >= 4000 ) slot1 = 500 + rnd()%shards;
+
+		rand = rnd()%10000; // reroll for quality -> 5% 116-125, 15% 101~115, 80% 65~100
+
+		if     ( rand >= 9500 ) quality = 116 + rnd()%10;
+		else if( rand >= 8000 ) quality = 101 + rnd()%15;
+		else                    quality = 65  + rnd()%36;
+
+		// item level is just set to the mob's level (for now?)
+		ilvl = md->level;
+
+		// enchantment rolls
+		//   min     max
+		//
+		// ilvl/2 ~ ilvl*2
+		//    0       2     - mob level 1
+		//   12      50     - mob level 25
+		//   25     100     - mob level 50
+		//
+		// rolls get set even if there is no enchantment in that slot!!
+
+		rolls |=  (ilvl / 2) + rnd()%(ilvl * 2 - (ilvl / 2));
+		rolls |= ((ilvl / 2) + rnd()%(ilvl * 2 - (ilvl / 2))) << 8;
+		rolls |= ((ilvl / 2) + rnd()%(ilvl * 2 - (ilvl / 2))) << 16;
+		rolls |= ((ilvl / 2) + rnd()%(ilvl * 2 - (ilvl / 2))) << 24;
+	} else if( flag == DT_CRAFT ) {
+		int rand = rnd()%10000;
+
+		// CRAFTING ITEMS
+		//  30% Orichalcum Ore
+		//  30% Mythril Ore
+		//  23% Empty Bijou
+		//  10% Arcane Bijou
+		// 2.5% Blessed Bijou
+		// 2.0% Divine Hammer
+		// 1.5% Capricious Bijou
+		// 1.0% Discordant Bijou
+
+		if     ( rand >= 7000 ) itid = ITEMID_ORICHALCUM;
+		else if( rand >= 4000 ) itid = ITEMID_MYTHRIL;
+		else if( rand >= 1700 ) itid = ITEMID_EMPTYBIJOU;
+		else if( rand >=  700 ) itid = ITEMID_ARCANEBIJOU;
+		else if( rand >=  450 ) itid = ITEMID_BLESSEDBIJOU;
+		else if( rand >=  250 ) itid = ITEMID_DIVINEHAMMER;
+		else if( rand >=  100 ) itid = ITEMID_CAPRICIOUSBIJOU;
+		else                    itid = ITEMID_DISCORDANTBIJOU;
+
+	}
+
+	it.nameid=itid;
+	it.identify=1;
+	it.amount=1;
+	it.refine=quality;
+	it.attribute=ilvl;
+	it.card[0]=(short)slot1;
+	it.card[1]=(short)slot2;
+	it.card[2]=(short)slot3;
+	it.card[3]=(short)slot4;
+	it.rolls=rolls;
+
+	//ShowError("[%d] LV. %d / %d % - [%d @ %d][%d @ %d][%d @ %d][%d @ %d]\n",itid,ilvl,quality,slot1,(rolls&0xFF),slot2,(rolls>>8&0xFF),slot3,(rolls>>16&0xFF),slot4,(rolls>>24&0xFF));
+	return it;
+}
+
 /*==========================================
  * item drop with delay (timer function)
  *------------------------------------------*/
@@ -2461,9 +2547,45 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 			}
 		}
 
-		if ( sd && pc->checkskill(sd,THF_PICKPOCKET) ) {
-			if ( rnd()%10000 < (300 + 40 * pc->checkskill(sd,THF_PICKPOCKET)) )
-				mob->item_drop(md, dlist, mob->setdropitem(809,1,NULL), 0, 300 + 40 * pc->checkskill(sd,THF_PICKPOCKET), false);
+		if( sd == mvp_sd ) {
+			/* DROP RATE
+			 *
+			 * 5 chances for a standard equipment item drop
+			 * 16% 8% 4% 2% 1%
+			 *
+			 * LUK increases each individual chance by 1%/LUK
+			 *
+			 * 4% (+1%/LUK) chance for a crafting item to drop */
+			int droprate;
+			struct item item_tmp;
+
+			for( i=0; i<5; i++) {
+				droprate = (1600 / (1 << i)) * (100 + status_get_luk(src)) / 100; // Equipment
+
+				if( rnd()%10000 < droprate ) {
+					item_tmp = mob->generate_item(md, DT_EQUIP);
+					ditem = mob->setlootitem(&item_tmp);
+					mob->item_drop(md, dlist, ditem, 0, 10000, false);
+				}
+			}
+
+			droprate = 400 * (100 + status_get_luk(src)) / 100; // Crafting Items
+
+			if( rnd()%10000 < droprate ) {
+				item_tmp = mob->generate_item(md, DT_CRAFT);
+				ditem = mob->setlootitem(&item_tmp);
+				mob->item_drop(md, dlist, ditem, 0, 10000, false);
+			}
+
+			if ( md->sc.data[SC_BROWBEAT] && (rnd()%100 < md->sc.data[SC_BROWBEAT]->val1) ) { // Browbeat
+				item_tmp = mob->generate_item(md, DT_EQUIP);
+				ditem = mob->setlootitem(&item_tmp);
+				mob->item_drop(md, dlist, ditem, 0, 10000, false);
+			}
+		}
+
+		if( sd && pc->checkskill(sd,THF_PICKPOCKET) ) {
+			mob->item_drop(md, dlist, mob->setdropitem(ITEMID_COINBAG,1,NULL), 0, 300 + 40 * pc->checkskill(sd,THF_PICKPOCKET), false);
 		}
 
 		if(sd) {
@@ -2666,10 +2788,6 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 				npc->event_do(md->npc_event);
 		} else if( mvp_sd && !md->state.npc_killmonster ) {
 			pc->setparam(mvp_sd, SP_KILLEDRID, md->class_);
-
-			if ( md->sc.data[SC_BROWBEAT] )
-				pc->setparam(sd, SP_EXTRAITEM, md->sc.data[SC_BROWBEAT]->val1);
-
 			npc->script_event(mvp_sd, NPCE_KILLNPC); // PCKillNPC [Lance]
 		}
 
@@ -5183,6 +5301,8 @@ void mob_clear_spawninfo(void)
 			memset(&mob->db_data[i]->spawn,0,sizeof(mob->db_data[i]->spawn));
 }
 
+
+
 /*==========================================
  * Circumference initialization of mob
  *------------------------------------------*/
@@ -5403,4 +5523,5 @@ void mob_defaults(void) {
 	mob->load = mob_load;
 	mob->clear_spawninfo = mob_clear_spawninfo;
 	mob->destroy_mob_db = mob_destroy_mob_db;
+	mob->generate_item = mob_generate_item;
 }
