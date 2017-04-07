@@ -3742,6 +3742,9 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 
 	map->freeblock_lock();
 
+	if( sd && skill_id && (sd->bonus.skillboost > rnd()%100) ) // skillboost% chance to use skill with +1 to level
+		skill_lv += 1;
+
 	switch(skill_id) {
 		case SWD_UMBOBLOW:
 		case SWD_SHIELDBOOMERANG:
@@ -5339,12 +5342,15 @@ int skill_castend_id(int tid, int64 tick, int id, intptr_t data)
 			ud->canact_tick = tick + skill->delay_fix(src, ud->skill_id, ud->skill_lv); // Tests show wings don't overwrite the delay but skill scrolls do. [Inkfish]
 		}
 		if (sd) { // Cooldown application
-			int i, cooldown = skill->get_cooldown(ud->skill_id, ud->skill_lv);
+			int i, cdr = sd->bonus.cdr, cooldown = skill->get_cooldown(ud->skill_id, ud->skill_lv);
 
-			if ( ud->skill_id == MGN_ICICLEEDGE ) // 1% faster cooldown expiration per mst
-				cooldown = (cooldown * 100) / (100 + status_get_dex(src));
-			if ( ud->skill_id == MGN_ICENOVA )
-				cooldown = (cooldown * 100) / (100 + status_get_dex(src));
+			switch( ud->skill_id ) {
+				case MGN_ICICLEEDGE:
+				case MGN_ICENOVA:
+					cdr += status_get_dex(src);
+			}
+
+			cooldown = (cooldown * 100) / (100 + cdr); // % faster cooldown expiration
 
 			for (i = 0; i < ARRAYLENGTH(sd->skillcooldown) && sd->skillcooldown[i].id; i++) { // Increases/Decreases cooldown of a skill by item/card bonuses.
 				if (sd->skillcooldown[i].id == ud->skill_id){
@@ -10810,7 +10816,12 @@ int skill_castend_pos2(struct block_list* src, int x, int y, uint16 skill_id, ui
 		FALLTHROUGH
 		case MGN_IONPULSE:
 		case MGN_COMET: // normally triggered through castend_damage_id, needed here for unit-placing spells (except locus itself)
-			if( sd ) { map->foreachinarea(skill->stormlocus_pulse, src->m, src->x-9, src->y-9, src->x+9, src->y+9, BL_SKILL); }
+			if( sd ) {
+				map->foreachinarea(skill->stormlocus_pulse, src->m, src->x-9, src->y-9, src->x+9, src->y+9, BL_SKILL);
+
+				if( sd->bonus.skillboost < rnd()%100 ) // do skillboost check here too, locus already gets the bonus from MGN_STORMLOCUS_PULSE
+					skill_lv += 1;
+			}
 		case MGN_STORMLOCUS:
 		case MG_FIREWALL:
 		case MG_THUNDERSTORM:

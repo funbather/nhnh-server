@@ -2650,6 +2650,8 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 
 	//bstatus->batk += bstatus->batk * bstatus->str * 4 / 100; // STR bonus - +4% BATK
 
+	bstatus->rhw.atk += bstatus->rhw.atk * sd->bonus.atk_rate / 100;
+
 	// ----- HP MAX CALCULATION -----
 
 	// Basic MaxHP value
@@ -2828,6 +2830,10 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	// Unlike other stats, ASPD rate modifiers from skills/SCs/items/etc are first all added together, then the final modifier is applied
 
 	// Basic ASPD value
+
+	if( (skill_lv = pc->checkskill(sd,THF_SOUL)) ) // THF_SOUL +0.2 attacks per second
+		sd->bonus.aps += 20;
+
 	i = status->base_amotion_pc(sd,bstatus);
 	bstatus->amotion = cap_value(i,(battle_config.max_aspd),2000);
 
@@ -3808,8 +3814,8 @@ int status_base_amotion_pc(struct map_session_data *sd, struct status_data *st)
 
 	amotion = status->dbs->aspd_base[pc->class2idx(sd->status.class)][sd->weapontype1];
 
-	if ( sd && pc->checkskill(sd,THF_SOUL) ) // THF_SOUL +0.2 attacks per second
-		amotion = 50000 / ((50000 / amotion) + 20);
+	if ( sd->bonus.aps )
+		amotion = 50000 / ((50000 / amotion) + sd->bonus.aps);
 
 	return amotion;
 }
@@ -7850,6 +7856,9 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 
 				tick_time = 100;
 
+				if( src_sd )
+					val2 += src_sd->bonus.poisondamage;
+
 				// POISON - 4% of mhp per second
 				// val2 - bonus damage
 				val4 = (1 + st->max_hp / 50) * ( val2 + 100 ) / 100;
@@ -7861,6 +7870,9 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 
 				tick_time = 100;
 
+				if( src_sd )
+					val2 += src_sd->bonus.ignitedamage;
+
 				// IGNITE - 8% of mhp per second, reduced by MDEF
 				// val2 - bonus damage
 				val4 = (int) ( (100.0f - st->mdef / (st->mdef + 700.0f) * 100.0f) / 100.0f * (1 + st->max_hp / 25) ) * ( val2 + 100 ) / 100;
@@ -7871,6 +7883,9 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				if(val3 < 1) val3 = 1;
 
 				tick_time = 100;
+
+				if( src_sd )
+					val2 += src_sd->bonus.bleeddamage;
 
 				// BLEEDING - 8% of mhp per second, reduced by DEF
 				// val2 - bonus damage

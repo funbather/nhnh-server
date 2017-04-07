@@ -2395,7 +2395,6 @@ void script_load_parameters(void)
 		{"BaseClass", SP_BASECLASS},
 		{"killerrid", SP_KILLERRID},
 		{"killedrid", SP_KILLEDRID},
-		{"extraitem", SP_EXTRAITEM},
 		{"SlotChange", SP_SLOTCHANGE},
 		{"CharRename", SP_CHARRENAME},
 		{"ModExp", SP_MOD_EXP},

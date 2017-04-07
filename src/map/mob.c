@@ -1861,12 +1861,11 @@ struct item_drop* mob_setlootitem(struct item* item)
 	return drop;
 }
 
-struct item mob_generate_item(struct mob_data *md, int flag) {
-	struct item it;
+void mob_generate_item(struct mob_data *md, struct item *it, int flag) {
 	int itid = 0, ilvl = 0, quality = 0, slot1 = 0, slot2 = 0, slot3 = 0, slot4 = 0, rolls = 0;
-	int shards = 19, seals = 13;
+	int shards = 35, seals = 21;
 
-	memset(&it,0,sizeof(it));
+	memset(it,0,sizeof(struct item));
 
 	if( flag == DT_EQUIP ) { // Equipment
 		int rank1[18] = { 1,4,7,10,13,16,19,25,28,31,34,100,103,106,109,112,115,118 };
@@ -1932,19 +1931,18 @@ struct item mob_generate_item(struct mob_data *md, int flag) {
 
 	}
 
-	it.nameid=itid;
-	it.identify=1;
-	it.amount=1;
-	it.refine=quality;
-	it.attribute=ilvl;
-	it.card[0]=(short)slot1;
-	it.card[1]=(short)slot2;
-	it.card[2]=(short)slot3;
-	it.card[3]=(short)slot4;
-	it.rolls=rolls;
+	it->nameid=itid;
+	it->identify=1;
+	it->amount=1;
+	it->refine=quality;
+	it->attribute=ilvl;
+	it->card[0]=(short)slot1;
+	it->card[1]=(short)slot2;
+	it->card[2]=(short)slot3;
+	it->card[3]=(short)slot4;
+	it->rolls=rolls;
 
 	//ShowError("[%d] LV. %d / %d % - [%d @ %d][%d @ %d][%d @ %d][%d @ %d]\n",itid,ilvl,quality,slot1,(rolls&0xFF),slot2,(rolls>>8&0xFF),slot3,(rolls>>16&0xFF),slot4,(rolls>>24&0xFF));
-	return it;
 }
 
 /*==========================================
@@ -2563,22 +2561,22 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 				droprate = (1600 / (1 << i)) * (100 + status_get_luk(src)) / 100; // Equipment
 
 				if( rnd()%10000 < droprate ) {
-					item_tmp = mob->generate_item(md, DT_EQUIP);
+					mob->generate_item(md, &item_tmp, DT_EQUIP);
 					ditem = mob->setlootitem(&item_tmp);
 					mob->item_drop(md, dlist, ditem, 0, 10000, false);
 				}
 			}
 
-			droprate = 400 * (100 + status_get_luk(src)) / 100; // Crafting Items
+			droprate = 500 * (100 + status_get_luk(src)) / 100; // Crafting Items
 
 			if( rnd()%10000 < droprate ) {
-				item_tmp = mob->generate_item(md, DT_CRAFT);
+				mob->generate_item(md, &item_tmp, DT_CRAFT);
 				ditem = mob->setlootitem(&item_tmp);
 				mob->item_drop(md, dlist, ditem, 0, 10000, false);
 			}
 
 			if ( md->sc.data[SC_BROWBEAT] && (rnd()%100 < md->sc.data[SC_BROWBEAT]->val1) ) { // Browbeat
-				item_tmp = mob->generate_item(md, DT_EQUIP);
+				mob->generate_item(md, &item_tmp, DT_EQUIP);
 				ditem = mob->setlootitem(&item_tmp);
 				mob->item_drop(md, dlist, ditem, 0, 10000, false);
 			}

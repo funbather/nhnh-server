@@ -395,6 +395,14 @@ BEGIN_ZEROED_BLOCK; // this block will be globally zeroed at the beginning of st
 		int castspeed;
 		int basicdamage;
 		int basehp;
+		int aps;
+		int cdr;
+		int poisondamage;
+		int bleeddamage;
+		int ignitedamage;
+		int skillboost;
+		int magtoatk;
+		int atktomag;
 	} bonus;
 END_ZEROED_BLOCK;
 

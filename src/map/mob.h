@@ -539,7 +539,7 @@ struct mob_interface {
 	void (*load) (bool minimal);
 	void (*clear_spawninfo) (void);
 	void (*destroy_mob_db) (int index);
-	struct item (*generate_item) (struct mob_data *md, int flag);
+	void (*generate_item) (struct mob_data *md, struct item *it, int flag);
 };
 
 #ifdef HERCULES_CORE

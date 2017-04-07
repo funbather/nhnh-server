@@ -2884,6 +2884,50 @@ int pc_bonus(struct map_session_data *sd,int type,int val) {
 			if (sd->state.lr_flag != 2)
 				sd->bonus.basehp += val;
 			break;
+		case SP_APS:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.aps += val;
+			break;
+		case SP_CDEXPIRATION:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.cdr += val;
+			break;
+		case SP_DEBUFFOTHER:
+			if (sd->state.lr_flag != 2)
+				sd->debuffother_rate += val;
+			break;
+		case SP_BUFFOTHER:
+			if (sd->state.lr_flag != 2)
+				sd->buffother_rate += val;
+			break;
+		case SP_BUFFSELF:
+			if (sd->state.lr_flag != 2)
+				sd->buffself_rate += val;
+			break;
+		case SP_POISONDMG:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.poisondamage += val;
+			break;
+		case SP_BLEEDDMG:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.bleeddamage += val;
+			break;
+		case SP_IGNITEDMG:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.ignitedamage += val;
+			break;
+		case SP_SKILLBOOST:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.skillboost += val;
+			break;
+		case SP_MAGTOATK:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.magtoatk += val;
+			break;
+		case SP_ATKTOMAG:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.atktomag += val;
+			break;
 		default:
 			ShowWarning("pc_bonus: unknown type %d %d !\n",type,val);
 			Assert_report(0);
@@ -8103,7 +8147,8 @@ int pc_readparam(const struct map_session_data *sd, int type)
 		case SP_STATUSRESIST:    val = sd->debuffself_rate; break;
 		case SP_BASICDAMAGE:     val = sd->bonus.basicdamage; break;
 		case SP_BASEHP:          val = sd->bonus.basehp; break;
-		case SP_EXTRAITEM:       val = sd->extraitem; break;
+		case SP_APS:             val = sd->bonus.aps; break;
+		case SP_CDEXPIRATION:    val = sd->bonus.cdr; break;
 	}
 
 	return val;
@@ -8263,10 +8308,6 @@ int pc_setparam(struct map_session_data *sd,int type,int val)
 	case SP_MOD_DEATH:
 		sd->status.mod_death = val;
 		return 1;
-	case SP_EXTRAITEM:
-		sd->extraitem = val;
-		return 1;
-		break;
 	default:
 		ShowError("pc_setparam: Attempted to set unknown parameter '%d'.\n", type);
 		return 0;

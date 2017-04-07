@@ -455,9 +455,6 @@ int64 battle_calc_weapon_damage(struct block_list *src, struct block_list *bl, u
 	if ( sd ) {
 		if ( sd->battle_status.equip_atk != 0 )
 			eatk = sd->base_status.equip_atk;
-
-		if ( sd->bonus.atk_rate )
-			damage += damage * sd->bonus.atk_rate / 100;
 	}
 
 	damage += eatk;
@@ -513,6 +510,9 @@ int64 battle_calc_base_damage(struct block_list *src, struct block_list *bl, uin
 				damage += sc->data[SC_DISCHARGE]->val1;
 		}
 	}
+
+	if( sd && sd->bonus.magtoatk ) // mag to atk bonus
+		damage += sd->bonus.magtoatk * st->matk_max / 100;
 
 	return damage;
 }
@@ -3173,6 +3173,8 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 			default: {
 				unsigned int skillratio = 100; //Skill dmg modifiers.
 				MATK_ADD( status->get_matk(src, 2) );
+				if( sd && sd->bonus.atktomag )
+					MATK_ADD( (status_get_batk(src) + status_get_watk(src)) * sd->bonus.atktomag / 100 );
 #ifdef RENEWAL
 				ad.damage = battle->calc_cardfix(BF_MAGIC, src, target, nk, s_ele, 0, ad.damage, 0, ad.flag);
 				ad.damage = battle->calc_cardfix2(src, target, ad.damage, s_ele, nk, ad.flag);
