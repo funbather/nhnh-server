@@ -160,6 +160,23 @@ struct party_data* party_searchname(const char* str)
 	return p;
 }
 
+struct map_session_data *party_searchleader(struct map_session_data *sd) {
+	struct party_data *p = party_search(sd->status.party_id);
+	int i;
+	if (!p) return NULL;
+
+	ARR_FIND(0, MAX_PARTY, i, p->party.member[i].leader);
+	if (i == MAX_PARTY) return NULL;
+
+	if (p->data[i].sd && !pc_isdead(p->data[i].sd))
+		return p->data[i].sd;
+
+	ARR_FIND(0, MAX_PARTY, i, p->data[i].sd && p->data[i].sd != sd && !pc_isdead(p->data[i].sd));
+
+	if (i == MAX_PARTY) return NULL;
+	return p->data[i].sd;
+}
+
 int party_create(struct map_session_data *sd, const char *name,int item,int item2)
 {
 	struct party_member leader;
@@ -1434,6 +1451,7 @@ void party_defaults(void) {
 	party->getmemberid = party_getmemberid;
 	party->getavailablesd = party_getavailablesd;
 
+	party->searchleader = party_searchleader;
 	party->create = party_create;
 	party->created = party_created;
 	party->request_info = party_request_info;

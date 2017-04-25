@@ -37,6 +37,7 @@
 #include "common/ers.h" // struct eri
 #include "common/hercules.h"
 #include "common/mmo.h" // JOB_*, MAX_FAME_LIST, struct fame_list, struct mmo_charstatus, NEW_CARTS
+#include <math.h>
 
 /**
  * Defines
@@ -925,6 +926,7 @@ END_ZEROED_BLOCK; /* End */
 
 	int (*modifybuyvalue) (struct map_session_data *sd,int orig_value);
 	int (*modifysellvalue) (struct map_session_data *sd,int orig_value);
+	int (*calczenyvalue) (struct item *item);
 
 	int (*follow) (struct map_session_data *sd, int target_id); // [MouseJstr]
 	int (*stop_following) (struct map_session_data *sd);

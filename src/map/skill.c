@@ -3376,6 +3376,13 @@ int skill_timerskill(int tid, int64 tick, int id, intptr_t data) {
 				case KN_AUTOCOUNTER:
 					clif->skill_nodamage(src,target,skl->skill_id,skl->skill_lv,1);
 					break;
+				case NPC_DELUGE:
+					if (!status->isdead(target))
+						skill->attack(BF_MAGIC,src,src,target,skl->skill_id,skl->skill_lv,tick,skl->flag);
+					if (skl->type>1 && !status->isdead(target) && !status->isdead(src)) {
+						skill->addtimerskill(src,tick+125,target->id,0,0,skl->skill_id,skl->skill_lv,skl->type-1,skl->flag);
+					}
+					break;
 				case WZ_WATERBALL:
 					skill->toggle_magicpower(src, skl->skill_id); // only the first hit will be amplify
 					if (!status->isdead(target))
@@ -4136,6 +4143,7 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 		case SWD_METEORMASH:
 		case THF_BLADEFLOURISH:
 		case MGN_EXPLOSION:
+		case MGN_ICENOVA:
 			if (flag&1) { //Recursive invocation
 				// skill->area_temp[0] holds number of targets in area
 				// skill->area_temp[1] holds the id of the original target
@@ -4414,6 +4422,10 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 				}
 				skill->attack(BF_MAGIC,src,src,bl,sid,skill_lv,tick,flag|SD_LEVEL);
 			}
+			break;
+		case NPC_DELUGE:
+			skill->addtimerskill(src,tick+150,bl->id,0,0,skill_id,skill_lv,rnd()%(skill_lv*5),flag); // 1 - 5*Lv Hits
+			skill->attack(BF_MAGIC,src,src,bl,skill_id,skill_lv,tick,flag);
 			break;
 		case WZ_WATERBALL:
 			{
@@ -6735,9 +6747,9 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 			                    skill->castend_damage_id);
 			break;
 
-		case MGN_FROSTBITE:
-		case MGN_ICENOVA: // this normally triggers from castend_damage_id, need this here for self-target aoe skills
+		case MGN_FROSTBITE: // this normally triggers from castend_damage_id, need this here for self-target aoe skills
 			map->foreachinarea(skill->stormlocus_pulse, src->m, src->x-9, src->y-9, src->x+9, src->y+9, BL_SKILL);
+		case NPC_GUSH:
 		case NJ_HYOUSYOURAKU:
 		case NJ_RAIGEKISAI:
 		case WZ_FROSTNOVA:
@@ -7159,12 +7171,25 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 					break;
 				}
 
-				if( sd->state.autocast || ( (sd->skillitem == AL_TELEPORT || battle_config.skip_teleport_lv1_menu) && skill_lv == 1 ) || skill_lv == 3 )
-				{
+				if( sd->state.autocast || ( (sd->skillitem == AL_TELEPORT || battle_config.skip_teleport_lv1_menu) && skill_lv == 1 ) || skill_lv == 3 ) {
 					if( skill_lv == 1 )
 						pc->randomwarp(sd,CLR_TELEPORT);
-					else
+					else if( skill_lv == 2 )
 						pc->setpos(sd,sd->status.save_point.map,sd->status.save_point.x,sd->status.save_point.y,CLR_TELEPORT);
+					else {
+						struct map_session_data *tsd = party->searchleader(sd);
+						if( !sd->status.party_id || !tsd || sd == tsd ) { //no party found / is party leader
+							clif->skill_fail(sd,skill_id,0,0);
+							break;
+						}
+
+						if( map->list[tsd->bl.m].flag.nowarpto && tsd->bl.m != sd->bl.m ) {
+							clif->skill_mapinfomessage(sd,0);
+							break;
+						}
+
+						pc->setpos(sd, tsd->mapindex, tsd->bl.x, tsd->bl.y, CLR_TELEPORT);
+					}
 					break;
 				}
 

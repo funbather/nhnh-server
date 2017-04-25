@@ -2204,6 +2204,9 @@ int npc_selllist(struct map_session_data *sd, struct itemlist *item_list)
 
 		value = pc->modifysellvalue(sd, sd->inventory_data[idx]->value_sell);
 
+		if( nameid < 200 )
+			value = pc->calczenyvalue(&sd->status.inventory[idx]) / 10;
+
 		z += (int64)value * entry->amount;
 	}
 

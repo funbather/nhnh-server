@@ -1,30 +1,30 @@
-valkyrie,43,50,6	script	Aelia#blacksmith	4_F_FRUIT,{
+prt_monk,206,183,6	script	Ysolt#blacksmith	4_F_FRUIT,{
 
 	disable_items;
-	mes "[Aelia]";
+	mes "[Ysolt]";
 	mes "Hey, kid. Need somethin' done?";
 	menu "Upgrade an item!",menuUpgrade,"What are your services?",askServices,"Nothing today.",thatsAll;
 	
 backToMenu:
 
 	cleartext;
-	mes "[Aelia]";
+	mes "[Ysolt]";
 	mes "Done thinkin' it over?";
 	menu "Upgrade an item!",menuUpgrade,"What are your services?",askServices,"That's all.",thatsAll;
 	
 askServices:
 
 	cleartext;
-	mes "[Aelia]";
+	mes "[Ysolt]";
 	mes "If ya got the right stuff, I can fix up an old or worn-out piece of equipment back into fighting shape.";
 	next;
-	mes "[Aelia]";
+	mes "[Ysolt]";
 	mes "With ^5555AA^boMythril Ore^ld^000000 I can increase an item's quality by ^5555AA^bo10%^ld^000000, but only up to a max of 100%.\n\nI know I'm good, but I still got my limits, ya know?";
 	next;
-	mes "[Aelia]";
+	mes "[Ysolt]";
 	mes "If ya got ^5555AA^boOrichalcum Ore^ld^000000, I can increase an item's level by ^5555AA^bo5^ld^000000, but only up to your own Base Level.";
 	next;
-	mes "[Aelia]";
+	mes "[Ysolt]";
 	mes "Now, get me a ^5555AA^boDivine Hammer^ld^000000, and I can transform a lower ranked item into the best of its type. My specialty!";
 	next;
 	goto backToMenu;
@@ -32,7 +32,7 @@ askServices:
 menuUpgrade:
 
 	cleartext;
-	mes "[Aelia]";
+	mes "[Ysolt]";
 	mes "Whadda ya got for me?";
 	menu "Mythril Ore (+10% Quality)",upgQuality,"Orichalcum Ore (+5 Item Level)",upgLevel,"Divine Hammer (+ Rank)",upgType,"I've changed my mind.",thatsAll;	
 
@@ -46,13 +46,13 @@ upgQuality:
 	set .@part, select(.@menu$)+1;
 	
 	if (getequiprefinerycnt(.@part) == 100) {
-		mes "[Aelia]";
+		mes "[Ysolt]";
 		mes "I got my limits, kid. I can't make this beauty any better.";
 		close;
 	}
 	
 	if (getequiprefinerycnt(.@part) > 100) {
-		mes "[Aelia]";
+		mes "[Ysolt]";
 		mes "The craftsmanship on this is beyond even my abilities... you're on your own here, kid.";
 		close;
 	}
@@ -60,7 +60,7 @@ upgQuality:
 	set .@material,800;
 
 	if (countitem(.@material) == 0) {
-		mes "[Aelia]";
+		mes "[Ysolt]";
 		mes "I need some Mythril Ore to do this, kid.";
 		close;
 	}
@@ -70,7 +70,7 @@ upgQuality:
 	successrefitem .@part,10,100;
 	
 	cleartext;
-	mes "[Aelia]";
+	mes "[Ysolt]";
 	mes "Success! Enjoy, kid.";
 	close;
 
@@ -84,7 +84,7 @@ upgLevel:
 	set .@part, select(.@menu$)+1;
 	
 	if (getequipilvl(.@part) >= BaseLevel) {
-		mes "[Aelia]";
+		mes "[Ysolt]";
 		mes "I can't make it any better than this, kid.";
 		close;
 	}
@@ -94,13 +94,13 @@ upgLevel:
 	cleartext;
 
 	if (countitem(.@material) == 0) {
-		mes "[Aelia]";
+		mes "[Ysolt]";
 		mes "Huh? Kid, ya don't even got any Orichalcum Ore!";
 		close;
 	}
 	
 	if (Zeny < .@price) {
-		mes "[Aelia]";
+		mes "[Ysolt]";
 		mes "I need some Orichalcum Ore to do this, kid.";
 		close;
 	}
@@ -110,7 +110,7 @@ upgLevel:
 	successrefitemilvl .@part,5,BaseLevel;
 	
 	cleartext;	
-	mes "[Aelia]";
+	mes "[Ysolt]";
 	mes "Success! Enjoy, kid.";
 	close;
 	
@@ -201,7 +201,7 @@ upgType:
 
 	
 	if (.@upg == -1) {
-		mes "[Aelia]";
+		mes "[Ysolt]";
 		mes "Kid, this is already the best of its kind. Nothing to do here.";
 		close;
 	}
@@ -210,7 +210,7 @@ upgType:
 	
 	cleartext;
 	if (countitem(.@material) == 0) {
-		mes "[Aelia]";
+		mes "[Ysolt]";
 		mes "I need a Divine Hammer to do this, kid.";
 		close;
 	}
@@ -238,13 +238,13 @@ upgType:
 	
 	specialeffect2 154;
 	
-	mes "[Aelia]";
+	mes "[Ysolt]";
 	mes "Success! Enjoy, kid.";
 	close;
 	
 thatsAll:
 	cleartext;
-	mes "[Aelia]";
+	mes "[Ysolt]";
 	mes "Nice doing business with ya, kid.";
 	close;
 }

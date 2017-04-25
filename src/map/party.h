@@ -97,6 +97,7 @@ struct party_interface {
 	int (*getmemberid) (struct party_data* p, struct map_session_data* sd);
 	struct map_session_data* (*getavailablesd) (struct party_data *p);
 
+	struct map_session_data* (*searchleader) (struct map_session_data *sd);
 	int (*create) (struct map_session_data *sd, const char *name, int item, int item2);
 	void (*created) (int account_id, int char_id, int fail, int party_id, const char *name);
 	int (*request_info) (int party_id, int char_id);

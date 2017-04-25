@@ -1907,6 +1907,7 @@ void clif_selllist(struct map_session_data *sd)
 			val=sd->inventory_data[i]->value_sell;
 			if( val < 0 )
 				continue;
+			if( sd->status.inventory[i].nameid < 200 ) val = pc->calczenyvalue(&sd->status.inventory[i]) / 10;
 			WFIFOW(fd,4+c*10)=i+2;
 			WFIFOL(fd,6+c*10)=val;
 			WFIFOL(fd,10+c*10)=pc->modifysellvalue(sd,val);
@@ -9985,8 +9986,10 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type, 
 		}
 		break;
 		case 0x02: // sitdown
-			if (DIFF_TICK(timer->gettick(), sd->canlog_tick) < 5000) // In combat
+			if (DIFF_TICK(timer->gettick(), sd->canlog_tick) < 5000) {// In combat
+				clif_talkiebox(&sd->bl, "Cannot sit while in combat.");
 				break;
+			}
 
 			if (sd->sc.data[SC_SITDOWN_FORCE] || sd->sc.data[SC_BANANA_BOMB_SITDOWN_POSTDELAY])
 				return;

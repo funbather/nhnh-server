@@ -4243,6 +4243,22 @@ int pc_modifysellvalue(struct map_session_data *sd, int orig_value)
 	return orig_value;
 }
 
+int pc_calczenyvalue(struct item *item) {
+	int i, ench = 0;
+	double basevalue = 127;
+
+	for( i = 0; i < 4; i++ ) {
+		if( item->card[i] > 0 )
+			ench++;
+	}
+
+	basevalue = basevalue * pow(item->attribute+10,2) / 100;
+	basevalue = basevalue * item->refine / 12;
+	basevalue = basevalue * (1 + sqrt(pow(ench,3)));
+
+	return (int) basevalue;
+}
+
 /*==========================================
  * Checking if we have enough place on inventory for new item
  * Make sure to take 30k as limit (for client I guess)
@@ -11968,6 +11984,7 @@ void pc_defaults(void) {
 
 	pc->modifybuyvalue = pc_modifybuyvalue;
 	pc->modifysellvalue = pc_modifysellvalue;
+	pc->calczenyvalue = pc_calczenyvalue;
 
 	pc->follow = pc_follow; // [MouseJstr]
 	pc->stop_following = pc_stop_following;

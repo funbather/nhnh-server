@@ -1,0 +1,139 @@
+prt_monk,218,183,5	script	Kharis#missions	4_F_JP_NOAH,{
+	mes "[Kharis]";
+	mes "Welcome. Do you wish to attempt a Trial?";
+	
+	menu "Yeah!",menuTrials,"Trial?",askTrial,"Maybe another time.",thatsAll;
+	
+backToMenu:
+
+	cleartext;
+	mes "[Kharis]";
+	mes "So? Will you attempt a Trial?";
+	menu "Yeah!",menuTrials,"Trial?",askTrial,"Maybe another time.",thatsAll;
+
+askTrial:
+	cleartext;
+	mes "[Kharis]";
+	mes "Trials are short instanced dungeons crawling with monsters, as well as a powerful Boss Monster waiting at the end.";
+	next;
+	mes "[Kharis]";
+	mes "Killing the Boss grants a large amount of experience and item drops, and sometimes even special items like a ticket for the Cosmetic Lottery.";
+	next;
+	mes "[Kharis]";
+	mes "Trials can be attempted as many times as you like, and do not need to be completed to retry.\n\nConsider clearing out the regular monsters in a Trial a few times for experience and equipment upgrades if a Boss is too much for you to handle.";
+	next;
+	goto backToMenu;
+	
+thatsAll:
+	cleartext;
+	mes "[Kharis]";
+	mes "Goodbye, for now.";
+	close;
+	
+menuTrials:
+
+	cleartext;
+	mes "[Kharis]";
+	mes "Which Trial will you challenge?";
+	menu "River - Lv 1 ~ 4",goRiver,"I changed my mind.",backToMenu;
+	
+goRiver:
+	
+	cleartext;
+	.@instance = has_instance2("prt_fild04");
+	debugmes("goRiver " + .@instance);
+	mes "[Kharis]";
+	mes "River - Lv 1 ~ 4";
+	mes "A winding path along a river bank.\n\n";
+	mes "Boss: ^boGigant Frog^ld";
+	mes "A giant frog with an affinity for water magic.";
+	if( .@instance >= 0 )
+		menu "Enter Existing Trial",goEnterRiver,"Create Solo Trial",goRiverSolo,"Create Party Trial",goRiverParty,"I changed my mind.",backToMenu;
+	if( .@instance  < 0 )
+		menu "Create Solo Trial",goRiverSolo,"Create Party Trial",goRiverParty,"I changed my mind.",backToMenu;
+	
+goRiverSolo:
+
+	.@party_id = getcharid(CHAR_ID_PARTY);
+
+	if( .@party_id != 0 ) {
+		cleartext;
+		mes "[Kharis]";
+		mes "You cannot begin a Solo Trial while in a party.";
+		next;
+		goto backToMenu;
+	}
+
+	if( .@instance >= 0 )
+		instance_destroy( .@instance );
+		
+	.@instance = instance_create("River", getcharid(CHAR_ID_ACCOUNT), IOT_CHAR);
+	if( .@instance < 0 ) {
+		cleartext;
+		mes "Failed to create instance! Report this!!";
+		close;
+	}
+	if( instance_attachmap("prt_fild04", .@instance, true, getcharid(CHAR_ID_ACCOUNT)+"T1") == "" ) {
+		instance_destroy(.@instance);
+		cleartext;
+		mes "Failed to attach map! Report this!!";
+		close;
+	}
+	
+	instance_attach(.@instance);
+	instance_set_timeout(3600, 600, .@instance);
+	instance_init(.@instance);
+
+	warp has_instance("prt_fild04"), 367, 159;
+	end;
+	
+goRiverParty:
+
+	.@party_id = getcharid(CHAR_ID_PARTY);
+
+	if( .@party_id == 0 ) {
+		cleartext;
+		mes "[Kharis]";
+		mes "You must already be in a party to begin a Party Trial.";
+		next;
+		goto backToMenu;
+	}
+	
+	if( getpartyleader(.@party_id) !=  strcharinfo(PC_NAME) ) {
+		cleartext;
+		mes "[Kharis]";
+		mes "You must be the party leader to begin a Party Trial.";
+		next;
+		goto backToMenu;
+	}
+	
+	debugmes("goRiverParty " + .@instance);
+
+	if( .@instance >= 0 )
+		instance_destroy( .@instance );
+		
+	.@instance = instance_create("River", getcharid(CHAR_ID_PARTY), IOT_PARTY);
+	
+	if( .@instance < 0 ) {
+		cleartext;
+		mes "Failed to create instance! Report this!!";
+		close;
+	}
+	if( instance_attachmap("prt_fild04", .@instance, true, getcharid(CHAR_ID_PARTY)+"T1") == "" ) {
+		instance_destroy(.@instance);
+		cleartext;
+		mes "Failed to attach map! Report this!!";
+		close;
+	}
+	
+	instance_attach(.@instance);
+	instance_set_timeout(3600, 600, .@instance);
+	instance_init(.@instance);
+
+	warp has_instance("prt_fild04"), 367, 159;
+	end;	
+
+goEnterRiver:
+	warp has_instance("prt_fild04"), 367, 159;
+	end;
+}

@@ -1893,20 +1893,11 @@ void mob_generate_item(struct mob_data *md, struct item *it, int flag) {
 		// item level is just set to the mob's level (for now?)
 		ilvl = md->level;
 
-		// enchantment rolls
-		//   min     max
-		//
-		// ilvl/2 ~ ilvl*2
-		//    0       2     - mob level 1
-		//   12      50     - mob level 25
-		//   25     100     - mob level 50
-		//
 		// rolls get set even if there is no enchantment in that slot!!
-
-		rolls |=  (ilvl / 2) + rnd()%(ilvl * 2 - (ilvl / 2));
-		rolls |= ((ilvl / 2) + rnd()%(ilvl * 2 - (ilvl / 2))) << 8;
-		rolls |= ((ilvl / 2) + rnd()%(ilvl * 2 - (ilvl / 2))) << 16;
-		rolls |= ((ilvl / 2) + rnd()%(ilvl * 2 - (ilvl / 2))) << 24;
+		rolls |=  ilvl / 2 + rnd()%(24 + ilvl);
+		rolls |= (ilvl / 2 + rnd()%(24 + ilvl)) << 8;
+		rolls |= (ilvl / 2 + rnd()%(24 + ilvl)) << 16;
+		rolls |= (ilvl / 2 + rnd()%(24 + ilvl)) << 24;
 	} else if( flag == DT_CRAFT ) {
 		int rand = rnd()%10000;
 

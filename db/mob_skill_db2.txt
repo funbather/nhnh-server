@@ -54,6 +54,11 @@
 //	-4: added for all mobs.
 
 // Athena Dev Team
+1006,Bubble@Deluge,anytarget,4052,1,3000,2000,6000,no,target,always,0,,,,,,33,
+1007,Snapper@Skullcrack,anytarget,4012,1,2000,500,6000,no,target,always,0,,,,,,36,
+1009,GFrog@Deluge,anytarget,4052,3,3000,2000,4500,no,target,always,0,,,,,,6,
+1009,GFrog@Gush,anytarget,4053,3,3000,1500,6000,no,target,always,0,,,,,,7,
+
 //1900,Valaris@AL_TELEPORT,idle,26,1,10000,0,0,yes,self,rudeattacked,,,,,,,,
 //1900,Valaris@AL_TELEPORT,walk,26,1,500,0,5000,yes,self,rudeattacked,,,,,,,,
 //1900,Valaris@KN_BRANDISHSPEAR,attack,57,10,2000,500,5000,no,target,always,0,,,,,,29,

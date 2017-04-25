@@ -3102,7 +3102,7 @@ void status_calc_regen(struct block_list *bl, struct status_data *st, struct reg
 		return;
 
 	sd = BL_CAST(BL_PC,bl);
-	val = max(2,(st->max_hp * (100 + st->vit)) / 5000); // BASE HP REGEN - 2% of Max HP per second, increased by 1% per VIT
+	val = max(5,(st->max_hp * (100 + st->vit)) / 5000); // BASE HP REGEN - 2% of Max HP per second, increased by 1% per VIT (5 HP/sec minimum)
 
 	if( sd && sd->hprecov_rate != 100 )
 		val = val*sd->hprecov_rate/100;
@@ -3832,7 +3832,7 @@ unsigned short status_base_atk(const struct block_list *bl, const struct status_
 	if (bl->type == BL_PC)
 		str = (10 + BL_UCCAST(BL_PC, bl)->status.base_level);
 	else if (bl->type == BL_MOB)
-		str = 10 + BL_UCCAST(BL_MOB, bl)->level;
+		str = 1;
 
 	str += str * st->str * 2 / 100;
 

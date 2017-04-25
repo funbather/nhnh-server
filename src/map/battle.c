@@ -1395,6 +1395,12 @@ int battle_calc_skillratio(int attack_type, struct block_list *src, struct block
 	switch(attack_type){
 		case BF_MAGIC:
 			switch(skill_id){
+				case NPC_DELUGE:
+					skillratio = 65;
+					break;
+				case NPC_GUSH:
+					skillratio = 100 * skill_lv;
+					break;
 				case MGN_STORMLOCUS_PULSE:
 					skillratio += 20 * skill_lv;
 					break;
@@ -3222,7 +3228,7 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 					}
 				}
 
-				if( flag.cri && sd->crit_atk_rate )
+				if( sd && flag.cri && sd->crit_atk_rate )
 					MATK_RATE(sd->crit_atk_rate);
 
 				//Constant/misc additions from skills
@@ -3860,7 +3866,6 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 	wd.type = BDT_NORMAL;
 	wd.div_ = skill_id ? skill->get_num(skill_id,skill_lv) : 1;
 	wd.amotion=(skill_id && skill->get_inf(skill_id)&INF_GROUND_SKILL)?0:sstatus->amotion; //Amotion should be 0 for ground skills.
-	wd.amotion = skill_id ? sstatus->amotion * 150 / 100 : sstatus->amotion; // amotion x1.5 for skills
 	wd.dmotion=tstatus->dmotion;
 	wd.blewcount = skill_id ? skill->get_blewcount(skill_id,skill_lv) : 0;
 	wd.flag = BF_WEAPON; //Initial Flag
@@ -3878,6 +3883,9 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 
 	sd = BL_CAST(BL_PC, src);
 	tsd = BL_CAST(BL_PC, target);
+
+
+	wd.amotion = sd && skill_id ? sstatus->amotion * 150 / 100 : sstatus->amotion; // amotion x1.5 for player skills
 
 	if(sd)
 		wd.blewcount += battle->blewcount_bonus(sd, skill_id);

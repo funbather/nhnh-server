@@ -1126,7 +1126,7 @@ packet(0x96e,-1,clif->ackmergeitems);
 	packet(0x02b5,-1);
 	packet(0x02b6,7,clif->pquestStateAck,2,6);
 	packet(0x02b7,7);
-	packet(0x02b8,22);
+	packet(0x02b8,26);
 	packet(0x02b9,191);
 	packet(0x02ba,11,clif->pHotkey,2,4,5,9);
 	packet(0x02bb,8);
