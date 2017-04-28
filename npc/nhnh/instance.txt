@@ -35,18 +35,17 @@ menuTrials:
 	cleartext;
 	mes "[Kharis]";
 	mes "Which Trial will you challenge?";
-	menu "River - Lv 1 ~ 4",goRiver,"I changed my mind.",backToMenu;
+	menu "River - Lv 1 ~ 4",goRiver,"Desert - Lv 5 ~ 8",goDesert,"I changed my mind.",backToMenu;
 	
 goRiver:
 	
 	cleartext;
 	.@instance = has_instance2("prt_fild04");
-	debugmes("goRiver " + .@instance);
 	mes "[Kharis]";
 	mes "River - Lv 1 ~ 4";
 	mes "A winding path along a river bank.\n\n";
 	mes "Boss: ^boGigant Frog^ld";
-	mes "A giant frog with an affinity for water magic.";
+	mes "A giant Frog with an affinity for water magic.";
 	if( .@instance >= 0 )
 		menu "Enter Existing Trial",goEnterRiver,"Create Solo Trial",goRiverSolo,"Create Party Trial",goRiverParty,"I changed my mind.",backToMenu;
 	if( .@instance  < 0 )
@@ -106,8 +105,6 @@ goRiverParty:
 		next;
 		goto backToMenu;
 	}
-	
-	debugmes("goRiverParty " + .@instance);
 
 	if( .@instance >= 0 )
 		instance_destroy( .@instance );
@@ -136,4 +133,102 @@ goRiverParty:
 goEnterRiver:
 	warp has_instance("prt_fild04"), 367, 159;
 	end;
+	
+goDesert:
+	
+	cleartext;
+	.@instance = has_instance2("moc_fild16");
+	mes "[Kharis]";
+	mes "Desert - Lv 5 ~ 8";
+	mes "Abandoned fortress hidden in the desert.\n\n";
+	mes "Boss: ^boTitan Rhea^ld";
+	mes "A fearsome Rhea with a deadly beak.";
+	if( .@instance >= 0 )
+		menu "Enter Existing Trial",goEnterDesert,"Create Solo Trial",goDesertSolo,"Create Party Trial",goDesertParty,"I changed my mind.",backToMenu;
+	if( .@instance  < 0 )
+		menu "Create Solo Trial",goDesertSolo,"Create Party Trial",goDesertParty,"I changed my mind.",backToMenu;
+	
+goDesertSolo:
+
+	.@party_id = getcharid(CHAR_ID_PARTY);
+
+	if( .@party_id != 0 ) {
+		cleartext;
+		mes "[Kharis]";
+		mes "You cannot begin a Solo Trial while in a party.";
+		next;
+		goto backToMenu;
+	}
+
+	if( .@instance >= 0 )
+		instance_destroy( .@instance );
+		
+	.@instance = instance_create("Desert", getcharid(CHAR_ID_ACCOUNT), IOT_CHAR);
+	if( .@instance < 0 ) {
+		cleartext;
+		mes "Failed to create instance! Report this!!";
+		close;
+	}
+	if( instance_attachmap("moc_fild16", .@instance, true, getcharid(CHAR_ID_ACCOUNT)+"T2") == "" ) {
+		instance_destroy(.@instance);
+		cleartext;
+		mes "Failed to attach map! Report this!!";
+		close;
+	}
+	
+	instance_attach(.@instance);
+	instance_set_timeout(3600, 600, .@instance);
+	instance_init(.@instance);
+
+	warp has_instance("moc_fild16"), 344, 359;
+	end;
+	
+goDesertParty:
+
+	.@party_id = getcharid(CHAR_ID_PARTY);
+
+	if( .@party_id == 0 ) {
+		cleartext;
+		mes "[Kharis]";
+		mes "You must already be in a party to begin a Party Trial.";
+		next;
+		goto backToMenu;
+	}
+	
+	if( getpartyleader(.@party_id) !=  strcharinfo(PC_NAME) ) {
+		cleartext;
+		mes "[Kharis]";
+		mes "You must be the party leader to begin a Party Trial.";
+		next;
+		goto backToMenu;
+	}
+
+	if( .@instance >= 0 )
+		instance_destroy( .@instance );
+		
+	.@instance = instance_create("Desert", getcharid(CHAR_ID_PARTY), IOT_PARTY);
+	
+	if( .@instance < 0 ) {
+		cleartext;
+		mes "Failed to create instance! Report this!!";
+		close;
+	}
+	if( instance_attachmap("moc_fild16", .@instance, true, getcharid(CHAR_ID_PARTY)+"T2") == "" ) {
+		instance_destroy(.@instance);
+		cleartext;
+		mes "Failed to attach map! Report this!!";
+		close;
+	}
+	
+	instance_attach(.@instance);
+	instance_set_timeout(3600, 600, .@instance);
+	instance_init(.@instance);
+
+	warp has_instance("moc_fild16"), 344, 359;
+	end;
+
+goEnterDesert:
+	warp has_instance("moc_fild16"), 344, 359;
+	end;
+
 }

@@ -3376,6 +3376,10 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 		}
 	}
 
+	if( ad.damage ) { // 15% variation in magical damage
+		ad.damage = ad.damage * (85 + rnd()%31) / 100;
+	}
+
 	return ad;
 #undef MATK_RATE
 #undef MATK_ADDRATE
@@ -4278,6 +4282,10 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 			} else
 				battle->reflect_damage(target, src, &wd, skill_id);
 		}
+	}
+
+	if( wd.damage ) { // 15% variation in physical damage
+		wd.damage = wd.damage * (85 + rnd()%31) / 100;
 	}
 
 	return wd;

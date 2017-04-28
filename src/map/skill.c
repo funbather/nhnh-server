@@ -5084,7 +5084,7 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 	if( sc && sc->data[SC_CURSEDCIRCLE_ATKER] ) //Should only remove after the skill has been casted.
 		status_change_end(src,SC_CURSEDCIRCLE_ATKER,INVALID_TIMER);
 
-	if( sc && sc->data[SC_DOUBLETEAM] ) // removed on offensive skill use
+	if( sc && skill_id && sc->data[SC_DOUBLETEAM] ) // removed on offensive skill use
 		status_change_end(src,SC_DOUBLETEAM,INVALID_TIMER);
 
 
@@ -5819,10 +5819,6 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 
 		case THF_BROWBEAT:
 			sc_start(src, bl, type, 100, (20 + 2 * skill_lv) * (100 + status_get_dex(src)) / 100, -1); // infinite duration
-
-			if( dstmd )
-				mob->unlocktarget(dstmd, tick);
-
 			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
 		break;
 
@@ -13746,7 +13742,7 @@ int skill_check_condition_castbegin(struct map_session_data* sd, uint16 skill_id
 	nullpo_ret(sd);
 
 	if ( skill_id > 10000 ) { // ids above 10k signal ACO_BENEVOLENCE bonus, there shouldn't be any skills with ids > 10k.... right??
-		benevolence = pc->checkskill(sd,ACO_BENEVOLENCE);
+		benevolence = 10 + 5 * pc->checkskill(sd,ACO_BENEVOLENCE);
 		skill_id = skill_id % 10000;
 	}
 
@@ -14656,7 +14652,7 @@ int skill_check_condition_castbegin(struct map_session_data* sd, uint16 skill_id
 	}
 
 	if ( (benevolence > 0) && (require.sp > 0) ) {
-		require.sp = require.sp * (100 - (benevolence * 5) ) / 100;
+		require.sp = require.sp * (100 - benevolence) / 100;
 
 		if ( require.sp < 0 ) // this shouldn't happen, but it doesn't hurt to check
 			require.sp = 0;
@@ -14935,7 +14931,7 @@ int skill_consume_requirement(struct map_session_data *sd, uint16 skill_id, uint
 	nullpo_ret(sd);
 
 	if ( skill_id > 10000 ) {
-		benevolence = pc->checkskill(sd,ACO_BENEVOLENCE);
+		benevolence = 10 + 5 * pc->checkskill(sd,ACO_BENEVOLENCE);
 		skill_id = skill_id % 10000;
 	}
 
@@ -14954,7 +14950,7 @@ int skill_consume_requirement(struct map_session_data *sd, uint16 skill_id, uint
 		}
 
 		if ( (benevolence > 0) && (req.sp > 0) ) {
-			req.sp = req.sp * (100 - (benevolence * 5) ) / 100;
+			req.sp = req.sp * (100 - benevolence) / 100;
 
 			if ( req.sp < 0 )
 				req.sp = 0;

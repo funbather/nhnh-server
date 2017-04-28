@@ -112,7 +112,7 @@
 #endif
 #define MAX_CARTS (MAX_BASE_CARTS + MAX_CARTDECORATION_CARTS)
 
-#define MAX_INVENTORY 30
+#define MAX_INVENTORY 40
 //Max number of characters per account. Note that changing this setting alone is not enough if the client is not hexed to support more characters as well.
 #define MAX_CHARS 9
 //Number of slots carded equipment can have. Never set to less than 4 as they are also used to keep the data of forged items/equipment. [Skotlex]

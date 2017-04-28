@@ -9,3 +9,24 @@ function	script	doWarpParty	{
 	}
 	return;
 }
+
+function	script	doCoinBag	{
+	.@zenygain = rand(25,250);
+	Zeny += .@zenygain;
+	dispbottom(sprintf("Gained %d zeny!",.@zenygain));
+	
+	if( rand(100) < 25 ) {
+		.@itemroll = rand(10000);
+		
+		if     ( .@itemroll >= 7000 ) getitem(_mythril, 1);
+		else if( .@itemroll >= 4000 ) getitem(_orichalcum, 1);
+		else if( .@itemroll >= 1700 ) getitem(_emptybijou, 1);
+		else if( .@itemroll >=  700 ) getitem(_arcanebijou, 1);
+		else if( .@itemroll >=  450 ) getitem(_blessedbijou, 1);
+		else if( .@itemroll >=  250 ) getitem(_divinehammer, 1);
+		else if( .@itemroll >=  100 ) getitem(_capriciousbijou, 1);
+		else                          getitem(_discordantbijou, 1);
+	}
+	
+	return;
+}

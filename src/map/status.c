@@ -4834,7 +4834,7 @@ defType status_calc_def(struct block_list *bl, struct status_change *sc, int def
 #endif
 
 	if (sc->data[SC_FORCEARMOR])
-		def += def * sc->data[SC_FORCEARMOR]->val2 / 100;
+		def += def * sc->data[SC_FORCEARMOR]->val2 / 200;
 
 	if (sc->data[SC_STONEHARDSKIN])
 		def += sc->data[SC_STONEHARDSKIN]->val1;
@@ -9909,6 +9909,10 @@ int status_change_end_(struct block_list* bl, enum sc_type type, int tid, const 
 				return 0;
 		if (sce->timer != INVALID_TIMER) //Could be a SC with infinite duration
 			timer->delete(sce->timer,status->change_timer);
+		if( type == SC_DISCHARGE ) {
+			sce->timer = timer->add(timer->gettick()+30, status->change_timer, bl->id, type); // small delay before ending status so AoE damage calculates properly
+			return 1;
+		}
 		if (sc->opt1)
 			switch (type) {
 				//"Ugly workaround"  [Skotlex]

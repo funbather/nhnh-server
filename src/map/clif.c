@@ -4133,7 +4133,7 @@ static inline int clif_calc_delay(int type, int div, int damage, int delay)
  * Estimates walk delay based on the damage criteria. [Skotlex]
  *------------------------------------------*/
 int clif_calc_walkdelay(struct block_list *bl,int delay, int type, int damage, int div_) {
-	if (type == 4 || type == 9 || damage <=0)
+	if (type == 4 || type == 9 || type == 22 || type == 23 || type == 24 || damage <=0)
 		return 0;
 
 	nullpo_retr(delay, bl);
