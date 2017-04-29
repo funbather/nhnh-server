@@ -7561,7 +7561,7 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 	if(!(flag&SCFLAG_LOADED)) { // Do not parse val settings when loading SCs
 		switch(type) {
 			case SC_SECONDWIND:
-				val2 = tick / 250; // 4 ticks per second
+				val2 = tick / 500; // 2 ticks per second
 				if(val2 < 1) val2 = 1;
 
 				val3 = ( val1 / val2 ) / 10000; // hp/tick = heal total / # ticks
@@ -10721,14 +10721,14 @@ int status_change_timer(int tid, int64 tick, int id, intptr_t data)
 
 	switch(type) {
 		case SC_SECONDWIND:
-			if (sd && --(sce->val2) >= 0) {
+			if (--(sce->val2) >= 0) {
 				status->heal(bl, sce->val3, 0, 3);
-				sc_timer_next(250 + tick, status->change_timer, bl->id, data);
+				sc_timer_next(500 + tick, status->change_timer, bl->id, data);
 				return 0;
 			}
 			break;
 		case SC_PURIFY:
-			if (sd && --(sce->val2) >= 0) {
+			if (--(sce->val2) >= 0) {
 				status->heal(bl, sce->val3, 0, 3);
 				sc_timer_next(1000 + tick, status->change_timer, bl->id, data);
 				return 0;

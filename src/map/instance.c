@@ -196,8 +196,14 @@ int instance_add_map(const char *name, int instance_id, bool usebasename, const 
 	}
 
 	if( map_name != NULL && strdb_iget(mapindex->db, map_name) ) {
-		ShowError("instance_add_map: trying to create instanced map with existent name '%s'\n", map_name);
-		return -2;
+		instance->del_map(map->mapname2mapid(map_name)); /* if the map name exists, delete the map and continue anyway.
+		                                                    there's an issue where instances attached to a session (IOT_CHAR)
+		                                                    become orphaned if the player relogs, and the map name which was generated
+		                                                    from the player's account id blocks them from creating a new one until it expires
+		                                                    deleting the existing map here shouldn't break anything (for my purposes, anyway :^)) */
+
+		//ShowError("instance_add_map: trying to create instanced map with existent name '%s'\n", map_name);
+		//return -2;
 	}
 
 	if( map->list[m].instance_id >= 0 ) {

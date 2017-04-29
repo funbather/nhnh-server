@@ -807,7 +807,7 @@ ACMD(load) {
 	}
 
 	pc->setpos(sd, sd->status.save_point.map, sd->status.save_point.x, sd->status.save_point.y, CLR_OUTSIGHT);
-	clif->message(fd, msg_fd(fd,7)); // Warping to save point..
+	//clif->message(fd, msg_fd(fd,7)); // Warping to save point..
 
 	return true;
 }

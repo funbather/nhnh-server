@@ -7,7 +7,7 @@ moc_fild16,344,354,6	script	Guardian#desert	2_MONEMUS,{
 		areamonster("this", 135, 90, 285, 331, "Antlion"    , 1012, 80);
 		areamonster("this", 135, 90, 285, 331, "Rhea"       , 1013, 50);
 		areamonster("this", 135, 90, 285, 331, "Sandstinger", 1014, 35);
-		monster("this", 205, 295, "Titan Rhea", 1015,1,instance_npcname("Guardian#river")+"::onBossKilled");
+		monster("this", 205, 295, "Titan Rhea", 1015,1,instance_npcname("Guardian#desert")+"::onBossKilled");
 	}
 	end;
 	

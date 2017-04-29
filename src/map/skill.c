@@ -5772,18 +5772,14 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 		break;
 
 		case SWD_SECONDWIND:
-			if( sd && pc_iscritical(sd) ) {
-				sc_start(src, bl, type, 100, ((40 + 6 * skill_lv) * (100 + status_get_dex(src))) * status_get_max_hp(src), skill->get_time(skill_id, skill_lv));
+			sc_start(src, bl, type, 100, ((40 + 6 * skill_lv) * (100 + status_get_dex(src))) * status_get_max_hp(src), skill->get_time(skill_id, skill_lv));
 
-				status_change_end(bl, SC_POISON, INVALID_TIMER);
-				status_change_end(bl, SC_IGNITE, INVALID_TIMER);
-				status_change_end(bl, SC_BLOODING, INVALID_TIMER);
-				status_change_end(bl, SC_BLIND, INVALID_TIMER);
+			status_change_end(bl, SC_POISON, INVALID_TIMER);
+			status_change_end(bl, SC_IGNITE, INVALID_TIMER);
+			status_change_end(bl, SC_BLOODING, INVALID_TIMER);
+			status_change_end(bl, SC_BLIND, INVALID_TIMER);
 
-				skill->blockpc_start(sd, skill_id, skill_get_time2(skill_id, skill_lv)); // only apply cooldown on successful cast
-				clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
-			} else
-				clif->skill_fail(sd,skill_id,USESKILL_FAIL_LEVEL,0);
+			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
 		break;
 
 		case SWD_SWAGGER:

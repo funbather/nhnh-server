@@ -35,7 +35,7 @@ menuTrials:
 	cleartext;
 	mes "[Kharis]";
 	mes "Which Trial will you challenge?";
-	menu "River - Lv 1 ~ 4",goRiver,"Desert - Lv 5 ~ 8",goDesert,"I changed my mind.",backToMenu;
+	menu "River - Lv 1 ~ 4",goRiver,"Desert - Lv 5 ~ 8",goDesert,"Village - Lv 9 ~ 12",goVillage,"I changed my mind.",backToMenu;
 	
 goRiver:
 	
@@ -229,6 +229,103 @@ goDesertParty:
 
 goEnterDesert:
 	warp has_instance("moc_fild16"), 344, 359;
+	end;
+
+goVillage:
+	
+	cleartext;
+	.@instance = has_instance2("gef_fild11");
+	mes "[Kharis]";
+	mes "Village - Lv 9 ~ 12";
+	mes "A hostile encampment deep in the woods.\n\n";
+	mes "Boss: ^boGoblin King^ld";
+	mes "A stalwart goblin warrior.";
+	if( .@instance >= 0 )
+		menu "Enter Existing Trial",goEnterVillage,"Create Solo Trial",goVillageSolo,"Create Party Trial",goVillageParty,"I changed my mind.",backToMenu;
+	if( .@instance  < 0 )
+		menu "Create Solo Trial",goVillageSolo,"Create Party Trial",goVillageParty,"I changed my mind.",backToMenu;
+	
+goVillageSolo:
+
+	.@party_id = getcharid(CHAR_ID_PARTY);
+
+	if( .@party_id != 0 ) {
+		cleartext;
+		mes "[Kharis]";
+		mes "You cannot begin a Solo Trial while in a party.";
+		next;
+		goto backToMenu;
+	}
+
+	if( .@instance >= 0 )
+		instance_destroy( .@instance );
+		
+	.@instance = instance_create("Village", getcharid(CHAR_ID_ACCOUNT), IOT_CHAR);
+	if( .@instance < 0 ) {
+		cleartext;
+		mes "Failed to create instance! Report this!!";
+		close;
+	}
+	if( instance_attachmap("gef_fild11", .@instance, true, getcharid(CHAR_ID_ACCOUNT)+"T3") == "" ) {
+		instance_destroy(.@instance);
+		cleartext;
+		mes "Failed to attach map! Report this!!";
+		close;
+	}
+	
+	instance_attach(.@instance);
+	instance_set_timeout(3600, 600, .@instance);
+	instance_init(.@instance);
+
+	warp has_instance("gef_fild11"), 340, 259;
+	end;
+	
+goVillageParty:
+
+	.@party_id = getcharid(CHAR_ID_PARTY);
+
+	if( .@party_id == 0 ) {
+		cleartext;
+		mes "[Kharis]";
+		mes "You must already be in a party to begin a Party Trial.";
+		next;
+		goto backToMenu;
+	}
+	
+	if( getpartyleader(.@party_id) !=  strcharinfo(PC_NAME) ) {
+		cleartext;
+		mes "[Kharis]";
+		mes "You must be the party leader to begin a Party Trial.";
+		next;
+		goto backToMenu;
+	}
+
+	if( .@instance >= 0 )
+		instance_destroy( .@instance );
+		
+	.@instance = instance_create("Village", getcharid(CHAR_ID_PARTY), IOT_PARTY);
+	
+	if( .@instance < 0 ) {
+		cleartext;
+		mes "Failed to create instance! Report this!!";
+		close;
+	}
+	if( instance_attachmap("gef_fild11", .@instance, true, getcharid(CHAR_ID_PARTY)+"T3") == "" ) {
+		instance_destroy(.@instance);
+		cleartext;
+		mes "Failed to attach map! Report this!!";
+		close;
+	}
+	
+	instance_attach(.@instance);
+	instance_set_timeout(3600, 600, .@instance);
+	instance_init(.@instance);
+
+	warp has_instance("gef_fild11"), 340, 259;
+	end;
+
+goEnterVillage:
+	warp has_instance("gef_fild11"), 340, 259;
 	end;
 
 }
