@@ -5784,7 +5784,7 @@ int pc_memo(struct map_session_data* sd, int pos) {
 /*==========================================
  * Return player sd skill_lv learned for given skill
  *------------------------------------------*/
-int pc_checkskill(struct map_session_data *sd,uint16 skill_id) {
+int pc_checkskill(const struct map_session_data *sd,uint16 skill_id) {
 	uint16 index = 0;
 	if(sd == NULL) return 0;
 	if( skill_id >= GD_SKILLBASE && skill_id < GD_MAX ) {

@@ -846,11 +846,11 @@ int skill_additional_effect(struct block_list* src, struct block_list *bl, uint1
 			break;
 
 		case THF_PUNCTURE:
-			sc_start(src,bl,SC_BLOODING,100,skill_lv,skill->get_time(skill_id,skill_lv));
+			sc_start2(src,bl,SC_BLOODING,100,skill_lv,src->id,skill->get_time(skill_id,skill_lv));
 			break;
 
 		case MGN_INCINERATE:
-			sc_start2(src,bl,SC_IGNITE,100,skill_lv,status_get_dex(src),skill->get_time(skill_id,skill_lv));
+			sc_start2(src,bl,SC_IGNITE,100,status_get_dex(src),src->id,skill->get_time(skill_id,skill_lv));
 			break;
 
 		case MGN_EXPLOSION:
@@ -1058,14 +1058,14 @@ int skill_additional_effect(struct block_list* src, struct block_list *bl, uint1
 		case NPC_SILENCEATTACK:
 		case NPC_STUNATTACK:
 		case NPC_HELLPOWER:
-			sc_start(src,bl,status->skill2sc(skill_id),50+10*skill_lv,skill_lv,skill->get_time2(skill_id,skill_lv));
+			sc_start2(src,bl,status->skill2sc(skill_id),50+10*skill_lv,0,src->id,skill->get_time2(skill_id,skill_lv));
 			break;
 		case NPC_ACIDBREATH:
 		case NPC_ICEBREATH:
 			sc_start(src,bl,status->skill2sc(skill_id),70,skill_lv,skill->get_time2(skill_id,skill_lv));
 			break;
 		case NPC_BLEEDING:
-			sc_start2(src,bl,SC_BLOODING,(20*skill_lv),skill_lv,src->id,skill->get_time2(skill_id,skill_lv));
+			sc_start2(src,bl,SC_BLOODING,(20*skill_lv),0,src->id,skill->get_time2(skill_id,skill_lv));
 			break;
 		case NPC_MENTALBREAKER:
 		{

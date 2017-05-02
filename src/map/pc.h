@@ -864,7 +864,7 @@ END_ZEROED_BLOCK; /* End */
 	int (*equippoint) (struct map_session_data *sd,int n);
 	int (*setinventorydata) (struct map_session_data *sd);
 
-	int (*checkskill) (struct map_session_data *sd,uint16 skill_id);
+	int (*checkskill) (const struct map_session_data *sd,uint16 skill_id);
 	int (*checkskill2) (struct map_session_data *sd,uint16 index);
 	int (*checkallowskill) (struct map_session_data *sd);
 	int (*checkequip) (struct map_session_data *sd,int pos);

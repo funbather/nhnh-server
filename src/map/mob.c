@@ -2542,20 +2542,27 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 			 * 5 chances for a standard equipment item drop
 			 * 16% 8% 4% 2% 1%
 			 *
+			 * 10 chances for boss flagged mobs
+			 * 100% 100% 100% 64% 32% 16% 8% 4% 2% 1%
+			 *
 			 * LUK increases each individual chance by 1%/LUK
 			 *
 			 * 4% (+1%/LUK) chance for a crafting item to drop */
 			int droprate;
 			struct item item_tmp;
+			int baserate = (BL_UCCAST(BL_MOB, &md->bl)->status.mode&MD_BOSS) ? 51200 : 1600;
 
-			for( i=0; i<5; i++) {
-				droprate = (1600 / (1 << i)) * (100 + status_get_luk(src)) / 100; // Equipment
+			for( i=0; i>=0; i++) {
+				droprate = (baserate / (1 << i)) * (100 + status_get_luk(src)) / 100; // Equipment
 
 				if( rnd()%10000 < droprate ) {
 					mob->generate_item(md, &item_tmp, DT_EQUIP);
 					ditem = mob->setlootitem(&item_tmp);
 					mob->item_drop(md, dlist, ditem, 0, 10000, false);
 				}
+
+				if( (baserate / (1 << i)) <= 100 )
+					i = -99; // break out
 			}
 
 			droprate = 500 * (100 + status_get_luk(src)) / 100; // Crafting Items

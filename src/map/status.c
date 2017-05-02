@@ -174,13 +174,13 @@ void initChangeTables(void)
 	status->set_sc( NPC_WIDEFREEZE    , SC_FREEZE    , SI_BLANK    , SCB_DEF_ELE|SCB_DEF|SCB_MDEF );
 	status->set_sc( NPC_STUNATTACK    , SC_STUN      , SI_BLANK    , SCB_NONE );
 	status->set_sc( NPC_SLEEPATTACK   , SC_SLEEP     , SI_BLANK    , SCB_NONE );
-	status->set_sc( NPC_POISON        , SC_POISON    , SI_BLANK    , SCB_DEF2|SCB_REGEN );
+	status->set_sc( NPC_POISON        , SC_POISON    , SI_HEALTHSTATE_POISON    , SCB_NONE );
 	status->set_sc( NPC_CURSEATTACK   , SC_CURSE     , SI_BLANK    , SCB_LUK|SCB_BATK|SCB_WATK|SCB_SPEED );
 	status->set_sc( NPC_SILENCEATTACK , SC_SILENCE   , SI_BLANK    , SCB_NONE );
 	status->set_sc( NPC_WIDECONFUSE   , SC_CONFUSION , SI_BLANK    , SCB_NONE );
 	status->set_sc( NPC_BLINDATTACK   , SC_BLIND     , SI_BLANK    , SCB_HIT|SCB_FLEE );
-	status->set_sc( NPC_BLEEDING      , SC_BLOODING  , SI_BLOODING , SCB_REGEN );
-	status->set_sc( NPC_POISON        , SC_DPOISON   , SI_BLANK    , SCB_DEF2|SCB_REGEN );
+	status->set_sc( NPC_BLEEDING      , SC_BLOODING  , SI_BLOODING , SCB_NONE );
+	status->set_sc( NPC_POISON        , SC_DPOISON   , SI_BLANK    , SCB_NONE );
 
 	//The main status definitions
 	add_sc( SM_BASH              , SC_STUN            );
@@ -3094,7 +3094,7 @@ int status_calc_homunculus_(struct homun_data *hd, enum e_status_calc_opt opt)
 void status_calc_regen(struct block_list *bl, struct status_data *st, struct regen_data *regen)
 {
 	struct map_session_data *sd;
-	int val, skill_lv, reg_flag;
+	int val, reg_flag;
 	nullpo_retv(bl);
 	nullpo_retv(st);
 
@@ -6696,78 +6696,9 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 #endif // 0
 	}
 
-	if( sc->data[SC_REFRESH] ) {
-		if( type >= SC_COMMON_MIN && type <= SC_COMMON_MAX) // Confirmed.
-			return 0; // Immune to status ailements
-		switch( type ) {
-			case SC_DEEP_SLEEP:
-			case SC__CHAOS:
-			case SC_BURNING:
-			case SC_STUN:
-			case SC_SLEEP:
-			case SC_CURSE:
-			case SC_STONE:
-			case SC_POISON:
-			case SC_BLIND:
-			case SC_SILENCE:
-			case SC_BLOODING:
-			case SC_FREEZE:
-			case SC_FROSTMISTY:
-			case SC_COLD:
-			case SC_TOXIN:
-			case SC_PARALYSE:
-			case SC_VENOMBLEED:
-			case SC_MAGICMUSHROOM:
-			case SC_DEATHHURT:
-			case SC_PYREXIA:
-			case SC_OBLIVIONCURSE:
-			case SC_MARSHOFABYSS:
-			case SC_MANDRAGORA:
-				return 0;
-		}
-	} else if( sc->data[SC_INSPIRATION] ) {
-		if( type >= SC_COMMON_MIN && type <= SC_COMMON_MAX )
-			return 0; // Immune to status ailements
-		switch( type ) {
-			case SC_POISON:
-			case SC_BLIND:
-			case SC_STUN:
-			case SC_SILENCE:
-			case SC__CHAOS:
-			case SC_STONE:
-			case SC_SLEEP:
-			case SC_BLOODING:
-			case SC_CURSE:
-			case SC_BURNING:
-			case SC_FROSTMISTY:
-			case SC_FREEZE:
-			case SC_COLD:
-			case SC_FEAR:
-			case SC_TOXIN:
-			case SC_PARALYSE:
-			case SC_VENOMBLEED:
-			case SC_MAGICMUSHROOM:
-			case SC_DEATHHURT:
-			case SC_PYREXIA:
-			case SC_OBLIVIONCURSE:
-			case SC_LEECHESEND:
-			case SC_DEEP_SLEEP:
-			case SC_SATURDAY_NIGHT_FEVER:
-			case SC__BODYPAINT:
-			case SC__ENERVATION:
-			case SC__GROOMY:
-			case SC__IGNORANCE:
-			case SC__LAZINESS:
-			case SC__UNLUCKY:
-			case SC__WEAKNESS:
-				return 0;
-		}
-	}
-
 	sd = BL_CAST(BL_PC, bl);
 	src_sd = BL_CAST(BL_PC, src);
 
-	//
 	if ( !(rnd()%10000 < rate) ) // SC success chance
 		return 0;
 
@@ -6847,6 +6778,35 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 					break;
 			}
 		}
+
+		if( st->mode&MD_BOSS ) { // boss resists
+			switch (type) {
+				case SC_POISON:
+				case SC_BLOODING:
+				case SC_IGNITE:
+					tick = tick * 50 / 100;
+					break;
+
+				case SC_STUN:
+				case SC_FREEZE:
+				case SC_BLIND:
+				case SC_SILENCE:
+				case SC_SLEEP:
+				case SC_MARKED:
+				case SC_SHATTER:
+				case SC_CHILLED:
+				case SC_DEEPFREEZE:
+					tick = tick * 33 / 100;
+					break;
+
+				case SC_SWASHBUCKLING:
+				case SC_SQUASHED:
+				case SC_SWAGGER:
+					tick = tick * 25 / 100;
+					break;
+			}
+		}
+
 		if( !tick ) return 0;
 	}
 
@@ -7137,61 +7097,6 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 			if(sc->data[SC_HOVERING])
 				return 0;
 			break;
-	}
-
-	//Check for BOSS resistances
-	if(st->mode&MD_BOSS && !(flag&SCFLAG_NOAVOID)) {
-		if (type>=SC_COMMON_MIN && type <= SC_COMMON_MAX)
-			return 0;
-		switch (type) {
-			case SC_BLESSING:
-			case SC_DEC_AGI:
-			case SC_PROVOKE:
-			case SC_COMA:
-			case SC_GRAVITATION:
-			case SC_NJ_SUITON:
-			case SC_RICHMANKIM:
-			case SC_ROKISWEIL:
-			case SC_FOGWALL:
-			case SC_FROSTMISTY:
-			case SC_BURNING:
-			case SC_MARSHOFABYSS:
-			case SC_ADORAMUS:
-			case SC_NEEDLE_OF_PARALYZE:
-			case SC_DEEP_SLEEP:
-			case SC_COLD:
-
-				// Exploit prevention - kRO Fix
-			case SC_PYREXIA:
-			case SC_DEATHHURT:
-			case SC_TOXIN:
-			case SC_PARALYSE:
-			case SC_VENOMBLEED:
-			case SC_MAGICMUSHROOM:
-			case SC_OBLIVIONCURSE:
-			case SC_LEECHESEND:
-
-			// Ranger Effects
-			case SC_WUGBITE:
-			case SC_ELECTRICSHOCKER:
-			case SC_MAGNETICFIELD:
-
-			// Masquerades
-			case SC__ENERVATION:
-			case SC__GROOMY:
-			case SC__LAZINESS:
-			case SC__UNLUCKY:
-			case SC__WEAKNESS:
-			case SC__IGNORANCE:
-
-			// Other Effects
-			case SC_VACUUM_EXTREME:
-			case SC_NETHERWORLD:
-			case SC_FRESHSHRIMP:
-			case SC_SV_ROOTTWIST:
-			case SC_BITESCAR:
-				return 0;
-		}
 	}
 
 	//Before overlapping fail, one must check for status cured.
@@ -7861,11 +7766,11 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				tick_time = 100;
 
 				if( src_sd )
-					val2 += src_sd->bonus.poisondamage;
+					val1 += src_sd->bonus.poisondamage;
 
 				// POISON - 4% of mhp per second
-				// val2 - bonus damage
-				val4 = (1 + st->max_hp / 50) * ( val2 + 100 ) / 100;
+				// val1 - bonus damage / val2 - src id
+				val4 = (1 + st->max_hp / 50) * ( val1 + 100 ) / 100;
 				break;
 
 			case SC_IGNITE:
@@ -7875,11 +7780,11 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				tick_time = 100;
 
 				if( src_sd )
-					val2 += src_sd->bonus.ignitedamage;
+					val1 += src_sd->bonus.ignitedamage;
 
 				// IGNITE - 8% of mhp per second, reduced by MDEF
-				// val2 - bonus damage
-				val4 = (int) ( (100.0f - st->mdef / (st->mdef + 700.0f) * 100.0f) / 100.0f * (1 + st->max_hp / 25) ) * ( val2 + 100 ) / 100;
+				// val1 - bonus damage / val2 - src id
+				val4 = (int) ( (100.0f - st->mdef / (st->mdef + 700.0f) * 100.0f) / 100.0f * (1 + st->max_hp / 25) ) * ( val1 + 100 ) / 100;
 				break;
 
 			case SC_BLOODING:
@@ -7889,11 +7794,11 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 				tick_time = 100;
 
 				if( src_sd )
-					val2 += src_sd->bonus.bleeddamage;
+					val1 += src_sd->bonus.bleeddamage;
 
 				// BLEEDING - 8% of mhp per second, reduced by DEF
-				// val2 - bonus damage
-				val4 = (int) ( (100.0f - st->def / (st->def + 700.0f) * 100.0f) / 100.0f * (1 + st->max_hp / 25) ) * ( val2 + 100 ) / 100;
+				// val1 - bonus damage / val2 - src id
+				val4 = (int) ( (100.0f - st->def / (st->def + 700.0f) * 100.0f) / 100.0f * (1 + st->max_hp / 25) ) * ( val1 + 100 ) / 100;
 				break;
 
 			case SC_CONFUSION:
@@ -10821,13 +10726,13 @@ int status_change_timer(int tid, int64 tick, int id, intptr_t data)
 
 		case SC_POISON:
 			if (--(sce->val3) > 0) {
+				struct block_list* src = map->id2bl(sce->val2);
 				if( sce->val2 && bl->type == BL_MOB ) {
-					struct block_list* src = map->id2bl(sce->val2);
 					if (src != NULL)
 						mob->log_damage(BL_UCAST(BL_MOB, bl), src, sce->val4);
 				}
 				map->freeblock_lock();
-				status->damage(bl, bl, sce->val4, 0, clif->damage(bl,bl,st->amotion,st->dmotion+200,sce->val4,1,BDT_POISON,0), 1);
+				status->damage(src, bl, sce->val4, 0, clif->damage(src,bl,st->amotion,st->dmotion+200,sce->val4,1,BDT_POISON,0), 1);
 				if (sc->data[type]) {
 					sc_timer_next(500 + tick, status->change_timer, bl->id, data );
 				}
@@ -10838,13 +10743,13 @@ int status_change_timer(int tid, int64 tick, int id, intptr_t data)
 
 		case SC_IGNITE:
 			if (--(sce->val3) > 0) {
+				struct block_list* src = map->id2bl(sce->val2);
 				if( sce->val2 && bl->type == BL_MOB ) {
-					struct block_list* src = map->id2bl(sce->val2);
 					if (src != NULL)
 						mob->log_damage(BL_UCAST(BL_MOB, bl), src, sce->val4);
 				}
 				map->freeblock_lock();
-				status->damage(bl, bl, sce->val4, 0, clif->damage(bl,bl,st->amotion,st->dmotion+200,sce->val4,1,BDT_IGNITE,0), 1);
+				status->damage(src, bl, sce->val4, 0, clif->damage(src,bl,st->amotion,st->dmotion+200,sce->val4,1,BDT_IGNITE,0), 1);
 				if (sc->data[type]) {
 					sc_timer_next(500 + tick, status->change_timer, bl->id, data );
 				}
@@ -10855,13 +10760,14 @@ int status_change_timer(int tid, int64 tick, int id, intptr_t data)
 
 		case SC_BLOODING:
 			if (--(sce->val3) > 0) {
+				struct block_list* src = map->id2bl(sce->val2);
 				if( sce->val2 && bl->type == BL_MOB ) {
-					struct block_list* src = map->id2bl(sce->val2);
-					if (src != NULL)
+					if (src != NULL) {
 						mob->log_damage(BL_UCAST(BL_MOB, bl), src, sce->val4);
+					}
 				}
 				map->freeblock_lock();
-				status->damage(bl, bl, sce->val4, 0, clif->damage(bl,bl,st->amotion,st->dmotion+200,sce->val4,1,BDT_BLEEDING,0), 1);
+				status->damage(src, bl, sce->val4, 0, clif->damage(src,bl,st->amotion,st->dmotion+200,sce->val4,1,BDT_BLEEDING,0), 1);
 				if (sc->data[type]) {
 					sc_timer_next(500 + tick, status->change_timer, bl->id, data );
 				}
