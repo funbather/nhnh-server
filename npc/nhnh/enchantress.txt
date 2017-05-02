@@ -424,7 +424,7 @@ enchDiscordant:
 	delitem .@bijou,1;
 
 	if(rand(0,1))
-		set .@qual,rand(60,100);
+		set .@qual,rand(80,110);
 	else
 		set .@qual,rand(90,135);
 

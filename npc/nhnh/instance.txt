@@ -1,4 +1,10 @@
-prt_monk,218,183,5	script	Kharis#missions	4_F_JP_NOAH,{
+prt_monk,218,183,3	script	Kharis#missions	4_F_JP_NOAH,{
+	
+	// common settings
+	.@instance_timelimit = 3600;
+	.@instance_timeout = 300;
+	.@party_id = getcharid(CHAR_ID_PARTY);
+
 	mes "[Kharis]";
 	mes "Welcome. Do you wish to attempt a Trial?";
 	
@@ -12,6 +18,7 @@ backToMenu:
 	menu "Yeah!",menuTrials,"Trial?",askTrial,"Maybe another time.",thatsAll;
 
 askTrial:
+
 	cleartext;
 	mes "[Kharis]";
 	mes "Trials are short instanced dungeons crawling with monsters, as well as a powerful Boss Monster waiting at the end.";
@@ -25,6 +32,7 @@ askTrial:
 	goto backToMenu;
 	
 thatsAll:
+
 	cleartext;
 	mes "[Kharis]";
 	mes "Goodbye, for now.";
@@ -38,218 +46,75 @@ menuTrials:
 	menu "River - Lv 1 ~ 4",goRiver,"Desert - Lv 5 ~ 8",goDesert,"Village - Lv 9 ~ 12",goVillage,"I changed my mind.",backToMenu;
 	
 goRiver:
+
+	.@instance_name$ = "River";
+	.@instance_map$ = "prt_fild04";
+	.@instance_spawnx = 367;
+	.@instance_spawny = 159;
+	.@instance_soloname$ = getcharid(CHAR_ID_ACCOUNT)+"T1";
+	.@instance_partyname$ = getcharid(CHAR_ID_PARTY) ? getcharid(CHAR_ID_PARTY)+"T1" : "";
 	
-	cleartext;
-	.@instance = has_instance2("prt_fild04");
+	.@instance_id = has_instance2(.@instance_map$);
+
+	cleartext;	
 	mes "[Kharis]";
 	mes "River - Lv 1 ~ 4";
 	mes "A winding path along a river bank.\n\n";
 	mes "Boss: ^boGigant Frog^ld";
 	mes "A giant Frog with an affinity for water magic.";
-	if( .@instance >= 0 )
-		menu "Enter Existing Trial",goEnterRiver,"Create Solo Trial",goRiverSolo,"Create Party Trial",goRiverParty,"I changed my mind.",backToMenu;
-	if( .@instance  < 0 )
-		menu "Create Solo Trial",goRiverSolo,"Create Party Trial",goRiverParty,"I changed my mind.",backToMenu;
 	
-goRiverSolo:
+	goto commonMenu;
 
-	.@party_id = getcharid(CHAR_ID_PARTY);
-
-	if( .@party_id != 0 ) {
-		cleartext;
-		mes "[Kharis]";
-		mes "You cannot begin a Solo Trial while in a party.";
-		next;
-		goto backToMenu;
-	}
-
-	if( .@instance >= 0 )
-		instance_destroy( .@instance );
-		
-	.@instance = instance_create("River", getcharid(CHAR_ID_ACCOUNT), IOT_CHAR);
-	if( .@instance < 0 ) {
-		cleartext;
-		mes "Failed to create instance! Report this!!";
-		close;
-	}
-	if( instance_attachmap("prt_fild04", .@instance, true, getcharid(CHAR_ID_ACCOUNT)+"T1") == "" ) {
-		instance_destroy(.@instance);
-		cleartext;
-		mes "Failed to attach map! Report this!!";
-		close;
-	}
-	
-	instance_attach(.@instance);
-	instance_set_timeout(3600, 600, .@instance);
-	instance_init(.@instance);
-
-	warp has_instance("prt_fild04"), 367, 159;
-	end;
-	
-goRiverParty:
-
-	.@party_id = getcharid(CHAR_ID_PARTY);
-
-	if( .@party_id == 0 ) {
-		cleartext;
-		mes "[Kharis]";
-		mes "You must already be in a party to begin a Party Trial.";
-		next;
-		goto backToMenu;
-	}
-	
-	if( getpartyleader(.@party_id) !=  strcharinfo(PC_NAME) ) {
-		cleartext;
-		mes "[Kharis]";
-		mes "You must be the party leader to begin a Party Trial.";
-		next;
-		goto backToMenu;
-	}
-
-	if( .@instance >= 0 )
-		instance_destroy( .@instance );
-		
-	.@instance = instance_create("River", getcharid(CHAR_ID_PARTY), IOT_PARTY);
-	
-	if( .@instance < 0 ) {
-		cleartext;
-		mes "Failed to create instance! Report this!!";
-		close;
-	}
-	if( instance_attachmap("prt_fild04", .@instance, true, getcharid(CHAR_ID_PARTY)+"T1") == "" ) {
-		instance_destroy(.@instance);
-		cleartext;
-		mes "Failed to attach map! Report this!!";
-		close;
-	}
-	
-	instance_attach(.@instance);
-	instance_set_timeout(3600, 600, .@instance);
-	instance_init(.@instance);
-
-	warp has_instance("prt_fild04"), 367, 159;
-	end;	
-
-goEnterRiver:
-	warp has_instance("prt_fild04"), 367, 159;
-	end;
-	
 goDesert:
 	
+	.@instance_name$ = "Desert";
+	.@instance_map$ = "moc_fild16";
+	.@instance_spawnx = 344;
+	.@instance_spawny = 359;
+	.@instance_soloname$ = getcharid(CHAR_ID_ACCOUNT)+"T2";
+	.@instance_partyname$ = getcharid(CHAR_ID_PARTY) ? getcharid(CHAR_ID_PARTY)+"T2" : "";
+	
+	.@instance_id = has_instance2(.@instance_map$);
+
 	cleartext;
-	.@instance = has_instance2("moc_fild16");
 	mes "[Kharis]";
 	mes "Desert - Lv 5 ~ 8";
 	mes "Abandoned fortress hidden in the desert.\n\n";
 	mes "Boss: ^boTitan Rhea^ld";
 	mes "A fearsome Rhea with a deadly beak.";
-	if( .@instance >= 0 )
-		menu "Enter Existing Trial",goEnterDesert,"Create Solo Trial",goDesertSolo,"Create Party Trial",goDesertParty,"I changed my mind.",backToMenu;
-	if( .@instance  < 0 )
-		menu "Create Solo Trial",goDesertSolo,"Create Party Trial",goDesertParty,"I changed my mind.",backToMenu;
 	
-goDesertSolo:
-
-	.@party_id = getcharid(CHAR_ID_PARTY);
-
-	if( .@party_id != 0 ) {
-		cleartext;
-		mes "[Kharis]";
-		mes "You cannot begin a Solo Trial while in a party.";
-		next;
-		goto backToMenu;
-	}
-
-	if( .@instance >= 0 )
-		instance_destroy( .@instance );
-		
-	.@instance = instance_create("Desert", getcharid(CHAR_ID_ACCOUNT), IOT_CHAR);
-	if( .@instance < 0 ) {
-		cleartext;
-		mes "Failed to create instance! Report this!!";
-		close;
-	}
-	if( instance_attachmap("moc_fild16", .@instance, true, getcharid(CHAR_ID_ACCOUNT)+"T2") == "" ) {
-		instance_destroy(.@instance);
-		cleartext;
-		mes "Failed to attach map! Report this!!";
-		close;
-	}
-	
-	instance_attach(.@instance);
-	instance_set_timeout(3600, 600, .@instance);
-	instance_init(.@instance);
-
-	warp has_instance("moc_fild16"), 344, 359;
-	end;
-	
-goDesertParty:
-
-	.@party_id = getcharid(CHAR_ID_PARTY);
-
-	if( .@party_id == 0 ) {
-		cleartext;
-		mes "[Kharis]";
-		mes "You must already be in a party to begin a Party Trial.";
-		next;
-		goto backToMenu;
-	}
-	
-	if( getpartyleader(.@party_id) !=  strcharinfo(PC_NAME) ) {
-		cleartext;
-		mes "[Kharis]";
-		mes "You must be the party leader to begin a Party Trial.";
-		next;
-		goto backToMenu;
-	}
-
-	if( .@instance >= 0 )
-		instance_destroy( .@instance );
-		
-	.@instance = instance_create("Desert", getcharid(CHAR_ID_PARTY), IOT_PARTY);
-	
-	if( .@instance < 0 ) {
-		cleartext;
-		mes "Failed to create instance! Report this!!";
-		close;
-	}
-	if( instance_attachmap("moc_fild16", .@instance, true, getcharid(CHAR_ID_PARTY)+"T2") == "" ) {
-		instance_destroy(.@instance);
-		cleartext;
-		mes "Failed to attach map! Report this!!";
-		close;
-	}
-	
-	instance_attach(.@instance);
-	instance_set_timeout(3600, 600, .@instance);
-	instance_init(.@instance);
-
-	warp has_instance("moc_fild16"), 344, 359;
-	end;
-
-goEnterDesert:
-	warp has_instance("moc_fild16"), 344, 359;
-	end;
+	goto commonMenu;
 
 goVillage:
+
+	.@instance_name$ = "Village";
+	.@instance_map$ = "gef_fild11";
+	.@instance_spawnx = 340;
+	.@instance_spawny = 259;
+	.@instance_soloname$ = getcharid(CHAR_ID_ACCOUNT)+"T3";
+	.@instance_partyname$ = getcharid(CHAR_ID_PARTY) ? getcharid(CHAR_ID_PARTY)+"T3" : "";
 	
+	.@instance_id = has_instance2(.@instance_map$);
+
 	cleartext;
-	.@instance = has_instance2("gef_fild11");
 	mes "[Kharis]";
 	mes "Village - Lv 9 ~ 12";
 	mes "A hostile encampment deep in the woods.\n\n";
 	mes "Boss: ^boGoblin King^ld";
 	mes "A stalwart goblin warrior.";
-	if( .@instance >= 0 )
-		menu "Enter Existing Trial",goEnterVillage,"Create Solo Trial",goVillageSolo,"Create Party Trial",goVillageParty,"I changed my mind.",backToMenu;
-	if( .@instance  < 0 )
-		menu "Create Solo Trial",goVillageSolo,"Create Party Trial",goVillageParty,"I changed my mind.",backToMenu;
 	
-goVillageSolo:
+	goto commonMenu;
 
-	.@party_id = getcharid(CHAR_ID_PARTY);
+commonMenu:
 
-	if( .@party_id != 0 ) {
+	if( .@instance_id >= 0 )
+		menu "Enter Existing Trial",goWarp,"Create Solo Trial",goSolo,"Create Party Trial",goParty,"I changed my mind.",backToMenu;
+	else
+		menu "Create Solo Trial",goSolo,"Create Party Trial",goParty,"I changed my mind.",backToMenu;
+
+goSolo:
+
+	if( .@party_id ) {
 		cleartext;
 		mes "[Kharis]";
 		mes "You cannot begin a Solo Trial while in a party.";
@@ -257,34 +122,33 @@ goVillageSolo:
 		goto backToMenu;
 	}
 
-	if( .@instance >= 0 )
-		instance_destroy( .@instance );
+	if( .@instance_id >= 0 )
+		instance_destroy( .@instance_id );
 		
-	.@instance = instance_create("Village", getcharid(CHAR_ID_ACCOUNT), IOT_CHAR);
-	if( .@instance < 0 ) {
+	.@instance_id = instance_create(.@instance_name$, getcharid(CHAR_ID_ACCOUNT), IOT_CHAR);
+	
+	if( .@instance_id < 0 ) {
 		cleartext;
 		mes "Failed to create instance! Report this!!";
 		close;
 	}
-	if( instance_attachmap("gef_fild11", .@instance, true, getcharid(CHAR_ID_ACCOUNT)+"T3") == "" ) {
-		instance_destroy(.@instance);
+	
+	if( instance_attachmap(.@instance_map$, .@instance_id, true, .@instance_soloname$) == "" ) {
+		instance_destroy(.@instance_id);
 		cleartext;
 		mes "Failed to attach map! Report this!!";
 		close;
 	}
 	
-	instance_attach(.@instance);
-	instance_set_timeout(3600, 600, .@instance);
-	instance_init(.@instance);
-
-	warp has_instance("gef_fild11"), 340, 259;
-	end;
+	instance_attach(.@instance_id);
+	instance_set_timeout(.@instance_timelimit, .@instance_timeout, .@instance_id);
+	instance_init(.@instance_id);
 	
-goVillageParty:
+	goto goWarp;
 
-	.@party_id = getcharid(CHAR_ID_PARTY);
+goParty:
 
-	if( .@party_id == 0 ) {
+	if( !(.@party_id) ) {
 		cleartext;
 		mes "[Kharis]";
 		mes "You must already be in a party to begin a Party Trial.";
@@ -300,32 +164,32 @@ goVillageParty:
 		goto backToMenu;
 	}
 
-	if( .@instance >= 0 )
+	if( .@instance_id >= 0 )
 		instance_destroy( .@instance );
 		
-	.@instance = instance_create("Village", getcharid(CHAR_ID_PARTY), IOT_PARTY);
+	.@instance_id = instance_create(.@instance_name$, getcharid(CHAR_ID_PARTY), IOT_PARTY);
 	
-	if( .@instance < 0 ) {
+	if( .@instance_id < 0 ) {
 		cleartext;
 		mes "Failed to create instance! Report this!!";
 		close;
 	}
-	if( instance_attachmap("gef_fild11", .@instance, true, getcharid(CHAR_ID_PARTY)+"T3") == "" ) {
-		instance_destroy(.@instance);
+	
+	if( instance_attachmap(.@instance_map$, .@instance_id, true, .@instance_partyname$) == "" ) {
+		instance_destroy(.@instance_id);
 		cleartext;
 		mes "Failed to attach map! Report this!!";
 		close;
 	}
 	
-	instance_attach(.@instance);
-	instance_set_timeout(3600, 600, .@instance);
-	instance_init(.@instance);
+	instance_attach(.@instance_id);
+	instance_set_timeout(.@instance_timelimit, .@instance_timeout, .@instance_id);
+	instance_init(.@instance_id);
 
-	warp has_instance("gef_fild11"), 340, 259;
+	goto goWarp;
+	
+goWarp:
+	
+	warp(has_instance(.@instance_map$), .@instance_spawnx, .@instance_spawny);
 	end;
-
-goEnterVillage:
-	warp has_instance("gef_fild11"), 340, 259;
-	end;
-
 }

@@ -1,16 +1,17 @@
 prt_monk,216,164,4	script	Stash#stash	TREASURECHEST,{
 	openstorage();
+	end;
 }
 
 function	script	doWarpParty	{
 	if(getpartyleader(getcharid(1),2) == getcharid(0)) {
-		getmapxy .@mapl$, .@xl, .@yl, 0;
-		warpparty "Leader", .@xl, .@yl, getcharid(1), .@mapl$;
+		getmapxy(.@mapl$, .@xl, .@yl, 0);
+		warpparty("Leader", .@xl, .@yl, getcharid(1), .@mapl$);
 	}
 	return;
 }
 
-function	script	doCoinBag	{
+function	script	useCoinBag	{
 	.@zenygain = rand(25,250);
 	Zeny += .@zenygain;
 	dispbottom(sprintf("Gained %d zeny!",.@zenygain));
@@ -28,5 +29,46 @@ function	script	doCoinBag	{
 		else                          getitem(_discordantbijou, 1);
 	}
 	
+	return;
+}
+
+function	script	useWarpstone	{	
+	if( (gettimetick(0) - @tick) < 1000) {
+		warp("Save",0,0);
+		return;
+	}
+	
+	getmapxy(.@map$, .@xx, .@yy, 0);
+	
+	if( has_instance2(.@map$) >= 0 ) {
+		instance_attach(has_instance2(.@map$));
+		getmapxy('map$, 'xx, 'yy, 0);
+		viewpoint(1, 'xx, 'yy, 5, 0x5555AA);
+	}
+	
+	@tick = gettimetick(0);
+	return;
+}
+
+function	script	giveTokens	{	
+	if( getcharid(CHAR_ID_PARTY) == 0 ) {
+		getitem(_token, 1);
+	} else {
+		getmapxy(.@map$, .@xx, .@yy, 0);
+	
+		getpartymember(getcharid(CHAR_ID_PARTY), 2);
+		
+		.@count = $@partymembercount;
+		copyarray(.@partyaid[0], $@partymemberaid[0], $@partymembercount);
+		
+		for( .@i = 0; .@i < .@count; .@i++ ) {
+			getmapxy(.@map2$, .@xx, .@yy, 0, .@partyaid[.@i]);
+			
+			if( .@map$ == .@map2$ ) {
+				getitem(_token, 1, .@partyaid[.@i]);
+			}
+		}
+	}
+
 	return;
 }

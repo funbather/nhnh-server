@@ -1,4 +1,17 @@
 gef_fild11,335,259,6	script	Guardian#village	2_MONEMUS,{
+	'bx = 345;
+	'by = 123;
+
+	if( 'status == 1 ) {
+		if( xx == 0 && 'yy == 0 ) {
+			showscript("No checkpoint currently set.", getnpcid(0));
+		} else {
+			if( 'map$ != "" )
+				warpchar('map$, 'xx, 'yy, getcharid(CHAR_ID_CHAR));
+				viewpoint(1, 'xx, 'yy, 5, 0x5555AA);
+		}
+	}
+
 	if( 'status == 0 ) {
 		instance_announce(-1, "Trial Start !!", bc_map);
 		'status = 1;
@@ -6,12 +19,14 @@ gef_fild11,335,259,6	script	Guardian#village	2_MONEMUS,{
 		areamonster("this", 45, 0, 355, 245, "Goblin Masher", 1017, 110);
 		areamonster("this", 45, 0, 355, 245, "Goblin Archer", 1018, 80);
 		areamonster("this", 45, 0, 355, 245, "Goblin Crusher", 1019, 110);
-		monster("this", 345, 123, "Goblin King", 1020,1,instance_npcname("Guardian#village")+"::onBossKilled");
+		monster("this", 'bx, 'by, "Goblin King", 1020,1,instance_npcname("Guardian#river")+"::onBossKilled");
 	}
+	
+	viewpoint(1, 'bx, 'by, 1, 0xFF0000);
 	end;
 	
 onBossKilled:
 	instance_announce(-1, "Trial Complete !!", bc_map);
-		
+	giveTokens();
 	end;
 }

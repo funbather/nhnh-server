@@ -3241,6 +3241,10 @@ void status_calc_bl_main(struct block_list *bl, /*enum scb_flag*/int flag)
 
 	if((!(bl->type&BL_REGEN)) && (!sc || !sc->count)) { //No difference.
 		status->copy(st, bst);
+
+		if( bl->type&BL_MOB )
+			status->update_matk(bl);
+
 		return;
 	}
 

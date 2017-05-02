@@ -18757,9 +18757,22 @@ BUILDIN(has_instance)
 	const char *str;
 	int16 m;
 	int instance_id = -1;
+	int tmp;
 	bool type = strcmp(script->getfuncname(st),"has_instance2") == 0 ? true : false;
 
 	str = script_getstr(st, 2);
+
+	// try and get the instance_id from an instance's unique name
+	if( type && !script_hasdata(st, 3) ) {
+		ARR_FIND(0, map->count, tmp, strcmp(map->list[tmp].name, str) == 0);
+
+		if( tmp < map->count ) {
+			if( map->list[tmp].instance_id >= 0 ) {
+				script_pushint(st, map->list[tmp].instance_id);
+				return true;
+			}
+		}
+	}
 
 	if( (m = map->mapname2mapid(str)) < 0 ) {
 		if( type )
