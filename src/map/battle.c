@@ -1302,9 +1302,9 @@ int64 battle_calc_defense(int attack_type, struct block_list *src, struct block_
 					}
 				}
 
-				if ( tsd && pc->checkskill(tsd,SWD_DAUNTLESS) > 0 ) { // SWD_DAUNTLESS +skill_lv% DEF per attacker
+				if ( tsd && pc->checkskill(tsd,SWD_DAUNTLESS) > 0 ) { // SWD_DAUNTLESS +3 + skill_lv% DEF per attacker
 					unsigned int attackers = unit->counttargeted(&tsd->bl);
-					int skill_lv = pc->checkskill(tsd,SWD_DAUNTLESS);
+					int skill_lv = 3 + pc->checkskill(tsd,SWD_DAUNTLESS);
 
 					def1 += def1 * attackers * skill_lv / 100;
 				}
@@ -1411,7 +1411,7 @@ int battle_calc_skillratio(int attack_type, struct block_list *src, struct block
 					skillratio += 200 + 40 * skill_lv;
 					break;
 				case MGN_FIRELANCE:
-					skillratio += 300 + 120 * skill_lv;
+					skillratio += 100 + 60 * skill_lv;
 					break;
 				case MGN_INCINERATE:
 					skillratio += 150 + 30 * skill_lv;
@@ -3951,7 +3951,7 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 
 	if ( sd && (!skill_id || skill_id == THF_BONECUTTER) ) {
 		//Check for double attack.
-		i = pc->checkskill(sd,THF_DOUBLESTRIKE) * 4; // THF_DOUBLESTIKE +skill_lv*4% Double Strike Chance
+		i = 10 + pc->checkskill(sd,THF_DOUBLESTRIKE) * 6; // THF_DOUBLESTIKE +10 + skill_lv*6% Double Strike Chance
 		if ( sc && sc->data[SC_DOUBLETEAM] )
 			i = 100; // 100% chance while SC_DOUBLETEAM active
 
@@ -3964,53 +3964,64 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 	}
 
 	//Check for critical
-	if( !flag.cri && sstatus->cri )
-	{
+	if( !flag.cri && sstatus->cri ) {
 		short cri = sstatus->cri;
-		if (sd != NULL) {
-			cri+= sd->critaddrace[tstatus->race];
-		}
 
-		if(tsd && tsd->bonus.critical_def)
+		if (sd != NULL)
+			cri+= sd->critaddrace[tstatus->race];
+		if( tsd && tsd->bonus.critical_def )
 			cri = cri * ( 100 - tsd->bonus.critical_def ) / 100;
-		if (rnd()%1000 < cri) {
+
+		if( rnd()%1000 < cri ) {
 			flag.cri = 1;
 
 
-		if(wd.type == BDT_MULTIHIT)
-			wd.type = BDT_MULTICRIT;
-		else
-			wd.type = BDT_CRIT;
+			if( wd.type == BDT_MULTIHIT ) // needed to display correctly on client
+				wd.type = BDT_MULTICRIT;
+			else
+				wd.type = BDT_CRIT;
 		}
 	}
 
-	if ( !flag.hit ) {
+	if( !flag.hit ) {
 		//Hit/Flee calculation
 		short flee = tstatus->flee;
 		int hitrate = (int)((100.0f - flee / (flee + 700.0f) * 100.0f) * 100.0f);
-		if( rnd()%10000 > hitrate ){
+
+		if( sc && sc->data[SC_BLIND] ) // half hitrate when blind
+			hitrate /= 2;
+
+		if( rnd()%10000 > hitrate ) {
+			wd.type = BDT_NORMAL;
 			wd.dmg_lv = ATK_FLEE;
-		}
-		else
+		} else
 			flag.hit = 1;
 	} //End hit/miss calculation
 
-	if ( flag.hit ) { // Physical Block
+	if( flag.hit ) { // Physical Block
 		short pblock = tstatus->def2;
 
-		if ( sc && sc->data[SC_SWAGGER] && sc->data[SC_SWAGGER]->val2 == target->id ) {
+		if( sc && sc->data[SC_SWAGGER] && sc->data[SC_SWAGGER]->val2 == target->id )
 			pblock += pblock * sc->data[SC_SWAGGER]->val3 / 100;
-		}
 
-		if ( rnd()%1000 < pblock ) {
+		if( rnd()%1000 < pblock ) {
 			wd.type = BDT_BLOCKED;
 			flag.hit = 0;
 		}
 	}
 
-	if ( flag.hit ) { // SC_SWAGGER
-		if ( sc && sc->data[SC_SWAGGER] && sc->data[SC_SWAGGER]->val2 == target->id ) {
-			if ( rnd()%100 < sc->data[SC_SWAGGER]->val1 ) { // val1 - chance to miss
+	if( flag.hit ) { // misc attack avoidance situations
+		if( sc && sc->data[SC_SWAGGER] && sc->data[SC_SWAGGER]->val2 == target->id ) {
+			if( rnd()%100 < sc->data[SC_SWAGGER]->val1 ) { // val1 - chance to miss
+				wd.type = BDT_NORMAL;
+				wd.dmg_lv = ATK_FLEE;
+				flag.hit = 0;
+			}
+		}
+
+		if( tsd && pc->checkskill(tsd,THF_REFLEXES) ) {
+			if( rnd()%100 < (pc->checkskill(tsd,THF_REFLEXES)*3) ) { // THF_REFLEXES 3% chance to avoid attacks
+				wd.type = BDT_NORMAL;
 				wd.dmg_lv = ATK_FLEE;
 				flag.hit = 0;
 			}

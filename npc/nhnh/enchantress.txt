@@ -7,7 +7,7 @@ prt_monk,200,170,6	script	Serra#enchantress	4_F_ALCHE_A,{
   .@SEALMAX = 620;
 	
 	mes "[Serra]";
-	mes "Welcome! What do ya need?";
+	mes "Welcome! Need some enchanting done?";
 	menu "I need some enchanting done!",menuEnchant,"What are your services?",askServices,"Nothing today.",thatsAll;
 	cleartext;
 	
@@ -22,7 +22,7 @@ askServices:
 
 	cleartext;
 	mes "[Serra]";
-	mes "Well, I'm an enchantress... so I can, you know, enchant items. As long as you got the right stuff for me!";
+	mes "Well, I'm an enchantress, so I... you know... enchant stuff.\n\nAs long as you got the right materials for me!";
 	next;
 	mes "[Serra]";
 	mes "Enchanting revolves around Bijous, magic-laced jewels that can be found on monsters.\n\nThey go crazy over them! But then, so do we enchantresses!";
@@ -37,7 +37,7 @@ askServices:
 	mes "I'm pretty good at what I do, but I can't store Seals within an Empty Bijou. I also can't add additional enchantments to an item with only a Fervent Bijou, only replace existing ones.";
 	next;
 	mes "[Serra]";
-	mes "Also, the item used to create a Fervent Bijou won't be left in... usable condition. So, definitely don't bring me anything you're attached to!";
+	mes "Also, the item used to create a Fervent Bijou won't be left in... usable condition.\n\nSo, definitely don't bring me anything you're attached to!";
 	next;
 	mes "[Serra]";
 	mes "Beyond that, there are also rare Bijous out there already charged with magic! They can do all sorts of stuff, so bring me one and I'll see what I can do, yeah?";
@@ -55,6 +55,14 @@ menuEnchant:
 enchEmpty:
 
 	cleartext;
+		
+	if (countitem(802) == 0) {
+		cleartext;	
+		mes "[Serra]";
+		mes "You know you need an Empty Bijou for this, right?";
+		close;
+	}
+	
 	mes "[Serra]";
 	mes "Let's get to it, then!\n\nRemember, taking a Shard from an item will ^FF0000^boirreversably destroy it^ld^000000! Be sure it's nothing you're gonna miss, yeah?";
 	next;
@@ -88,16 +96,7 @@ enchEmpty:
 	if (getequipcardcnt(.@part) == 0) {
 		cleartext;	
 		mes "[Serra]";
-		mes ""+getequipname(.@part);
-		mes ""+getequipcardcnt(.@part);
 		mes "I can't make something from nothing, pal. Bring me something enchanted!";
-		close;
-	}
-		
-	if (countitem(802) == 0) {
-		cleartext;	
-		mes "[Serra]";
-		mes "You know you need an Empty Bijou for this, right?";
 		close;
 	}
 	
@@ -148,7 +147,7 @@ enchEmpty2:
 	
 	cleartext;
 	mes "[Serra]";
-	mes "Tada! Simple as that! Sorry about your stuff, but uh... I'm sure Ysolt will appreciate the scrap metal!";
+	mes "Tada! Simple as that!\n\nSorry about your stuff, but uh... I'm sure Ysolt will appreciate the scrap metal!";
 	close;
 	
 enchBijou:
@@ -165,8 +164,16 @@ enchBijou:
 				@inventorylist_id[.@i] == 806 ||
 				@inventorylist_id[.@i] == 807) {
 			set .@menu$, .@menu$+(@inventorylist_id[.@i] == 803 ? getitemname(@inventorylist_id[.@i])+" ["+getitemname(@inventorylist_card1[.@i])+"]":getitemname(@inventorylist_id[.@i]));
+			.@bijoucount += 1;
 		}
 		set .@menu$, .@menu$ + ":";
+	}
+	
+	if( .@bijoucount == 0 ) {
+		cleartext;
+		mes "[Serra]";
+		mes "I appreciate the enthusiasm, but I can't do my thing with no materials.\n\nBring me some bijous and then we'll talk, yeah?";
+		close;
 	}
 	
 	set .@selection, select(.@menu$);
@@ -476,7 +483,7 @@ enchDiscordant:
 thatsAll:
 
 	cleartext;
-	mes "[Undine]";
+	mes "[Serra]";
 	mes "I'll see you around!";
 	close;
 }

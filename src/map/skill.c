@@ -5734,7 +5734,7 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 				clif->skill_nodamage (src, bl, skill_id, heal, 1);
 
 				if ( sd && (src != bl) && pc->checkskill(sd,ACO_LIFELINK) && skill_id == ACO_CURE ) { // ACO_LIFELINK heal yourself for a smaller amount when healing others
-					int skl = 10 + 2 * pc->checkskill(sd,ACO_LIFELINK);
+					int skl = 10 + 4 * pc->checkskill(sd,ACO_LIFELINK);
 					int selfheal = heal * skl / 100;
 
 					clif->skill_nodamage (src, src, skill_id, selfheal, 1);

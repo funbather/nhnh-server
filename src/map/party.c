@@ -223,6 +223,7 @@ void party_created(int account_id, int char_id, int fail, int party_id, const ch
 
 	if( !fail ) {
 		sd->status.party_id = party_id;
+		sd->state.party_leader = 1;
 		clif->party_created(sd,0); //Success message
 		//We don't do any further work here because the char-server sends a party info packet right after creating the party.
 	} else {
@@ -243,8 +244,10 @@ int party_recv_noinfo(int party_id, int char_id) {
 		// requester
 		struct map_session_data* sd;
 		sd = map->charid2sd(char_id);
-		if( sd && sd->status.party_id == party_id )
+		if( sd && sd->status.party_id == party_id ) {
 			sd->status.party_id = 0;
+			sd->state.party_leader = 0;
+		}
 	}
 	return 0;
 }
@@ -402,25 +405,31 @@ int party_invite(struct map_session_data *sd,struct map_session_data *tsd)
 		return 0;
 	}
 
-	if( tsd == NULL) {
+	if( tsd == NULL ) {
 		clif->party_inviteack(sd, "", 7);
 		return 0;
 	}
 
-	if(!battle_config.invite_request_check) {
+	if( !battle_config.invite_request_check ) {
 		if (tsd->guild_invite>0 || tsd->trade_partner || tsd->adopt_invite) {
 			clif->party_inviteack(sd,tsd->status.name,0);
 			return 0;
 		}
 	}
 
-	if (!tsd->fd) { //You can't invite someone who has already disconnected.
+	if( !tsd->fd ) { //You can't invite someone who has already disconnected.
 		clif->party_inviteack(sd,tsd->status.name,1);
 		return 0;
 	}
 
-	if( tsd->status.party_id > 0 || tsd->party_invite > 0 )
+	if( tsd->status.party_id == sd->status.party_id || tsd->party_invite > 0 )
 	{// already associated with a party
+		clif->party_inviteack(sd,tsd->status.name,0);
+		return 0;
+	}
+
+	if( tsd->status.party_id > 0 && tsd->state.party_leader) {
+		// can invite others in an existing party if they're not the leader
 		clif->party_inviteack(sd,tsd->status.name,0);
 		return 0;
 	}
@@ -450,6 +459,8 @@ void party_reply_invite(struct map_session_data *sd,int party_id,int flag) {
 	{// accepted and allowed
 		sd->party_joining = true;
 		party->fill_member(&member, sd, 0);
+		if( sd->status.party_id ) // switching parties?
+			party->leave(sd);
 		intif->party_addmember(sd->party_invite, &member);
 	}
 	else
@@ -480,6 +491,7 @@ void party_member_joined(struct map_session_data *sd)
 	if (i < MAX_PARTY) {
 		int j;
 		p->data[i].sd = sd;
+		sd->state.party_leader = p->party.member[i].leader;
 		for( j = 0; j < p->instances; j++ ) {
 			if( p->instance[j] >= 0 ) {
 				if( instance->list[p->instance[j]].idle_timer == INVALID_TIMER && instance->list[p->instance[j]].progress_timer == INVALID_TIMER )
@@ -621,6 +633,7 @@ int party_member_withdraw(int party_id, int account_id, int char_id)
 		pc->bound_clear(sd,IBT_PARTY);
 #endif
 		sd->status.party_id = 0;
+		sd->state.party_leader = 0;
 		clif->charnameupdate(sd); //Update name display [Skotlex]
 		//TODO: hp bars should be cleared too
 		if( p && p->instances )
@@ -730,7 +743,9 @@ bool party_changeleader(struct map_session_data *sd, struct map_session_data *ts
 		return false; //Shouldn't happen
 
 	//Change leadership.
+	sd->state.party_leader = 0;
 	p->party.member[mi].leader = 0;
+	tsd->state.party_leader = 1;
 	p->party.member[tmi].leader = 1;
 
 	/** update members **/

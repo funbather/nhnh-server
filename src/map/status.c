@@ -2774,8 +2774,8 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	if ( (skill_lv = pc->checkskill(sd,ACO_SOUL)) > 0 ) // ACO_SOUL +25% duration on buffs you apply
 		sd->buffother_rate += 25;
 
-	if ( (skill_lv = pc->checkskill(sd,ACO_SOUL)) > 0 ) // ACO_SPIRITWARD -10 + skill_lv*2% duration on debuffs applied to you
-		sd->debuffself_rate -= 10 + skill_lv * 2;
+	if ( (skill_lv = pc->checkskill(sd,ACO_SPIRITWARD)) > 0 ) // ACO_SPIRITWARD 15 + skill_lv*5% less duration on debuffs applied to you
+		sd->debuffself_rate -= 15 + skill_lv * 5;
 
 	if ( (skill_lv = pc->checkskill(sd,ACO_LIFELINK)) > 0 ) //ACO_LIFELINK heal power +skill_lv*6%
 		sd->bonus.add_heal_rate += skill_lv * 6;
@@ -2790,15 +2790,12 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	bstatus->flee += bstatus->agi;                       // AGI Bonus - +1 EVA
 	bstatus->flee += bstatus->flee * bstatus->agi / 100; //             +1% EVA
 
-	if ( (skill_lv = pc->checkskill(sd,THF_REFLEXES)) > 0 ) // THF_REFLEXES +skill_lv*3% EVA
-		bstatus->flee += bstatus->flee * skill_lv * 3 / 100;
-
 	// ----- EQUIPMENT-DEF CALCULATION -----
 
 	// Absolute modifiers from passive skills
 
-	if( (skill_lv = pc->checkskill(sd,SWD_HARDHEARTED)) > 0 ) // SWD_HARDHEARTED +skill_lv * 4% DEF
-		bstatus->def += bstatus->def * skill_lv * 4 / 100;
+	if( (skill_lv = pc->checkskill(sd,SWD_HARDHEARTED)) > 0 ) // SWD_HARDHEARTED +skill_lv * 5% DEF
+		bstatus->def += bstatus->def * skill_lv * 5 / 100;
 
 	if( (skill_lv = pc->checkskill(sd,SWD_PAVISE)) > 0 && sd->status.shield ) { // SWD_PAVISE +skill_lv% Phys-Block, +skill_lv/2% Mag-Block
 		bstatus->def2 += skill_lv * 10;
@@ -5077,11 +5074,11 @@ unsigned short status_calc_speed(struct block_list *bl, struct status_change *sc
 			if ( sd && sd->bonus.speed_rate + sd->bonus.speed_add_rate > 0 ) // permanent item-based speedup
 				val = max( val, sd->bonus.speed_rate + sd->bonus.speed_add_rate );
 
-			if ( sd && pc->checkskill(sd,THF_ADRENALINERUSH) ) { // THF_ADRENALINERUSH +skill_lv*1.5% MSPD, doubled if in combat (SC_ADRRUSH)
+			if ( sd && pc->checkskill(sd,THF_ADRENALINERUSH) ) { // THF_ADRENALINERUSH +5 + skill_lv*1.5% MSPD, doubled if in combat (SC_ADRRUSH)
 				if ( sc && sc->data[SC_ADRRUSH] )
-					val += pc->checkskill(sd,THF_ADRENALINERUSH) * 3;
+					val += 10 + (pc->checkskill(sd,THF_ADRENALINERUSH) * 3);
 				else
-					val += pc->checkskill(sd,THF_ADRENALINERUSH) * 3 / 2;
+					val += 5 + (pc->checkskill(sd,THF_ADRENALINERUSH) * 3 / 2);
 			}
 
 			if ( sc && sc->data[SC_CAMO] )
@@ -9404,6 +9401,7 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 		case SC_GODSSTRENGTH: sc->opt2 |= OPT2_GODSSTRENGTH; break;
 		case SC_SQUASHED:     sc->opt2 |= OPT2_SQUASHED;     break;
 		case SC_CHILLED:      sc->opt2 |= OPT2_CHILLED;      break;
+		case SC_DOUBLETEAM:   sc->opt2 |= OPT2_DOUBLETEAM;   break;
 		//OPT3
 		case SC_TWOHANDQUICKEN:
 		case SC_ONEHANDQUICKEN:
@@ -10344,6 +10342,9 @@ int status_change_end_(struct block_list* bl, enum sc_type type, int tid, const 
 			break;
 		case SC_CHILLED:
 			sc->opt2 &= ~OPT2_CHILLED;
+			break;
+		case SC_DOUBLETEAM:
+			sc->opt2 &= ~OPT2_DOUBLETEAM;
 			break;
 
 		case SC_HIDING:

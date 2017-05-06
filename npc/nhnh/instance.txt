@@ -1,4 +1,4 @@
-prt_monk,218,183,3	script	Kharis#missions	4_F_JP_NOAH,{
+prt_monk,218,182,3	script	Kharis#missions	4_F_JP_NOAH,{
 	
 	// common settings
 	.@instance_timelimit = 3600;
@@ -7,7 +7,6 @@ prt_monk,218,183,3	script	Kharis#missions	4_F_JP_NOAH,{
 
 	mes "[Kharis]";
 	mes "Welcome. Do you wish to attempt a Trial?";
-	
 	menu "Yeah!",menuTrials,"Trial?",askTrial,"Maybe another time.",thatsAll;
 	
 backToMenu:
@@ -21,13 +20,13 @@ askTrial:
 
 	cleartext;
 	mes "[Kharis]";
-	mes "Trials are short instanced dungeons crawling with monsters, as well as a powerful Boss Monster waiting at the end.";
+	mes "Trials are short instanced dungeons crawling with monsters, as well as a powerful Boss monster waiting at the end.";
 	next;
 	mes "[Kharis]";
-	mes "Killing the Boss grants a large amount of experience and item drops, and sometimes even special items like a ticket for the Cosmetic Lottery.";
+	mes "Killing the Boss grants a large amount of experience and plenty of item drops, including a Slime Token to use at the slot machine.";
 	next;
 	mes "[Kharis]";
-	mes "Trials can be attempted as many times as you like, and do not need to be completed to retry.\n\nConsider clearing out the regular monsters in a Trial a few times for experience and equipment upgrades if a Boss is too much for you to handle.";
+	mes "Trials can be attempted as many times as you like, as often as you like, and do not need to be completed to retry.\n\nIf a Boss is too much for you to handle, consider avoiding it until you feel like you can take it on.";
 	next;
 	goto backToMenu;
 	
@@ -79,7 +78,7 @@ goDesert:
 	cleartext;
 	mes "[Kharis]";
 	mes "Desert - Lv 5 ~ 8";
-	mes "Abandoned fortress hidden in the desert.\n\n";
+	mes "An abandoned fortress hidden in the desert.\n\n";
 	mes "Boss: ^boTitan Rhea^ld";
 	mes "A fearsome Rhea with a deadly beak.";
 	
@@ -129,14 +128,14 @@ goSolo:
 	
 	if( .@instance_id < 0 ) {
 		cleartext;
-		mes "Failed to create instance! Report this!!";
+		mes "Failed to generate instance! Report this!!";
 		close;
 	}
 	
 	if( instance_attachmap(.@instance_map$, .@instance_id, true, .@instance_soloname$) == "" ) {
 		instance_destroy(.@instance_id);
 		cleartext;
-		mes "Failed to attach map! Report this!!";
+		mes "Failed to attach map to instance! Report this!!";
 		close;
 	}
 	
@@ -171,14 +170,14 @@ goParty:
 	
 	if( .@instance_id < 0 ) {
 		cleartext;
-		mes "Failed to create instance! Report this!!";
+		mes "Failed to generate instance! Report this!!";
 		close;
 	}
 	
 	if( instance_attachmap(.@instance_map$, .@instance_id, true, .@instance_partyname$) == "" ) {
 		instance_destroy(.@instance_id);
 		cleartext;
-		mes "Failed to attach map! Report this!!";
+		mes "Failed to attach map to instance! Report this!!";
 		close;
 	}
 	

@@ -17927,33 +17927,21 @@ void clif_item_drop_announce(struct map_session_data *sd, unsigned short nameid,
 
 /* [Ind/Hercules] special thanks to Yommy~! */
 void clif_skill_cooldown_list(int fd, struct skill_cd* cd) {
-#if PACKETVER >= 20120604
 	const int offset = 10;
-#else
-	const int offset = 6;
-#endif
 	int i, count = 0;
 
 	nullpo_retv(cd);
 
 	WFIFOHEAD(fd,4+(offset*cd->cursor));
 
-#if PACKETVER >= 20120604
 	WFIFOW(fd,0) = 0x985;
-#else
-	WFIFOW(fd,0) = 0x43e;
-#endif
 
 	for( i = 0; i < cd->cursor; i++ ) {
 		if( cd->entry[i]->duration < 1 ) continue;
 
 		WFIFOW(fd, 4  + (count*offset)) = cd->entry[i]->skill_id;
-#if PACKETVER >= 20120604
 		WFIFOL(fd, 6  + (count*offset)) = cd->entry[i]->total;
 		WFIFOL(fd, 10 + (count*offset)) = cd->entry[i]->duration;
-#else
-		WFIFOL(fd, 6  + (count*offset)) = cd->entry[i]->duration;
-#endif
 		count++;
 	}
 

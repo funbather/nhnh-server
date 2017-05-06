@@ -225,6 +225,7 @@ struct map_session_data {
 		unsigned int loggingout : 1;
 		unsigned int warp_clean : 1;
 		unsigned int autotarget : 1;
+		unsigned int party_leader : 1;
 	} state;
 	struct {
 		unsigned char no_weapon_damage, no_magic_damage, no_misc_damage;
