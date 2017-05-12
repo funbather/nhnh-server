@@ -862,6 +862,12 @@ typedef enum sc_type {
 	SC_DEEPFREEZE,
 	SC_WAITFREEZE,
 	SC_DISCHARGE,
+	SC_DARKCONFIDANT,
+	SC_MAINGAUCHE,
+	SC_MEDUSAHEAD,
+	SC_VALORAURA,
+	SC_FORTUNEAURA,
+	SC_LIVINGARMOR,
 #ifndef SC_MAX
 	SC_MAX, //Automatically updated max, used in for's to check we are within bounds.
 #endif
@@ -1846,6 +1852,8 @@ enum si_type {
 	SI_CHILLED                             = 979,
 	SI_DEEPFREEZE                          = 980,
 	SI_DISCHARGE                           = 981,
+	SI_VALORAURA                           = 982,
+	SI_FORTUNEAURA                         = 983,
 #ifndef SI_MAX
 	SI_MAX,
 #endif
@@ -2383,6 +2391,7 @@ struct status_interface {
 	void (*copy) (struct status_data *a, const struct status_data *b);
 	unsigned short (*base_matk_min) (const struct status_data *st);
 	unsigned short (*base_matk_max) (const struct status_data *st);
+	int (*apply_aura) (struct block_list *bl, va_list ap);
 };
 
 #ifdef HERCULES_CORE

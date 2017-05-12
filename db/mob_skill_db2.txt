@@ -69,8 +69,9 @@
 
 //Tier 3
 1016,GBlader@Puncture,attack,4026,1,1500,1000,9000,no,target,always,0,,,,,,7,
-1017,GMasher@Sledgehammer,attack,4013,3,2500,500,9000,no,target,always,0,,,,,,36,
-1019,GCrusher@Bonecutter,attack,4024,1,2500,500,9000,no,target,always,0,,,,,,6,
-1020,GKing@BladeFlourish,attack,4025,5,3500,1000,10000,no,self,always,0,,,,,,6,
-1020,GKing@Endure,anytarget,4008,5,1000,2000,10000,no,self,always,0,,,,,,7,
-1020,GKing@SecondWind,anytarget,4006,1,10000,2000,30000,no,self,myhpltmaxrate,35,,,,,,7,
+1017,CGoblin@IcicleEdge,anytarget,4043,1,2000,2000,9000,no,target,always,0,,,,,,7,
+1018,GMasher@Sledgehammer,attack,4013,3,2500,500,9000,no,target,always,0,,,,,,36,
+1020,GCrusher@Bonecutter,attack,4024,1,2500,500,9000,no,target,always,0,,,,,,6,
+1021,GKing@BladeFlourish,attack,4025,5,3500,1000,10000,no,self,always,0,,,,,,6,
+1021,GKing@Endure,anytarget,4008,5,1000,2000,10000,no,self,always,0,,,,,,7,
+1021,GKing@SecondWind,anytarget,4006,1,10000,2000,30000,no,self,myhpltmaxrate,35,,,,,,7,

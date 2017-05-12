@@ -50,7 +50,7 @@ struct status_change_entry;
 #define MAX_ARROW_RESOURCE        5
 #define MAX_SKILL_ABRA_DB         210
 #define MAX_SKILL_IMPROVISE_DB    30
-#define MAX_SKILL_LEVEL           10
+#define MAX_SKILL_LEVEL           200
 #define MAX_SKILL_UNIT_LAYOUT     45
 #define MAX_SQUARE_LAYOUT         7 // 15*15 Placement of a maximum unit
 #define MAX_SKILL_UNIT_COUNT      ((MAX_SQUARE_LAYOUT*2+1)*(MAX_SQUARE_LAYOUT*2+1))
@@ -1425,6 +1425,7 @@ enum e_skill {
 	MGN_STORMLOCUS_PULSE,
 	NPC_DELUGE,
 	NPC_GUSH,
+	ALL_BLINK,
 
 	GC_DARKCROW = 5001,
 	RA_UNLIMIT,

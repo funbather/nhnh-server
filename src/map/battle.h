@@ -64,6 +64,7 @@ enum {
 	BF_WEAPONMASK = 0x000f,
 	BF_RANGEMASK  = 0x00f0,
 	BF_SKILLMASK  = 0x0f00,
+	BF_CRITICAL   = 0x1000,
 };
 
 // state of a single attack attempt; used in flee/def penalty calculations when mobbed

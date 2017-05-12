@@ -2685,6 +2685,7 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 	struct map_session_data *s_sd, *t_sd;
 	struct status_change *s_sc, *sc;
 	struct status_change_entry *sce;
+	int64 tmpdmg = 0;
 	int div_, flag;
 
 	nullpo_ret(bl);
@@ -2695,12 +2696,39 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 	div_ = d->div_;
 	flag = d->flag;
 
+	s_sc = status->get_sc(src);
+	sc = status->get_sc(bl);
+
 	// need check src for null pointer?
 
 	if( !damage )
 		return 0;
 	if( battle_config.ksprotection && mob->ksprotected(src, bl) )
 		return 0;
+
+	if (s_sc && s_sc->count) {
+		if ( (sce = s_sc->data[SC_GODSSTRENGTH]) )
+			damage += damage * sce->val1 / 100;
+	}
+
+	if (sc && sc->count) {
+		if ( (sce = sc->data[SC_DEEPFREEZE]) && damage > 0 )
+			damage += damage * sce->val1 / 100;
+	}
+
+	/* no data claims these settings affect anything other than players */
+	if (damage && t_sd && bl->type == BL_PC) {
+		// calc_pc_damage could increase or decrease damage, so we gotta check
+		// it only matters for the Ahura Mazda effect
+		tmpdmg = battle->calc_pc_damage(src, bl, d, damage, skill_id, skill_lv);
+	}
+
+	// !!PUT DAMAGE BONUSES ABOVE HERE!!
+	if( t_sd && t_sd->bonus.statuseffect&0x4 ) // Ahura Mazda - damage can't be reduced
+		return (tmpdmg > damage) ? tmpdmg : damage;
+
+	damage = (tmpdmg > 0) ? tmpdmg : damage;
+
 	if (t_sd != NULL) {
 		//Special no damage states
 		if(flag&BF_WEAPON && t_sd->special_state.no_weapon_damage)
@@ -2734,9 +2762,6 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 		damage -= damage * reduc / 100;
 	}
 
-	s_sc = status->get_sc(src);
-	sc = status->get_sc(bl);
-
 	if( sc && sc->data[SC_RAISE] )
 		return 0;
 
@@ -2760,19 +2785,6 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 
 		if ( (sce = sc->data[SC_FORCEARMOR]) && damage > 0 )
 			damage -= damage * sce->val1 / 100;
-
-		if ( (sce = sc->data[SC_DEEPFREEZE]) && damage > 0 )
-			damage += damage * sce->val1 / 100;
-	}
-
-	if (s_sc && s_sc->count) {
-		if ( (sce = s_sc->data[SC_GODSSTRENGTH]) )
-			damage += damage * sce->val1 / 100;
-	}
-
-	/* no data claims these settings affect anything other than players */
-	if (damage && t_sd && bl->type == BL_PC) {
-		damage = battle->calc_pc_damage(src, bl, d, damage, skill_id, skill_lv);
 	}
 
 	if(battle_config.skill_min_damage && damage > 0 && damage < div_)
@@ -3004,7 +3016,7 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 	short s_ele = 0;
 	struct map_session_data *sd = NULL;
 	struct map_session_data *tsd = NULL;
-	struct status_change *sc;
+	struct status_change *sc, *tsc;
 	struct Damage ad;
 	struct status_data *sstatus = status->get_status_data(src);
 	struct status_data *tstatus = status->get_status_data(target);
@@ -3036,6 +3048,7 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 	tsd = BL_CAST(BL_PC, target);
 
 	sc = status->get_sc(src);
+	tsc = status->get_sc(target);
 
 	//Initialize variables that will be used afterwards
 	s_ele = skill->get_ele(skill_id, skill_lv);
@@ -3076,6 +3089,9 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 	}
 
 	switch(skill_id) {
+		case NPC_DELUGE:
+			ad.div_ = skill_lv;
+			break;
 		case MG_FIREWALL:
 			if ( tstatus->def_ele == ELE_FIRE || battle->check_undead(tstatus->race, tstatus->def_ele) )
 				ad.blewcount = 0; //No knockback
@@ -3114,6 +3130,19 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 			flag.blocked = 1;
 		}
 	}
+
+
+
+	if( !flag.blocked && tsd && tsd->bonus.criticalevade && pc_iscritical(tsd) ) {
+		if( rnd()%100 < tsd->bonus.criticalevade ) {
+			ad.type = BDT_BLOCKED;
+			ad.dmg_lv = ATK_FLEE;
+			flag.blocked = 1;
+		}
+	}
+
+	if( tsd && tsd->bonus.statuseffect&0x4 )
+		flag.imdef = 1;
 
 	if (!flag.infdef) //No need to do the math for plants
 	{
@@ -3204,9 +3233,8 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 				//Check for critical
 				if ( !flag.cri && sstatus->cri ) {
 					short cri = sstatus->cri;
-					if (sd != NULL) {
+					if( sd != NULL )
 						cri += sd->critaddrace[tstatus->race];
-					}
 
 					if( tsd && tsd->bonus.critical_def )
 						cri = cri * ( 100 - tsd->bonus.critical_def ) / 100;
@@ -3218,8 +3246,27 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 							cri += cri * status_get_dex(src) / 100;
 					}
 
+					if( sd && sd->bonus.criteffect & 0x4 ) { // CRITFX 0x4 - always crit vs SC_FREEZE
+						if( tsc && tsc->data[SC_FREEZE] )
+							cri = 1000;
+					}
+
+					if( sc && sc->data[SC_DARKCONFIDANT] ) {
+						cri = 1000;
+						status_change_end(src, SC_DARKCONFIDANT, INVALID_TIMER);
+					}
+
+					if( tsc && tsc->data[SC_MARKED] )
+						cri = (cri + 1000) / 2;
+
+					if( sd && sd->bonus.nocrits ) {
+						if( (sd->bonus.nocrits & 2) && skill_id ) // skills cannot crit
+							cri = 0;
+					}
+
 					if ( rnd()%1000 < cri ) {
 						flag.cri = 1;
+						ad.flag |= BF_CRITICAL;
 
 						if( ad.type == BDT_MULTIHIT )
 							ad.type = BDT_MULTICRIT;
@@ -3230,6 +3277,9 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 
 				if( sd && flag.cri && sd->crit_atk_rate )
 					MATK_RATE(sd->crit_atk_rate);
+
+				if( tsc && tsc->data[SC_MARKED] )
+					MATK_RATE(200);
 
 				//Constant/misc additions from skills
 
@@ -3306,6 +3356,7 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 
 			//Ignore Defense?
 			if (!flag.imdef && (
+				((sd->bonus.criteffect & 0x2) && flag.cri) ||
 				sd->bonus.ignore_mdef_ele & ( 1 << tstatus->def_ele ) ||
 				sd->bonus.ignore_mdef_race & map->race_id2mask(tstatus->race) ||
 				sd->bonus.ignore_mdef_race & map->race_id2mask(is_boss(target) ? RC_BOSS : RC_NONBOSS)
@@ -3314,7 +3365,6 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 		}
 
 		ad.damage = battle->calc_defense(BF_MAGIC, src, target, skill_id, skill_lv, ad.damage, flag.imdef, 0);
-		if ( flag.blocked ) { ad.damage = 0; ad.type = BDT_BLOCKED; }; // damage blocked
 
 		if(ad.damage<1)
 			ad.damage=1;
@@ -3376,8 +3426,22 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 		}
 	}
 
-	if( ad.damage ) { // 15% variation in magical damage
-		ad.damage = ad.damage * (85 + rnd()%31) / 100;
+	if( ad.damage ) { // 10% variation in magical damage
+		ad.damage = ad.damage * (90 + rnd()%21) / 100;
+	}
+
+	if( tsd && tsd->bonus.healavoid && flag.blocked && ad.damage > 0 ) {
+		int64 healdmg = tsd->bonus.healavoid * ad.damage / 100;
+		status->heal(target, healdmg, 0, 3);
+	}
+
+	if( flag.blocked ) { // damage blocked
+		ad.damage = 0;
+		ad.type = BDT_BLOCKED;
+	};
+
+	if( ad.damage < 1 && tsd && pc->checkskill(tsd,ALL_BLINK) ) {
+		skill->blockpc_start(tsd, ALL_BLINK, 15);
 	}
 
 	return ad;
@@ -3951,7 +4015,7 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 
 	if ( sd && (!skill_id || skill_id == THF_BONECUTTER) ) {
 		//Check for double attack.
-		i = 10 + pc->checkskill(sd,THF_DOUBLESTRIKE) * 6; // THF_DOUBLESTIKE +10 + skill_lv*6% Double Strike Chance
+		i = pc->checkskill(sd,THF_DOUBLESTRIKE) ? 10 + pc->checkskill(sd,THF_DOUBLESTRIKE) * 6 : 0; // THF_DOUBLESTIKE +10 + skill_lv*6% Double Strike Chance
 		if ( sc && sc->data[SC_DOUBLETEAM] )
 			i = 100; // 100% chance while SC_DOUBLETEAM active
 
@@ -3967,14 +4031,52 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 	if( !flag.cri && sstatus->cri ) {
 		short cri = sstatus->cri;
 
-		if (sd != NULL)
+		if( sd != NULL )
 			cri+= sd->critaddrace[tstatus->race];
+		if( sd && sd->bonus.skillcrit && skill_id )
+			cri = cri * ( 100 + sd->bonus.skillcrit ) / 100;
 		if( tsd && tsd->bonus.critical_def )
 			cri = cri * ( 100 - tsd->bonus.critical_def ) / 100;
 
+		if( sd && sd->bonus.criteffect & 0x4 ) { // CRITFX 0x4 - always crit vs SC_FREEZE
+			struct status_change *tsc;
+			tsc = status->get_sc(target);
+
+			if( tsc && tsc->data[SC_FREEZE] )
+				cri = 1000;
+		}
+
+		if( sc && sc->data[SC_MAINGAUCHE] ) {
+			if( (!skill_id || skill_id == THF_BONECUTTER) ) {
+				wd.div_ = 2;
+				wd.type = BDT_MULTIHIT;
+				cri = 1000;
+
+				status_change_end(src,SC_MAINGAUCHE,INVALID_TIMER);
+			}
+		}
+
+		if( tsc && tsc->data[SC_MARKED] )
+			cri = (cri + 1000) / 2;
+
+		if( sd && sd->bonus.nocrits ) {
+			if( (sd->bonus.nocrits & 1) && !skill_id ) // basic attacks cannot crit
+				cri = 0;
+
+			if( (sd->bonus.nocrits & 2) && skill_id ) // skills cannot crit
+				cri = 0;
+		}
+
 		if( rnd()%1000 < cri ) {
 			flag.cri = 1;
+			wd.flag |= BF_CRITICAL;
 
+			if( sd && sd->bonus.criteffect & 0x10 ) { // CRITFX 0x10 - double strike when critting
+				if( (!skill_id || skill_id == THF_BONECUTTER) && wd.type != BDT_MULTIHIT ) {
+					wd.div_ = 2;
+					wd.type = BDT_MULTIHIT;
+				}
+			}
 
 			if( wd.type == BDT_MULTIHIT ) // needed to display correctly on client
 				wd.type = BDT_MULTICRIT;
@@ -4026,9 +4128,23 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 				flag.hit = 0;
 			}
 		}
+
+		if( sd && sd->bonus.criticalevade && pc_iscritical(sd) ) {
+			if( rnd()%100 < sd->bonus.criticalevade ) {
+				wd.type = BDT_NORMAL;
+				wd.dmg_lv = ATK_FLEE;
+				flag.hit = 0;
+			}
+		}
 	}
 
-	if (flag.hit && !flag.infdef) { //No need to do the math for plants
+	if( tsd && tsd->bonus.statuseffect&0x4 )
+		flag.idef = 1;
+
+	if( tsd && tsd->bonus.criteffect&0x80 && !flag.hit )
+		sc_start(target,target,SC_MAINGAUCHE,100,0,-1);
+
+	if (!flag.infdef) { //No need to do the math for plants
 		unsigned int skillratio = 100; //Skill dmg modifiers.
 		//Hitting attack
 
@@ -4074,6 +4190,10 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 					if(sd->battle_status.str > 0)
 						ATK_ADDRATE(sd->battle_status.str); // STR Bonus - +1% Phys damage dealt per STR
 				}
+
+				if( tsc && tsc->data[SC_MARKED] )
+					ATK_RATE(200);
+
 				break;
 			} //End default case
 		} //End switch(skill_id)
@@ -4133,6 +4253,7 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 			if (skill_id != CR_GRANDCROSS && skill_id != NPC_GRANDDARKNESS) {
 				//Ignore Defense?
 				if (!flag.idef && (
+					((sd->bonus.criteffect & 0x2) && flag.cri) ||
 					sd->right_weapon.ignore_def_ele & (1<<tstatus->def_ele) ||
 					sd->right_weapon.ignore_def_race & map->race_id2mask(tstatus->race) ||
 					sd->right_weapon.ignore_def_race & map->race_id2mask(is_boss(target) ? RC_BOSS : RC_NONBOSS)
@@ -4295,8 +4416,20 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 		}
 	}
 
-	if( wd.damage ) { // 15% variation in physical damage
-		wd.damage = wd.damage * (85 + rnd()%31) / 100;
+	if( tsd && tsd->bonus.healavoid && (wd.type == BDT_BLOCKED || !flag.hit) && wd.damage > 0 ) {
+		int64 healdmg = tsd->bonus.healavoid * wd.damage / 100;
+		status->heal(target, healdmg, 0, 3);
+	}
+
+	if( wd.damage ) { // 10% variation in physical damage
+		wd.damage = wd.damage * (90 + rnd()%21) / 100;
+	}
+
+	if( wd.type == BDT_BLOCKED || !flag.hit )
+		wd.damage = 0;
+
+	if( wd.damage < 1 && tsd && pc->checkskill(tsd,ALL_BLINK) ) {
+		skill->blockpc_start(tsd, ALL_BLINK, 15);
 	}
 
 	return wd;
@@ -4349,6 +4482,14 @@ struct Damage battle_calc_attack(int attack_type,struct block_list *bl,struct bl
 		d.dmotion = 0;
 	} else // Some skills like Weaponry Research will cause damage even if attack is dodged
 		d.dmg_lv = ATK_DEF;
+
+	if( sd && sd->bonus.scaddeddamage && d.damage > 1 ) {
+		struct status_change *sc = status->get_sc(target);
+		int sccount = (sc) ? (int) sc->count : 0;
+
+		if( sc && sccount )
+			d.damage += d.damage * sd->bonus.scaddeddamage * sccount / 100;
+	}
 
 	if (sd && d.damage + d.damage2 > 1) {
 		// HPVanishRate
@@ -4825,6 +4966,11 @@ enum damage_lv battle_weapon_attack(struct block_list* src, struct block_list* t
 		tsc->data[SC_KAAHI]->val4 = timer->add(tick + skill->get_time2(SL_KAAHI,tsc->data[SC_KAAHI]->val1), status->kaahi_heal_timer, target->id, SC_KAAHI); //Activate heal.
 
 	wd = battle->calc_attack(BF_WEAPON, src, target, 0, 0, flag);
+
+	if( sd && (sd->bonus.criteffect & 0x8) ) {
+		if( wd.type == BDT_CRIT || wd.type == BDT_MULTICRIT )
+			discharge = 3;
+	}
 
 	if( sc && sc->count ) {
 		if( sc->data[SC_SPELLFIST] ) {

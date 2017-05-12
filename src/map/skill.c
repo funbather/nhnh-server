@@ -728,10 +728,10 @@ int skill_additional_effect(struct block_list* src, struct block_list *bl, uint1
 				}
 
 				if (sd->addeff[i].flag&ATF_TARGET)
-					status->change_start(src,bl,type,rate,7,0,(type == SC_BURNING)?src->id:0,0,temp,flag);
+					status->change_start(src,bl,type,rate,0,src->id,0,0,temp,flag);
 
 				if (sd->addeff[i].flag&ATF_SELF)
-					status->change_start(src,src,type,rate,7,0,(type == SC_BURNING)?src->id:0,0,temp,flag);
+					status->change_start(src,src,type,rate,0,src->id,0,0,temp,flag);
 			}
 		}
 
@@ -750,6 +750,37 @@ int skill_additional_effect(struct block_list* src, struct block_list *bl, uint1
 				if( sd->addeff3[i].target&ATF_SELF )
 					status->change_start(src,src,type,sd->addeff3[i].rate,7,0,0,0,temp,SCFLAG_NONE);
 			}
+		}
+
+		if( sd->bonus.criteffect && attack_type&BF_CRITICAL ) {
+			if( sd->bonus.criteffect&0x1 )
+				sc_start2(src,bl,SC_IGNITE,100,0,src->id,4000);
+
+			if( sd->bonus.criteffect&0x20 && attack_type&BF_MAGIC) {
+				int blight = rnd()%5;
+
+				switch(blight) {
+					case 0: sc_start2(src,bl,SC_POISON,100,0,src->id,12000); break;
+					case 1: sc_start(src,bl,SC_SILENCE,100,0,12000); break;
+					case 2: sc_start(src,bl,SC_STUN,100,0,2000); break;
+					case 3: sc_start(src,bl,SC_FREEZE,100,0,12000); break;
+					case 4: sc_start(src,bl,SC_BLIND,100,0,12000); break;
+				}
+			}
+		}
+
+		if( sd->bonus.instantkill && attack_type&BF_WEAPON ) {
+			if( rnd()%1000 < sd->bonus.instantkill )
+				status_percent_damage(src, bl, -100, 0, true);
+		}
+
+		if( sd->bonus.cullingstrike && attack_type&BF_WEAPON ) {
+			if( (status_get_hp(bl) * 100 / status_get_max_hp(bl)) <= sd->bonus.cullingstrike )
+				status_percent_damage(src, bl, -100, 0, true);
+		}
+
+		if( sd->bonus.statuseffect&0x2 && attack_type&BF_MAGIC ) {
+			sc_start2(src,bl,SC_POISON,100,0,src->id,12000);
 		}
 	}
 
@@ -846,11 +877,11 @@ int skill_additional_effect(struct block_list* src, struct block_list *bl, uint1
 			break;
 
 		case THF_PUNCTURE:
-			sc_start2(src,bl,SC_BLOODING,100,skill_lv,src->id,skill->get_time(skill_id,skill_lv));
+			sc_start2(src,bl,SC_BLOODING,100,0,src->id,skill->get_time(skill_id,skill_lv));
 			break;
 
 		case MGN_INCINERATE:
-			sc_start2(src,bl,SC_IGNITE,100,status_get_dex(src),src->id,skill->get_time(skill_id,skill_lv));
+			sc_start2(src,bl,SC_IGNITE,100,status_get_dex(src),src->id,skill->get_time2(skill_id,skill_lv));
 			break;
 
 		case MGN_EXPLOSION:
@@ -858,7 +889,7 @@ int skill_additional_effect(struct block_list* src, struct block_list *bl, uint1
 			break;
 
 		case MGN_ICICLEEDGE:
-			sc_start(src,bl,SC_CHILLED,100,35,skill->get_time(skill_id,skill_lv));
+			sc_start(src,bl,SC_CHILLED,100,35,skill->get_time2(skill_id,skill_lv));
 			break;
 
 		case MGN_ICENOVA:
@@ -1557,6 +1588,9 @@ int skill_additional_effect(struct block_list* src, struct block_list *bl, uint1
 				 sd->autospell[i].flag&attack_type&BF_SKILLMASK))
 				continue; // one or more trigger conditions were not fulfilled
 
+			if( skill_id == NPC_DELUGE ) // don't trigger from NPC_DELUGE
+				continue;
+
 			temp = (sd->autospell[i].id > 0) ? sd->autospell[i].id : -sd->autospell[i].id;
 
 			sd->state.autocast = 1;
@@ -1805,10 +1839,10 @@ int skill_counter_additional_effect(struct block_list* src, struct block_list *b
 			time = skill->get_time2(status->sc2skill(type),7);
 
 			if (dstsd->addeff2[i].flag&ATF_TARGET)
-				status->change_start(bl,src,type,rate,7,0,0,0,time,SCFLAG_NONE);
+				status->change_start(bl,src,type,rate,0,bl->id,0,0,time,SCFLAG_NONE);
 
 			if (dstsd->addeff2[i].flag&ATF_SELF && !status->isdead(bl))
-				status->change_start(bl,bl,type,rate,7,0,0,0,time,SCFLAG_NONE);
+				status->change_start(bl,bl,type,rate,0,bl->id,0,0,time,SCFLAG_NONE);
 		}
 	}
 
@@ -1983,6 +2017,12 @@ int skill_counter_additional_effect(struct block_list* src, struct block_list *b
 			pc->exeautobonus(dstsd,&dstsd->autobonus2[i]);
 		}
 	}
+
+	if( sd && sd->bonus.criteffect&0x40 && !skill_id && status->isdead(bl) )
+		sc_start(src,src,SC_DARKCONFIDANT,100,0,-1);
+
+	if( dstsd && dstsd->bonus.medusa )
+		sc_start(bl, src, SC_MEDUSAHEAD, 100, dstsd->bonus.medusa, 5000);
 
 	return 0;
 }
@@ -3376,13 +3416,6 @@ int skill_timerskill(int tid, int64 tick, int id, intptr_t data) {
 				case KN_AUTOCOUNTER:
 					clif->skill_nodamage(src,target,skl->skill_id,skl->skill_lv,1);
 					break;
-				case NPC_DELUGE:
-					if (!status->isdead(target))
-						skill->attack(BF_MAGIC,src,src,target,skl->skill_id,skl->skill_lv,tick,skl->flag);
-					if (skl->type>1 && !status->isdead(target) && !status->isdead(src)) {
-						skill->addtimerskill(src,tick+125,target->id,0,0,skl->skill_id,skl->skill_lv,skl->type-1,skl->flag);
-					}
-					break;
 				case WZ_WATERBALL:
 					skill->toggle_magicpower(src, skl->skill_id); // only the first hit will be amplify
 					if (!status->isdead(target))
@@ -3749,8 +3782,11 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 
 	map->freeblock_lock();
 
-	if( sd && skill_id && (sd->bonus.skillboost > rnd()%100) ) // skillboost% chance to use skill with +1 to level
+	if( sd && skill_id && (rnd()%100 < sd->bonus.skillboost) ) // skillboost% chance to use skill with +1 to level
 		skill_lv += 1;
+
+	if( sd && skill_id && sd->bonus.skillboost2 ) // +skillboost2 skill levels
+		skill_lv += sd->bonus.skillboost2;
 
 	switch(skill_id) {
 		case SWD_UMBOBLOW:
@@ -4424,8 +4460,8 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 			}
 			break;
 		case NPC_DELUGE:
-			skill->addtimerskill(src,tick+150,bl->id,0,0,skill_id,skill_lv,rnd()%(skill_lv*5),flag); // 1 - 5*Lv Hits
-			skill->attack(BF_MAGIC,src,src,bl,skill_id,skill_lv,tick,flag);
+			//skill->addtimerskill(src,tick+150,bl->id,0,0,skill_id,skill_lv,rnd()%(skill_lv*5),flag); // 1 - 5*Lv Hits
+			skill->attack(BF_MAGIC,src,src,bl,skill_id,1 + rnd()%(skill_lv*5),tick,flag);
 			break;
 		case WZ_WATERBALL:
 			{
@@ -5370,8 +5406,9 @@ int skill_castend_id(int tid, int64 tick, int id, intptr_t data)
 					break;
 				}
 			}
-			if(cooldown)
+			if(cooldown && !(rnd()%100 < sd->bonus.ignorecooldown) ) {
 				skill->blockpc_start(sd, ud->skill_id, cooldown);
+			}
 		}
 		if( battle_config.display_status_timers && sd )
 			clif->status_change(src, SI_POSTDELAY, 1, skill->delay_fix(src, ud->skill_id, ud->skill_lv), 0, 0, 0);
@@ -5802,7 +5839,10 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 		break;
 
 		case THF_CAMOUFLAGE:
-			sc_start2(src, bl, type, 100, 150 + 30 * skill_lv, status_get_dex(src) * 2, skill->get_time(skill_id, skill_lv));
+			if( sd && sd->bonus.statuseffect&0x20 )
+				sc_start4(src, bl, type, 100, 150 + 30 * skill_lv, status_get_dex(src) * 2, 0, 1, -1);
+			else
+				sc_start2(src, bl, type, 100, 150 + 30 * skill_lv, status_get_dex(src) * 2, skill->get_time(skill_id, skill_lv));
 
 			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
 		break;
@@ -10500,15 +10540,19 @@ int skill_castend_pos(int tid, int64 tick, int id, intptr_t data)
 			ud->canact_tick = tick + skill->delay_fix(src, ud->skill_id, ud->skill_lv);
 		}
 		if (sd) { //Cooldown application
-			int i, cooldown = skill->get_cooldown(ud->skill_id, ud->skill_lv);
+			int i, cdr = sd->bonus.cdr, cooldown = skill->get_cooldown(ud->skill_id, ud->skill_lv);
 			for (i = 0; i < ARRAYLENGTH(sd->skillcooldown) && sd->skillcooldown[i].id; i++) { // Increases/Decreases cooldown of a skill by item/card bonuses.
 				if (sd->skillcooldown[i].id == ud->skill_id){
 					cooldown += sd->skillcooldown[i].val;
 					break;
 				}
 			}
-			if(cooldown)
+
+			cooldown = (cooldown * 100) / (100 + cdr); // % faster cooldown expiration
+
+			if(cooldown && !(rnd()%100 < sd->bonus.ignorecooldown) ) {
 				skill->blockpc_start(sd, ud->skill_id, cooldown);
+			}
 		}
 		if( battle_config.display_status_timers && sd )
 			clif->status_change(src, SI_POSTDELAY, 1, skill->delay_fix(src, ud->skill_id, ud->skill_lv), 0, 0, 0);
@@ -10745,6 +10789,7 @@ int skill_castend_pos2(struct block_list* src, int x, int y, uint16 skill_id, ui
 	sce = (sc != NULL && type != SC_NONE) ? sc->data[type] : NULL;
 
 	switch (skill_id) { //Skill effect.
+		case ALL_BLINK:
 		case WZ_METEOR:
 		case MO_BODYRELOCATION:
 		case CR_CULTIVATION:
@@ -10838,6 +10883,8 @@ int skill_castend_pos2(struct block_list* src, int x, int y, uint16 skill_id, ui
 
 				if( sd->bonus.skillboost < rnd()%100 ) // do skillboost check here too, locus already gets the bonus from MGN_STORMLOCUS_PULSE
 					skill_lv += 1;
+				if( sd->bonus.skillboost2 )
+					skill_lv += sd->bonus.skillboost2;
 			}
 		case MGN_STORMLOCUS:
 		case MG_FIREWALL:
@@ -11054,15 +11101,10 @@ int skill_castend_pos2(struct block_list* src, int x, int y, uint16 skill_id, ui
 				status_change_end(src,SC_CURSEDCIRCLE_ATKER,INVALID_TIMER);
 			return 0; // not to consume item.
 
+		case ALL_BLINK:
 		case MO_BODYRELOCATION:
 			if (unit->movepos(src, x, y, 1, 1)) {
-	#if PACKETVER >= 20111005
 				clif->snap(src, src->x, src->y);
-	#else
-				clif->skill_poseffect(src,skill_id,skill_lv,src->x,src->y,tick);
-	#endif
-				if (sd)
-					skill->blockpc_start (sd, MO_EXTREMITYFIST, 2000);
 			}
 			break;
 		case NJ_SHADOWJUMP:

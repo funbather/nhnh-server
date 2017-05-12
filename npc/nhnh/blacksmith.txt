@@ -46,7 +46,7 @@ upgQuality:
 		.@equipped += 1;
 	}
 	
-	if (!equipped) {
+	if (!.@equipped) {
 		cleartext;
 		mes "[Ysolt]";
 		mes "You're not even wearin'... ugh, nevermind. Don't waste my time, kid.";
@@ -97,7 +97,7 @@ upgLevel:
 		.@equipped += 1;
 	}
 	
-	if (!equipped) {
+	if (!.@equipped) {
 		cleartext;
 		mes "[Ysolt]";
 		mes "You're not even wearin'... ugh, nevermind. Don't waste my time, kid.";
@@ -142,7 +142,7 @@ upgType:
 		.@equipped += 1;
 	}
 	
-	if (!equipped) {
+	if (!.@equipped) {
 		cleartext;
 		mes "[Ysolt]";
 		mes "You're not even wearin'... ugh nevermind. Don't waste my time, kid.";

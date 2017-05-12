@@ -403,8 +403,22 @@ BEGIN_ZEROED_BLOCK; // this block will be globally zeroed at the beginning of st
 		int bleeddamage;
 		int ignitedamage;
 		int skillboost;
+		int skillboost2;
 		int magtoatk;
 		int atktomag;
+		int nocrits;
+		int criteffect;
+		int scaddeddamage;
+		int instantkill;
+		unsigned int necromancy;
+		unsigned int statuseffect;
+		int cullingstrike;
+		int healavoid;
+		int medusa;
+		int skillcrit;
+		unsigned int equiprestriction;
+		int criticalevade;
+		int ignorecooldown;
 	} bonus;
 END_ZEROED_BLOCK;
 

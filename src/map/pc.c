@@ -1010,10 +1010,12 @@ int pc_isequip(struct map_session_data *sd,int n)
 	if(item == NULL)
 		return 0;
 
-#if PACKETVER <= 20100707
-	if (itemdb_is_shadowequip(item->equip) || itemdb_is_costumeequip(item->equip))
-		return 0;
-#endif
+	if( sd->bonus.equiprestriction ) {
+		if( sd->bonus.equiprestriction&0x01 ) {
+			if( item->type == IT_WEAPON && item->look != W_MACE )
+				return 0;
+		}
+	}
 
 	if(pc_has_permission(sd, PC_PERM_USE_ALL_EQUIPMENT))
 		return 1;
@@ -2249,12 +2251,8 @@ int pc_bonus(struct map_session_data *sd,int type,int val) {
 			break;
 		case SP_BASE_ATK:
 			if(sd->state.lr_flag != 2) {
-#ifdef RENEWAL
-				bst->equip_atk += val;
-#else
 				bonus = bst->batk + val;
 				bst->batk = cap_value(bonus, 0, USHRT_MAX);
-#endif
 			}
 			break;
 		case SP_DEF1:
@@ -2928,6 +2926,63 @@ int pc_bonus(struct map_session_data *sd,int type,int val) {
 			if (sd->state.lr_flag != 2)
 				sd->bonus.atktomag += val;
 			break;
+		case SP_NOCRITS:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.nocrits |= val;
+			break;
+		case SP_CRITEFFECT:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.criteffect |= val;
+			break;
+		case SP_SCADDEDDAMAGE:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.scaddeddamage += val;
+			break;
+		case SP_INSTANTKILL:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.instantkill += val;
+			break;
+		case SP_NECROMANCY:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.necromancy |= val;
+			break;
+		case SP_STATUSEFFECT:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.statuseffect |= val;
+			break;
+		case SP_CULLINGSTRIKE:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.cullingstrike = max(sd->bonus.cullingstrike, val);
+			break;
+		case SP_HEALAVOID:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.healavoid += val;
+			break;
+		case SP_MEDUSA:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.medusa += val;
+			break;
+		case SP_SKILLCRIT:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.skillcrit += val;
+			break;
+		case SP_EQUIPRESTRICTION:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.equiprestriction |= val;
+			break;
+		case SP_CRITICALEVADE:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.criticalevade += val;
+			break;
+		case SP_IGNORECOOLDOWN:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.ignorecooldown += val;
+			break;
+		case SP_SKILLBOOST2:
+			if (sd->state.lr_flag != 2)
+				sd->bonus.skillboost2 += val;
+			break;
+
 		default:
 			ShowWarning("pc_bonus: unknown type %d %d !\n",type,val);
 			Assert_report(0);
@@ -7585,6 +7640,9 @@ void pc_respawn(struct map_session_data* sd, clr_type clrtype)
 
 	pc->setstand(sd);
 	pc->setrestartvalue(sd,3);
+
+	status_calc_pc(sd, SCO_NONE);
+
 	if( pc->setpos(sd, sd->status.save_point.map, sd->status.save_point.x, sd->status.save_point.y, clrtype) )
 		clif->resurrection(&sd->bl, 1); //If warping fails, send a normal stand up packet.
 }
@@ -8005,6 +8063,8 @@ void pc_revive(struct map_session_data *sd,unsigned int hp, unsigned int sp) {
 		guild->aura_refresh(sd,GD_SOULCOLD,guild->checkskill(sd->guild,GD_SOULCOLD));
 		guild->aura_refresh(sd,GD_HAWKEYES,guild->checkskill(sd->guild,GD_HAWKEYES));
 	}
+
+	status_calc_pc(sd, SCO_NONE);
 }
 // script
 //
@@ -9746,6 +9806,15 @@ int pc_equipitem(struct map_session_data *sd,int n,int req_pos)
 	{
 		clif->equipitemack(sd,n,0,EIA_FAIL); // fail
 		return 0;
+	}
+
+	if( sd->bonus.equiprestriction ) {
+		if( sd->bonus.equiprestriction&0x01 ) {// Jarngreipr - maces only
+			if( pos&EQP_HAND_R && id->look != W_MACE) {
+				clif->equipitemack(sd,n,0,EIA_FAIL);
+				return 0;
+			}
+		}
 	}
 
 	/* won't fail from this point onwards */

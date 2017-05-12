@@ -1863,7 +1863,7 @@ struct item_drop* mob_setlootitem(struct item* item)
 
 void mob_generate_item(struct mob_data *md, struct item *it, int flag) {
 	int itid = 0, ilvl = 0, quality = 0, slot1 = 0, slot2 = 0, slot3 = 0, slot4 = 0, rolls = 0;
-	int shards = 35, seals = 21;
+	int shards = 34 + 1, seals = 20 + 1, uniques = 84 + 1;
 
 	memset(it,0,sizeof(struct item));
 
@@ -1871,10 +1871,11 @@ void mob_generate_item(struct mob_data *md, struct item *it, int flag) {
 		int rank1[18] = { 1,4,7,10,13,16,19,25,28,31,34,100,103,106,109,112,115,118 };
 		int rank2[18] = { 2,5,8,11,14,17,20,26,29,32,35,101,104,107,110,113,116,119 };
 		int rank3[31] = { 3,6,9,12,15,18,21,22,23,24,37,38,39,40,41,42,43,44,45,46,27,30,33,36,102,105,108,111,114,117,120 };
-		int rand = rnd()%10000; // roll for item rank -> 60% R1, 30% R2, 10% R3
+		int rand = rnd()%10000; // roll for item rank -> 55% R1, 30% R2, 14% R3, 1% Unique
 
-		if     ( rand >= 9000 ) itid = rank3[rnd()%(sizeof(rank3)/sizeof(rank3[0]))];
-		else if( rand >= 6000 ) itid = rank2[rnd()%(sizeof(rank2)/sizeof(rank2[0]))];
+		if     ( rand >= 9900 ) itid = 200 + rnd()%uniques;
+		else if( rand >= 8500 ) itid = rank3[rnd()%(sizeof(rank3)/sizeof(rank3[0]))];
+		else if( rand >= 5500 ) itid = rank2[rnd()%(sizeof(rank2)/sizeof(rank2[0]))];
 		else                    itid = rank1[rnd()%(sizeof(rank1)/sizeof(rank1[0]))];
 
 		rand = rnd()%10000; // reroll for enchantments -> 5% - 4, 10% - 3, 15% - 2, 30% - 1, 40% - 0
@@ -1884,10 +1885,10 @@ void mob_generate_item(struct mob_data *md, struct item *it, int flag) {
 		if( rand >= 7000 ) slot2 = 500 + rnd()%shards;
 		if( rand >= 4000 ) slot1 = 500 + rnd()%shards;
 
-		rand = rnd()%10000; // reroll for quality -> 5% 116-125, 15% 101~115, 80% 65~100
+		rand = rnd()%10000; // reroll for quality -> 2% 116-125, 13% 101~115, 85% 65~100
 
-		if     ( rand >= 9500 ) quality = 116 + rnd()%10;
-		else if( rand >= 8000 ) quality = 101 + rnd()%15;
+		if     ( rand >= 9800 ) quality = 116 + rnd()%10;
+		else if( rand >= 8500 ) quality = 101 + rnd()%15;
 		else                    quality = 65  + rnd()%36;
 
 		// item level is just set to the mob's level (for now?)
@@ -2536,7 +2537,7 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 			}
 		}
 
-		if( sd == mvp_sd ) {
+		if( mvp_sd ) {
 			/* DROP RATE
 			 *
 			 * 5 chances for a standard equipment item drop
@@ -2584,7 +2585,7 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 			mob->item_drop(md, dlist, mob->setdropitem(ITEMID_COINBAG,1,NULL), 0, 10000, false);
 		}
 
-		if(sd) {
+		if( sd ) {
 			// process script-granted extra drop bonuses
 			int itemid = 0;
 			for (i = 0; i < ARRAYLENGTH(sd->add_drop) && (sd->add_drop[i].id || sd->add_drop[i].group); i++)
@@ -2769,7 +2770,7 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 
 
 			if ( pc->checkskill(sd,THF_SONICSTRIKE) ) {
-				skill->blockpc_start(sd, THF_SONICSTRIKE, 1); // Refresh THF_SONICSTRIKE cooldown on kill
+				skill->blockpc_start(sd, THF_SONICSTRIKE, 15); // Refresh THF_SONICSTRIKE cooldown on kill
 			}
 		}
 
@@ -2793,6 +2794,70 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 	if(md->deletetimer != INVALID_TIMER) {
 		timer->delete(md->deletetimer,mob->timer_delete);
 		md->deletetimer = INVALID_TIMER;
+	}
+
+	if( mvp_sd && mvp_sd->bonus.necromancy ) {
+		if( (mvp_sd->bonus.necromancy & 0xFF) && (rnd()%100 < 35) ) { // Platinum Spanner
+			struct mob_data *md2;
+			int atkmod = mvp_sd->bonus.necromancy & 0xFF; // % of ATK stored in first byte
+			int construct = (rnd()%100 < 25) ? 1023 : 1022; // 25% chance for ranged minion instead of melee
+
+			md2 = mob->once_spawn_sub(&mvp_sd->bl, mvp_sd->bl.m, -1, -1, "Construct", construct, "", SZ_SMALL, AI_ATTACK);
+
+			if( md2 ) {
+				md2->master_id = mvp_sd->bl.id;
+				md2->special_state.ai = AI_ATTACK;
+
+				if( md2->deletetimer != INVALID_TIMER )
+					timer->delete(md2->deletetimer, mob->timer_delete);
+
+				md2->deletetimer = timer->add(tick+20000, mob->timer_delete, md2->bl.id, 0);
+				mob->spawn(md2);
+				md2->level = mvp_sd->status.base_level;
+				md2->status.max_hp = status_get_max_hp(&mvp_sd->bl) / 2;
+				md2->status.hp = md2->status.max_hp;
+				md2->status.rhw.atk = (pc_leftside_atk(mvp_sd) + pc_rightside_atk(mvp_sd)) * atkmod / 100;
+			}
+		}
+
+		if( (mvp_sd->bonus.necromancy & 0xFF00) && (rnd()%100 < 20) ) { // Cryptcaller
+			struct mob_data *md2;
+			int atkmod = (mvp_sd->bonus.necromancy & 0xFF00) >> 8; // % of ATK stored in second byte
+			int minion = (rnd()%100 < 25) ? 1025 : 1024; // 25% chance for ranged minion instead of melee
+
+			md2 = mob->once_spawn_sub(&mvp_sd->bl, mvp_sd->bl.m, -1, -1, "Skeletal Minion", minion, "", SZ_SMALL, AI_ATTACK);
+
+			if( md2 ) {
+				md2->master_id = mvp_sd->bl.id;
+				md2->special_state.ai = AI_ATTACK;
+
+				if( md2->deletetimer != INVALID_TIMER )
+					timer->delete(md2->deletetimer, mob->timer_delete);
+
+				md2->deletetimer = timer->add(tick+20000, mob->timer_delete, md2->bl.id, 0);
+				mob->spawn(md2);
+				md2->level = mvp_sd->status.base_level;
+				md2->status.max_hp = status_get_max_hp(&mvp_sd->bl) / 2;
+				md2->status.hp = md2->status.max_hp;
+				md2->status.rhw.atk = (pc_rightside_matk(mvp_sd)+pc_leftside_matk(mvp_sd)) * atkmod / 100;
+			}
+		}
+
+		if( (mvp_sd->bonus.necromancy & 0xFF0000) && (rnd()%100 < 10) ) {
+			struct mob_data *md2;
+			md2 = mob->once_spawn_sub(&mvp_sd->bl, mvp_sd->bl.m, -1, -1, md->name, md->class_, "", SZ_SMALL, AI_ATTACK);
+
+			if( md2 ) {
+				md2->master_id = mvp_sd->bl.id;
+				md2->special_state.ai = AI_ATTACK;
+
+				if( md2->deletetimer != INVALID_TIMER )
+					timer->delete(md2->deletetimer, mob->timer_delete);
+
+				md2->deletetimer = timer->add(tick+20000, mob->timer_delete, md2->bl.id, 0);
+				mob->spawn(md2);
+			}
+		}
 	}
 	/**
 	 * Only loops if necessary (e.g. a poring would never need to loop)
@@ -3560,7 +3625,7 @@ int mob_is_clone(int class_)
 int mob_clone_spawn(struct map_session_data *sd, int16 m, int16 x, int16 y, const char *event, int master_id, uint32 mode, int flag, unsigned int duration)
 {
 	int class_;
-	int i,j,h,inf, fd;
+	int i,j,h,inf,fd,tmpatk;
 	struct mob_data *md;
 	struct mob_skill *ms;
 	struct mob_db* db;
@@ -3582,8 +3647,11 @@ int mob_clone_spawn(struct map_session_data *sd, int16 m, int16 x, int16 y, cons
 	strcpy(db->jname,sd->status.name);
 	db->lv=status->get_lv(&sd->bl);
 	memcpy(mstatus, &sd->base_status, sizeof(struct status_data));
-	mstatus->rhw.atk2= mstatus->dex + mstatus->rhw.atk + mstatus->rhw.atk2; //Max ATK
-	mstatus->rhw.atk = mstatus->dex; //Min ATK
+
+	tmpatk = (sd->weapontype1 == W_DAGGER || sd->weapontype1 == W_STAFF) ? sd->battle_status.matk_max : (mstatus->rhw.atk + mstatus->batk);
+
+	mstatus->rhw.atk2 = 0;
+	mstatus->rhw.atk = tmpatk;
 	if (mstatus->lhw.atk) {
 		mstatus->lhw.atk2= mstatus->dex + mstatus->lhw.atk + mstatus->lhw.atk2; //Max ATK
 		mstatus->lhw.atk = mstatus->dex; //Min ATK
