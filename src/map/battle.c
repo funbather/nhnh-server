@@ -3256,8 +3256,10 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 						status_change_end(src, SC_DARKCONFIDANT, INVALID_TIMER);
 					}
 
-					if( tsc && tsc->data[SC_MARKED] )
-						cri = (cri + 1000) / 2;
+					if( tsc && tsc->data[SC_MARKED] ) {
+						if( rnd()%1000 < cri )
+							cri = 1000;
+					}
 
 					if( sd && sd->bonus.nocrits ) {
 						if( (sd->bonus.nocrits & 2) && skill_id ) // skills cannot crit
@@ -3278,7 +3280,7 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 				if( sd && flag.cri && sd->crit_atk_rate )
 					MATK_RATE(sd->crit_atk_rate);
 
-				if( tsc && tsc->data[SC_MARKED] )
+				if( flag.cri && tsc && tsc->data[SC_MARKED] )
 					MATK_RATE(200);
 
 				//Constant/misc additions from skills
@@ -4056,15 +4058,19 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 			}
 		}
 
-		if( tsc && tsc->data[SC_MARKED] )
-			cri = (cri + 1000) / 2;
-
 		if( sd && sd->bonus.nocrits ) {
 			if( (sd->bonus.nocrits & 1) && !skill_id ) // basic attacks cannot crit
 				cri = 0;
 
 			if( (sd->bonus.nocrits & 2) && skill_id ) // skills cannot crit
 				cri = 0;
+		}
+
+		if( tsc && tsc->data[SC_MARKED] ) {
+			// attacker essentially gets an extra roll for a crit success
+			// when enemy is marked for death
+			if( rnd()%1000 < cri )
+				cri = 1000;
 		}
 
 		if( rnd()%1000 < cri ) {
@@ -4083,6 +4089,7 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 			else
 				wd.type = BDT_CRIT;
 		}
+
 	}
 
 	if( !flag.hit ) {
@@ -4191,7 +4198,7 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 						ATK_ADDRATE(sd->battle_status.str); // STR Bonus - +1% Phys damage dealt per STR
 				}
 
-				if( tsc && tsc->data[SC_MARKED] )
+				if( flag.cri && tsc && tsc->data[SC_MARKED] )
 					ATK_RATE(200);
 
 				break;
