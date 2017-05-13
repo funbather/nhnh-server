@@ -5956,30 +5956,7 @@ void status_set_viewdata(struct block_list *bl, int class_)
 	{
 		struct map_session_data *sd = BL_UCAST(BL_PC, bl);
 		if (pc->db_checkid(class_)) {
-			if (pc_isridingpeco(sd)) {
-				switch (class_) {
-					//Adapt class to a Mounted one.
-					case JOB_KNIGHT:
-						class_ = JOB_KNIGHT2;
-						break;
-					case JOB_CRUSADER:
-						class_ = JOB_CRUSADER2;
-						break;
-					case JOB_LORD_KNIGHT:
-						class_ = JOB_LORD_KNIGHT2;
-						break;
-					case JOB_PALADIN:
-						class_ = JOB_PALADIN2;
-						break;
-					case JOB_BABY_KNIGHT:
-						class_ = JOB_BABY_KNIGHT2;
-						break;
-					case JOB_BABY_CRUSADER:
-						class_ = JOB_BABY_CRUSADER2;
-						break;
-				}
-			}
-			sd->vd.class = class_;
+			sd->vd.class = (sd->status.class_choices >> 24);//class_;
 			clif->get_weapon_view(sd, &sd->vd.weapon, &sd->vd.shield);
 			sd->vd.head_top = sd->status.head_top;
 			sd->vd.head_mid = sd->status.head_mid;
@@ -5990,26 +5967,6 @@ void status_set_viewdata(struct block_list *bl, int class_)
 			sd->vd.robe = sd->status.robe;
 			sd->vd.body_style = sd->status.body;
 			sd->vd.sex = sd->status.sex;
-
-			if (sd->vd.cloth_color) {
-				if (sd->sc.option&OPTION_WEDDING && battle_config.wedding_ignorepalette)
-				       sd->vd.cloth_color = 0;
-				if (sd->sc.option&OPTION_XMAS && battle_config.xmas_ignorepalette)
-				       sd->vd.cloth_color = 0;
-				if (sd->sc.option&OPTION_SUMMER && battle_config.summer_ignorepalette)
-				       sd->vd.cloth_color = 0;
-				if (sd->sc.option&OPTION_HANBOK && battle_config.hanbok_ignorepalette)
-				       sd->vd.cloth_color = 0;
-				if (sd->sc.option&OPTION_OKTOBERFEST /* TODO: config? */)
-					sd->vd.cloth_color = 0;
-			}
-			if (sd->vd.body_style
-			 && (sd->sc.option&OPTION_WEDDING
-			  || sd->sc.option&OPTION_XMAS
-			  || sd->sc.option&OPTION_SUMMER
-			  || sd->sc.option&OPTION_HANBOK
-			  || sd->sc.option&OPTION_OKTOBERFEST))
-				sd->vd.body_style = 0;
 		} else if (vd != NULL) {
 			memcpy(&sd->vd, vd, sizeof(struct view_data));
 		} else {

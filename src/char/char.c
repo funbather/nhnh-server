@@ -1917,9 +1917,9 @@ int char_mmo_char_tobuf(uint8* buffer, struct mmo_charstatus* p) {
 	WBUFW(buf,50) = min(p->sp, INT16_MAX);
 	WBUFW(buf,52) = min(p->max_sp, INT16_MAX);
 	WBUFW(buf,54) = DEFAULT_WALK_SPEED; // p->speed;
-	WBUFW(buf,56) = p->class;
+	WBUFW(buf,56) = (p->class_choices >> 24) & 0xFF;//p->class;
 	WBUFW(buf,58) = p->hair;
-	WBUFW(buf,60) = (p->class_choices >> 24) & 0xFF;
+	WBUFW(buf,60) = p->body;
 	WBUFW(buf,62) = p->weapon;
 	WBUFW(buf,64) = p->base_level;
 	WBUFW(buf,66) = min(p->skill_point, INT16_MAX);
