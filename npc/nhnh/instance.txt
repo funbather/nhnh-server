@@ -5,28 +5,30 @@ prt_monk,218,182,3	script	Kharis#missions	4_F_JP_NOAH,{
 	.@instance_timeout = 300;
 	.@party_id = getcharid(CHAR_ID_PARTY);
 
-	mes "[Kharis]";
-	mes "Welcome. Do you wish to attempt a Trial?";
-	menu "Yeah!",menuTrials,"Trial?",askTrial,"Maybe another time.",thatsAll;
+	mes("[Kharis]");
+	mes("Welcome. Do you wish to attempt a Trial?");
+	menu("Yeah!",menuTrials,"Trial?",askTrial,"Maybe another time.",thatsAll);
 	
 backToMenu:
 
 	cleartext;
-	mes "[Kharis]";
-	mes "So? Will you attempt a Trial?";
-	menu "Yeah!",menuTrials,"Trial?",askTrial,"Maybe another time.",thatsAll;
+	mes("[Kharis]");
+	mes("So? Will you attempt a Trial?");
+	menu("Yeah!",menuTrials,"Trial?",askTrial,"Maybe another time.",thatsAll);
 
 askTrial:
 
 	cleartext;
-	mes "[Kharis]";
-	mes "Trials are short instanced dungeons crawling with monsters, as well as a powerful Boss monster waiting at the end.";
+	mes("[Kharis]");
+	mes("Trials are short instanced dungeons crawling with monsters, as well as a powerful Boss monster waiting at the end of each one.");
 	next;
-	mes "[Kharis]";
-	mes "Killing the Boss grants a large amount of experience and plenty of item drops, including a Slime Token to use at the slot machine.";
+	mes("[Kharis]");
+	mes("To clear a Trial, you must defeat the boss.");
+	mes("\nIt's truly a challenge, but clearing a Trial is not without reward; killing the boss grants a large amount of experience and plenty of item drops, including a Slime Token to use at the slot machine.");
 	next;
-	mes "[Kharis]";
-	mes "Trials can be attempted as many times as you like, as often as you like, and do not need to be completed to retry.\n\nIf a Boss is too much for you to handle, consider avoiding it until you feel like you can take it on.";
+	mes("[Kharis]");
+	mes("Trials can be attempted as many times as you like, as often as you like, and do not need to be cleared to retry.");
+	mes("\nIf a boss is too much for you to handle, consider avoiding it until you're confident you can take it on.");
 	next;
 	goto backToMenu;
 	
@@ -40,9 +42,14 @@ thatsAll:
 menuTrials:
 
 	cleartext;
-	mes "[Kharis]";
-	mes "Which Trial will you challenge?";
-	menu "River - Lv 1 ~ 4",goRiver,"Desert - Lv 5 ~ 8",goDesert,"Village - Lv 9 ~ 12",goVillage,"I changed my mind.",backToMenu;
+	mes("[Kharis]");
+	mes("Which Trial will you challenge?");
+	menu("River - Lv 1 ~ 4",goRiver,
+	     "Desert - Lv 5 ~ 8",goDesert,
+	     "Village - Lv 9 ~ 12",goVillage,
+	     "Ruins - Lv 13 ~ 16",goRuins,
+	     "Temple - Lv 17 ~ 20",goTemple,
+	     "I changed my mind.",backToMenu);
 	
 goRiver:
 
@@ -56,11 +63,11 @@ goRiver:
 	.@instance_id = has_instance2(.@instance_map$);
 
 	cleartext;	
-	mes "[Kharis]";
-	mes "River - Lv 1 ~ 4";
-	mes "A winding path along a river bank.\n\n";
-	mes "Boss: ^boGigant Frog^ld";
-	mes "A giant Frog with an affinity for water magic.";
+	mes("[Kharis]");
+	mes("River - Lv 1 ~ 4");
+	mes("A winding path along a river bank.\n\n");
+	mes("Boss: ^boGigant Frog^ld");
+	mes("A giant Frog with an affinity for water magic.");
 	
 	goto commonMenu;
 
@@ -76,11 +83,11 @@ goDesert:
 	.@instance_id = has_instance2(.@instance_map$);
 
 	cleartext;
-	mes "[Kharis]";
-	mes "Desert - Lv 5 ~ 8";
-	mes "An abandoned fortress hidden in the desert.\n\n";
-	mes "Boss: ^boTitan Rhea^ld";
-	mes "A fearsome Rhea with a deadly beak.";
+	mes("[Kharis]");
+	mes("Desert - Lv 5 ~ 8");
+	mes("An abandoned fortress hidden in the desert.\n\n");
+	mes("Boss: ^boTitan Rhea^ld");
+	mes("A fearsome Rhea with a deadly beak.");
 	
 	goto commonMenu;
 
@@ -96,27 +103,68 @@ goVillage:
 	.@instance_id = has_instance2(.@instance_map$);
 
 	cleartext;
-	mes "[Kharis]";
-	mes "Village - Lv 9 ~ 12";
-	mes "A hostile encampment deep in the woods.\n\n";
-	mes "Boss: ^boGoblin King^ld";
-	mes "A stalwart goblin warrior.";
+	mes("[Kharis]");
+	mes("Village - Lv 9 ~ 12");
+	mes("A hostile encampment deep in the woods.\n\n");
+	mes("Boss: ^boGoblin King^ld");
+	mes("A stalwart goblin warrior.");
 	
 	goto commonMenu;
+
+goRuins:
+
+	.@instance_name$ = "Ruins";
+	.@instance_map$ = "ayo_fild01";
+	.@instance_spawnx = 231;
+	.@instance_spawny = 42;
+	.@instance_soloname$ = getcharid(CHAR_ID_ACCOUNT)+"T4";
+	.@instance_partyname$ = getcharid(CHAR_ID_PARTY) ? getcharid(CHAR_ID_PARTY)+"T4" : "";
+	
+	.@instance_id = has_instance2(.@instance_map$);
+
+	cleartext;
+	mes("[Kharis]");
+	mes("Ruins - Lv 13 ~ 16");
+	mes("Ruins left from an ancient civilization.\n\n");
+	mes("Boss: ^boSabretooth^ld");
+	mes("A wolf with fangs that can pierce any armor.");
+	
+	goto commonMenu;
+
+goTemple:
+
+	.@instance_name$ = "Temple";
+	.@instance_map$ = "ayo_fild02";
+	.@instance_spawnx = 21;
+	.@instance_spawny = 102;
+	.@instance_soloname$ = getcharid(CHAR_ID_ACCOUNT)+"T5";
+	.@instance_partyname$ = getcharid(CHAR_ID_PARTY) ? getcharid(CHAR_ID_PARTY)+"T5" : "";
+	
+	.@instance_id = has_instance2(.@instance_map$);
+
+	cleartext;
+	mes("[Kharis]");
+	mes("Temple - Lv 17 ~ 20");
+	mes("An abandoned temple crawling with spirits.\n\n");
+	mes("Boss: ^boTemple Guardian^ld");
+	mes("An ancient protector with a deadly array of spells and attacks.");
+	
+	goto commonMenu;
+
 
 commonMenu:
 
 	if( .@instance_id >= 0 )
-		menu "Enter Existing Trial",goWarp,"Create Solo Trial",goSolo,"Create Party Trial",goParty,"I changed my mind.",backToMenu;
+		menu("Enter Existing Trial",goWarp,"Create Solo Trial",goSolo,"Create Party Trial",goParty,"I changed my mind.",backToMenu);
 	else
-		menu "Create Solo Trial",goSolo,"Create Party Trial",goParty,"I changed my mind.",backToMenu;
+		menu("Create Solo Trial",goSolo,"Create Party Trial",goParty,"I changed my mind.",backToMenu);
 
 goSolo:
 
 	if( .@party_id ) {
 		cleartext;
-		mes "[Kharis]";
-		mes "You cannot begin a Solo Trial while in a party.";
+		mes("[Kharis]");
+		mes("You cannot begin a Solo Trial while in a party.");
 		next;
 		goto backToMenu;
 	}
@@ -128,14 +176,14 @@ goSolo:
 	
 	if( .@instance_id < 0 ) {
 		cleartext;
-		mes "Failed to generate instance! Report this!!";
+		mes("Failed to generate instance! Report this!!");
 		close;
 	}
 	
 	if( instance_attachmap(.@instance_map$, .@instance_id, true, .@instance_soloname$) == "" ) {
 		instance_destroy(.@instance_id);
 		cleartext;
-		mes "Failed to attach map to instance! Report this!!";
+		mes("Failed to attach map to instance! Report this!!");
 		close;
 	}
 	
@@ -149,16 +197,16 @@ goParty:
 
 	if( !(.@party_id) ) {
 		cleartext;
-		mes "[Kharis]";
-		mes "You must already be in a party to begin a Party Trial.";
+		mes("[Kharis]");
+		mes("You must already be in a party to begin a Party Trial.");
 		next;
 		goto backToMenu;
 	}
 	
 	if( getpartyleader(.@party_id) !=  strcharinfo(PC_NAME) ) {
 		cleartext;
-		mes "[Kharis]";
-		mes "You must be the party leader to begin a Party Trial.";
+		mes("[Kharis]");
+		mes("You must be the party leader to begin a Party Trial.");
 		next;
 		goto backToMenu;
 	}
@@ -170,14 +218,14 @@ goParty:
 	
 	if( .@instance_id < 0 ) {
 		cleartext;
-		mes "Failed to generate instance! Report this!!";
+		mes("Failed to generate instance! Report this!!");
 		close;
 	}
 	
 	if( instance_attachmap(.@instance_map$, .@instance_id, true, .@instance_partyname$) == "" ) {
 		instance_destroy(.@instance_id);
 		cleartext;
-		mes "Failed to attach map to instance! Report this!!";
+		mes("Failed to attach map to instance! Report this!!");
 		close;
 	}
 	

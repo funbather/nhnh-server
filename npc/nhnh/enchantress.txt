@@ -6,484 +6,499 @@ prt_monk,200,170,6	script	Serra#enchantress	4_F_ALCHE_A,{
   .@SEALMIN = 600;
   .@SEALMAX = 620;
 	
-	mes "[Serra]";
-	mes "Welcome! Need some enchanting done?";
-	menu "I need some enchanting done!",menuEnchant,"What are your services?",askServices,"Nothing today.",thatsAll;
+	mes("[Serra]");
+	mes("Welcome! Need some enchanting done?");
+	menu("I need some enchanting done!",menuEnchant,"Enchanting?",askServices,"Nothing today.",thatsAll);
 	cleartext;
 	
 backToMenu:
 
 	cleartext;
-	mes "[Serra]";
-	mes "So, what's up?";
-	menu "I need some enchanting done!",menuEnchant,"What are your services?",askServices,"That's all.",thatsAll;
+	mes("[Serra]");
+	mes("So, what's up?");
+	menu("I need some enchanting done!",menuEnchant,"Enchanting?",askServices,"That's all.",thatsAll);
 	
 askServices:
 
 	cleartext;
-	mes "[Serra]";
-	mes "Well, I'm an enchantress, so I... you know... enchant stuff.\n\nAs long as you got the right materials for me!";
+	mes("[Serra]");
+	mes("Equipment on its own is alright... but what if you could make a piece of equipment way stronger? Way better? Way cooler??");
+	mes("\nThat's where I come in!!\nSerra the Enchantress, at your service!");
 	next;
-	mes "[Serra]";
-	mes "Enchanting revolves around Bijous, magic-laced jewels that can be found on monsters.\n\nThey go crazy over them! But then, so do we enchantresses!";
+	mes("[Serra]");
+	mes("Every piece of gear has the potential to hold three minor enchantments called ^5555AA^boShards^ld^000000, and one major enchantment called a ^5555AA^boSeal^ld^000000.");
+	mes("\nThese enchantments can raise all sorts of different stats, and sometimes can do stuff even beyond that!");
 	next;
-	mes "[Serra]";
-	mes "^5555AA^boEmpty Bijous^ld^000000 may only seem like shiny rocks, but they got the potential to hold a ton of magic!\n\nUsing one, I can store a Shard from an enchanted item to create a ^5555AA^boFervent Bijou!^ld^000000";
+	mes("[Serra]");
+	mes("Using different kinds of ^5555AA^boBijous^ld^000000, I can add shards and seals to stuff, and even help you mix and match enchantments to make your equipment the best it can be!");
 	next;
-	mes "[Serra]";
-	mes "I can use the magic within a Fervent Bijou to replace a Shard in whatever you want. You can totally customize your equipment this way!\n\nA few warnings, though...";
+	mes("[Serra]");
+	mes("\"Wow! What's a bijou?\" you may ask!");
+	mes("\nWell, they're magic-laced jewels carried by monsters. They go crazy over 'em! But then again... so do I!!");
 	next;
-	mes "[Serra]";
-	mes "I'm pretty good at what I do, but I can't store Seals within an Empty Bijou. I also can't add additional enchantments to an item with only a Fervent Bijou, only replace existing ones.";
+	mes("[Serra]");
+	mes("The most common kind you'll find are ^5555AA^boEmpty Bijous^ld^000000. They might just look like a shiny rock, but they got the potential to hold a ton of magic!");
+	mes("\nUsing one, I can rip a shard out of an enchanted item and store it for you. You can then use it to replace any existing shard in another item! Cool, huh?");
 	next;
-	mes "[Serra]";
-	mes "Also, the item used to create a Fervent Bijou won't be left in... usable condition.\n\nSo, definitely don't bring me anything you're attached to!";
+	mes("[Serra]");
+	mes("Careful though...");
+	mes("\nAfter taking a shard out of an item, that item won't be left in... usable condition. So definitely don't bring me anything you're attached to, yeah?");
 	next;
-	mes "[Serra]";
-	mes "Beyond that, there are also rare Bijous out there already charged with magic! They can do all sorts of stuff, so bring me one and I'll see what I can do, yeah?";
+	mes("[Serra]");
+	mes("Beyond that, there are also rarer bijous out there already charged with magic!");
+	mes("\nThey can do all sorts of stuff, so bring me one and I'll see what I can do, yeah?");
 	next;
 	goto backToMenu;
 	
 menuEnchant:
 
 	cleartext;
-	mes "[Serra]";
-	mes "Oh yeah? What kind?";
-	menu "Enscribe Empty Bijou.",enchEmpty,"Enchant Item.",enchBijou,"I've changed my mind.",thatsAll;
+	mes("[Serra]");
+	mes("Yeah? What kind?");
+	menu("Enscribe Empty Bijou.",enchEmpty,"Enchant Item.",enchBijou,"I've changed my mind.",thatsAll);
 	cleartext;
 
 enchEmpty:
 
 	cleartext;
-		
-	if (countitem(802) == 0) {
-		cleartext;	
-		mes "[Serra]";
-		mes "You know you need an Empty Bijou for this, right?";
+	if( !countitem(802) ) {
+		mes("[Serra]");
+		mes("You know you need an Empty Bijou for this, right?");
 		close;
 	}
 	
-	mes "[Serra]";
-	mes "Let's get to it, then!\n\nRemember, taking a Shard from an item will ^FF0000^boirreversably destroy it^ld^000000! Be sure it's nothing you're gonna miss, yeah?";
-	next;
-	mes "[Serra]";
-	mes "What're we working with?";
-	setarray .@position$[1],"Body","Left Hand","Right Hand","Gloves","Belt","Robe","Shoes","Accessory 1", "Accessory 2";
-	set .@menu$,"";
-	for(set .@i,1; .@i<=9; set .@i,.@i+1) {
-		if (getequipisequiped(.@i+1)) {
-			set .@menu$, .@menu$ + getequipname(.@i+1);
-			set .@equipped,1;
+	setarray(.@position$[1],"Body","Left Hand","Right Hand","Gloves","Belt","Robe","Shoes","Accessory 1", "Accessory 2");
+	.@menu$ = "";
+	
+	for( .@i = 1; .@i <= 9; .@i++) {
+		if( getequipisequiped(.@i+1) ) {
+			.@menu$ += getequipname(.@i+1);
+			.@equipped = 1;
 		}
-		set .@menu$, .@menu$ + ":";
+		.@menu$ += ":";
 	}
 	
-	if (.@equipped == 0) {
+	if ( !.@equipped ) {
 		cleartext;
-		mes "[Serra]";
-		mes "Uh... you actually need some equipment if we're gonna do this...";
+		mes("[Serra]");
+		mes("Uh... you actually need some equipment if we're gonna do this...");
 		close;
 	}
-	set .@part, select(.@menu$)+1;
+	
+	cleartext;
+	mes("[Serra]");
+	mes("Let's get to it!\n\nRemember, taking a shard from an item will ^FF0000^boirreversably destroy it^ld^000000! Be sure it's nothing you're gonna miss, yeah?");
+	next;
+		
+	mes("[Serra]");
+	mes("Which item are we lookin' at?");
+	.@part = select(.@menu$)+1;
 
-	if (!getequipisequiped(.@part)) { //custom check
+	if( !getequipisequiped(.@part) ) {
 		cleartext;	
-		mes "[Serra]";
-		mes "Uh... you actually need some equipment if we're gonna do this...";
+		mes("[Serra]");
+		mes("Uh... you actually need some equipment if we're gonna do this...");
 		close;
 	}
 	
-	if (getequipcardcnt(.@part) == 0) {
-		cleartext;	
-		mes "[Serra]";
-		mes "I can't make something from nothing, pal. Bring me something enchanted!";
+	if( !getequipcardcnt(.@part) ) {
+		cleartext;
+		mes("[Serra]");
+		mes("I can't make something from nothing, pal.\n\nBring me something enchanted!");
 		close;
 	}
 	
-	if (getequipcardcnt(.@part) == 4) {
+	if( getequipcardcnt(.@part) == 4 ) {
 		cleartext;	
-		mes "[Serra]";
-		mes "Are you sure you want to use this item...? It's overflowing with magic energy!";
-		menu "On second thought...",-,"Yeah, I'm sure.",enchEmpty2;
+		mes("[Serra]");
+		mes("Are you sure you want to use this item...? It's overflowing with magic energy!");
+		menu("On second thought...",-,"Yeah, I'm sure.",enchEmpty2);
 		cleartext;	
-		mes "[Serra]";
-		mes "Phew, okay. I'd hate to have to destroy something like that!";
+		mes("[Serra]");
+		mes("Phew, okay. I'd hate to have to destroy something like that!");
 		close;
 	}
 	
-	if (getequipid(.@part) > 200) { // unique
+	if( getequipid(.@part) >= 200 && getequipid(.@part) < 500 ) { // unique
 		cleartext;	
-		mes "[Serra]";
-		mes "Are you sure you want to use this item...? It looks pretty rare!";
-		menu "On second thought...",-,"Yeah, I'm sure.",enchEmpty2;
+		mes("[Serra]");
+		mes("Are you sure you want to use this item...? It looks pretty rare!");
+		menu("On second thought...",-,"Yeah, I'm sure.",enchEmpty2);
 		cleartext;	
-		mes "[Serra]";
-		mes "Phew, okay. I'd hate to have to destroy something like that!";
+		mes("[Serra]");
+		mes("Phew, okay. I'd hate to have to destroy something like that!");
 		close;
 	}
 
 enchEmpty2:
 
 	cleartext;
-	mes "[Serra]";
-	mes "Nice! So which of these am I ripping out?";
-	set .@menu2$,"";
-	for(set .@i,0; .@i<=2; set .@i,.@i+1)
-		set .@menu2$, .@menu2$+((getequipcardid(.@part,.@i))?getitemname((getequipcardid(.@part,.@i))):"")+ ":";
-	set .@slot, select(.@menu2$) - 1;
-	set .@ench, getequipcardid(.@part,.@slot);
+	mes("[Serra]");
+	mes("Gotcha. So which of these am I ripping out?");
 	
-	switch (.@slot) {
-		case 0: set .@roll,getequiprolls(.@part,0); break;
-		case 1: set .@roll,getequiprolls(.@part,1); break;
-		case 2: set .@roll,getequiprolls(.@part,2); break;
-	}
+	.@menu2$ = "";
+	for( .@i = 0; .@i <= 2; .@i++ )
+		.@menu2$ += ( (getequipcardid(.@part,.@i)) ? getitemname(getequipcardid(.@part,.@i)) : "" ) + ":";
+	.@slot = select(.@menu2$) - 1;
+	
+	.@ench = getequipcardid(.@part,.@slot);
+	.@roll = getequiprolls(.@part,.@slot);
 
-	delitem 802,1;
-	delequip .@part;
-	spawnitem 803,1,0,0,1,.@ench,0,0,0,.@roll,0,0,0;
+	delitem(802, 1);
+	delequip(.@part);
 	
-	specialeffect2 610;
+	spawnitem(803,1,0,0,1,.@ench,0,0,0,.@roll,0,0,0);
 	
 	cleartext;
-	mes "[Serra]";
-	mes "Tada! Simple as that!\n\nSorry about your stuff, but uh... I'm sure Ysolt will appreciate the scrap metal!";
+	mes("[Serra]");
+	mes("Tada! Simple as that!\n\nSorry about your stuff, but uh... look at the bright side! You got a cool new Fervent Bijou now.");
 	close;
 	
 enchBijou:
 
 	cleartext;
-	mes "[Serra]";
-	mes "What're we working with?";
+	mes("[Serra]");
+	mes("Yeah? Whadda ya got for me?");
+	
 	getinventorylist;
-	set .@menu$,"";
-	for(set .@i,0; .@i<@inventorylist_count; set .@i,.@i+1) {
+	
+	.@menu$ = "";
+	for( .@i = 0; .@i < @inventorylist_count; .@i++ ) {
 		if (@inventorylist_id[.@i] == 803 ||
 				@inventorylist_id[.@i] == 804 ||
 				@inventorylist_id[.@i] == 805 ||
 				@inventorylist_id[.@i] == 806 ||
-				@inventorylist_id[.@i] == 807) {
-			set .@menu$, .@menu$+(@inventorylist_id[.@i] == 803 ? getitemname(@inventorylist_id[.@i])+" ["+getitemname(@inventorylist_card1[.@i])+"]":getitemname(@inventorylist_id[.@i]));
-			.@bijoucount += 1;
+				@inventorylist_id[.@i] == 807 ) {
+			.@menu$ += ( @inventorylist_id[.@i] == 803 ? getitemname(@inventorylist_id[.@i]) + " ["+getitemname(@inventorylist_card1[.@i])+"]" : getitemname(@inventorylist_id[.@i]) );
+			.@havebijou = 1;
 		}
-		set .@menu$, .@menu$ + ":";
+		.@menu$ += ":";
 	}
 	
-	if( .@bijoucount == 0 ) {
+	if( !.@havebijou ) {
 		cleartext;
-		mes "[Serra]";
-		mes "I appreciate the enthusiasm, but I can't do my thing with no materials.\n\nBring me some bijous and then we'll talk, yeah?";
+		mes("[Serra]");
+		mes("I appreciate the enthusiasm, but I can't do my thing if you don't got the materials.\n\nBring me some bijous and then we'll talk, yeah?");
 		close;
 	}
 	
-	set .@selection, select(.@menu$);
-	set .@bijou,@inventorylist_id[.@selection-1];
-	set .@bijouroll,@inventorylist_rolls[.@selection-1];
-	set .@shard,@inventorylist_card1[.@selection-1];
+	.@selection = select(.@menu$) - 1;
+	.@bijou     = @inventorylist_id[.@selection];
+	.@roll      = @inventorylist_rolls[.@selection];
+	.@shard     = @inventorylist_card1[.@selection];
 	
 	cleartext;
-	mes "[Serra]";
-	mes "Nice, nice. Which item are we working on?";
-	setarray .@position$[1],"Body","Left Hand","Right Hand","Gloves","Belt","Robe","Shoes","Accessory 1", "Accessory 2";
-	set .@menu2$,"";
-	for(set .@i,1; .@i<=9; set .@i,.@i+1) {
-		if (getequipisequiped(.@i+1)) {
-			set .@menu2$, .@menu2$ + getequipname(.@i+1);
-			set .@equipped,1;
+	mes("[Serra]");
+	mes("Which item are we lookin' at?");
+	setarray(.@position$[1],"Body","Left Hand","Right Hand","Gloves","Belt","Robe","Shoes","Accessory 1", "Accessory 2");
+	
+	.@menu2$ = "";
+	for( .@i = 1; .@i <= 9; .@i++ ) {
+		if( getequipisequiped(.@i+1) ) {
+			.@menu2$ += getequipname(.@i+1);
+			.@equipped = 1;
 		}
-		set .@menu2$, .@menu2$ + ":";
+		.@menu2$ += ":";
 	}
 	
-	if (.@equipped == 0) {
+	if( !.@equipped ) {
 		cleartext;	
-		mes "[Serra]";
-		mes "Uh... you actually need some equipment if we're gonna do this...";
+		mes("[Serra]");
+		mes("Uh... you actually need some equipment if we're gonna do this...");
 		close;
 	}
-	set .@part, select(.@menu2$)+1;
-
+	.@part = select(.@menu2$)+1;
 	
-	switch(.@bijou) {
+	switch( .@bijou ) {
 		case 804: goto enchArcane; break;
 		case 805: goto enchBlessed; break;
 		case 806: goto enchCapricious; break;
 		case 807: goto enchDiscordant; break;
 	}
 	
+	/* FALLTHROUGH IF FERVENT */
+	
 enchFervent:
 
 	cleartext;
-	if (getequipcardcnt(.@part) == 0) {
-		mes "[Serra]";
-		mes "Hey! I can only replace enchantments with these, not add them! Give me something already enchanted to work on!";
+	if( !getequipcardcnt(.@part) ) {
+		mes("[Serra]");
+		mes("Hey! I can only replace shards with these, not add them!\n\nYou gotta me something already enchanted to work on.");
 		close;
 	}
 
-	mes "[Serra]";
-	mes "Which one of these do you want to replace?";
-	set .@menu3$,"";
-	for(set .@i,0; .@i<=2; set .@i,.@i+1)
-		set .@menu3$, .@menu3$+((getequipcardid(.@part,.@i))?getitemname((getequipcardid(.@part,.@i))):"")+ ":";
-	set .@selection,select(.@menu3$) - 1;
-	set .@ench, getequipcardid(.@part,.@selection);
+	mes("[Serra]");
+	mes("Which one of these do you want to replace?");
+	.@menu3$ = "";
+	for( .@i = 0; .@i <= 2; .@i++ )
+		.@menu3$ += ( (getequipcardid(.@part,.@i)) ? getitemname(getequipcardid(.@part,.@i)) : "") + ":";
+	.@selection = select(.@menu3$) - 1;
 	
-	set .@type,getequipid(.@part);
-	set .@qual,getequiprefinerycnt(.@part);
-	set .@ilvl,getequipilvl(.@part);
-	set .@ench1,getequipcardid(.@part,0);
-	set .@ench2,getequipcardid(.@part,1);
-	set .@ench3,getequipcardid(.@part,2);
-	set .@ench4,getequipcardid(.@part,3);
+	.@ench  = getequipcardid(.@part,.@selection);
+	.@type  = getequipid(.@part);
+	.@qual  = getequiprefinerycnt(.@part);
+	.@ilvl  = getequipilvl(.@part);
 	
-	set .@roll1,getequiprolls(.@part,0);
-	set .@roll2,getequiprolls(.@part,1);
-	set .@roll3,getequiprolls(.@part,2);
-	set .@roll4,getequiprolls(.@part,3);
+	.@ench1 = getequipcardid(.@part,0);
+	.@ench2 = getequipcardid(.@part,1);
+	.@ench3 = getequipcardid(.@part,2);
+	.@ench4 = getequipcardid(.@part,3);
 	
-	unequip .@part;
-	delitem2 .@type,1,1,.@qual,.@ilvl,.@ench1,.@ench2,.@ench3,.@ench4;	
-	delitem2 .@bijou,1,1,0,0,.@shard,0,0,0;
+	.@roll1 = getequiprolls(.@part,0);
+	.@roll2 = getequiprolls(.@part,1);
+	.@roll3 = getequiprolls(.@part,2);
+	.@roll4 = getequiprolls(.@part,3);
 	
-	switch(.@selection) {
+	unequip(.@part);
+	delitem2(.@type,1,1,.@qual,.@ilvl,.@ench1,.@ench2,.@ench3,.@ench4);	
+	delitem2(.@bijou,1,1,0,0,.@shard,0,0,0);
+	
+	switch( .@selection ) {
 		case 0: 
-			set .@ench1,.@shard;
-			set .@roll1,.@bijouroll;
-			break;
+			.@ench1 = .@shard;
+			.@roll1 = .@roll;
+		break;
+		
 		case 1: 
-			set .@ench2,.@shard;
-			set .@roll2,.@bijouroll;
-			break;
+			.@ench2 = .@shard;
+			.@roll2 = .@roll;
+		break;
+		
 		case 2: 
-			set .@ench3,.@shard;
-			set .@roll3,.@bijouroll;
-			break;
+			.@ench3 = .@shard;
+			.@roll3 = .@roll;
+		break;
 	}
 	
 	
-	autoequip .@type,1;
-	spawnitem .@type,1,.@qual,.@ilvl,1,.@ench1,.@ench2,.@ench3,.@ench4,.@roll1,.@roll2,.@roll3,.@roll4;
-	autoequip .@type,0;
+	autoequip(.@type,1);
+	spawnitem(.@type,1,.@qual,.@ilvl,1,.@ench1,.@ench2,.@ench3,.@ench4,.@roll1,.@roll2,.@roll3,.@roll4);
+	autoequip(.@type,0);
 
 	cleartext;
-	mes "[Serra]";
-	mes "Tada! Simple as that! Enjoy your stuff!";
+	mes("[Serra]");
+	mes("Tada! Simple as that! Enjoy your stuff!");
 	close;
 	
 enchArcane:
 
 	cleartext;
-	if (getequipcardcnt(.@part) >= 3) {
-		mes "[Serra]";
-		mes "Ah, this item already has the maximum number of Shards in it, I can't add any more with one of these.\n\nBring me something less... enchanted, yeah?";
+	if( getequipcardcnt(.@part) >= 3 ) {
+		mes("[Serra]");
+		mes("Ah, this item already has the maximum number of shards in it, I can't add any more with one of these.\n\nBring me something less... enchanted, yeah?");
 		close;
 	}
 	
-	set .@type,getequipid(.@part);
-	set .@qual,getequiprefinerycnt(.@part);
-	set .@ilvl,getequipilvl(.@part);
-	set .@ench1,getequipcardid(.@part,0);
-	set .@ench2,getequipcardid(.@part,1);
-	set .@ench3,getequipcardid(.@part,2);
-	set .@ench4,getequipcardid(.@part,3);
-	set .@roll1,getequiprolls(.@part,0);
-	set .@roll2,getequiprolls(.@part,1);
-	set .@roll3,getequiprolls(.@part,2);
-	set .@roll4,getequiprolls(.@part,3);
-	set .@rand,(.@ilvl / 2) + rand(24+.@ilvl);
-
-	set .@numEnch,getequipcardcnt(.@part);
-	unequip .@part;
-	delitem2 .@type,1,1,.@qual,.@ilvl,.@ench1,.@ench2,.@ench3,.@ench4;	
-	delitem .@bijou,1;
+	.@numEnch = getequipcardcnt(.@part);
+	.@type = getequipid(.@part);
+	.@qual = getequiprefinerycnt(.@part);
+	.@ilvl = getequipilvl(.@part);
+	
+	.@ench1 = getequipcardid(.@part,0);
+	.@ench2 = getequipcardid(.@part,1);
+	.@ench3 = getequipcardid(.@part,2);
+	.@ench4 = getequipcardid(.@part,3);
+	
+	.@roll1 = getequiprolls(.@part,0);
+	.@roll2 = getequiprolls(.@part,1);
+	.@roll3 = getequiprolls(.@part,2);
+	.@roll4 = getequiprolls(.@part,3);
+	
+	.@rand = (.@ilvl / 2) + rand(24 + .@ilvl);
+	
+	unequip(.@part);
+	delitem2(.@type,1,1,.@qual,.@ilvl,.@ench1,.@ench2,.@ench3,.@ench4);	
+	delitem(.@bijou,1);
 	
 	switch(.@numEnch) {
 		case 0: 
-			set .@ench1,rand(.@SHARDMIN,.@SHARDMAX);
-			set .@roll1,.@rand;
-			break;
+			.@ench1 = rand(.@SHARDMIN,.@SHARDMAX);
+			.@roll1 = .@rand;
+		break;
+		
 		case 1: 
-			set .@ench2,rand(.@SHARDMIN,.@SHARDMAX);
-			set .@roll2,.@rand;
-			break;
+			.@ench2 = rand(.@SHARDMIN,.@SHARDMAX);
+			.@roll2 = .@rand;
+		break;
+		
 		case 2: 
-			set .@ench3,rand(.@SHARDMIN,.@SHARDMAX); 
-			set .@roll3,.@rand;
-			break;
+			.@ench3 = rand(.@SHARDMIN,.@SHARDMAX); 
+			.@roll3 = .@rand;
+		break;
 	}
 	
-	autoequip .@type,1;
-	spawnitem .@type,1,.@qual,.@ilvl,1,.@ench1,.@ench2,.@ench3,.@ench4,.@roll1,.@roll2,.@roll3,.@roll4;
-	autoequip .@type,0;
+	autoequip(.@type,1);
+	spawnitem(.@type,1,.@qual,.@ilvl,1,.@ench1,.@ench2,.@ench3,.@ench4,.@roll1,.@roll2,.@roll3,.@roll4);
+	autoequip(.@type,0);
 
-	cleartext;	
-	mes "[Serra]";
-	mes "Tada! Simple as that! Enjoy your stuff!";
+	cleartext;
+	mes("[Serra]");
+	mes("Tada! Simple as that! Enjoy your stuff!");
 	close;
 	
 enchBlessed:
 
 	cleartext;
-	if (getequipcardcnt(.@part) < 3) {
-		mes "[Serra]";
-		mes "This item can't quite handle a Seal yet... I can only use this on items with at least three Shards.";
+	if( getequipcardcnt(.@part) < 3 ) {
+		mes("[Serra]");
+		mes("An item needs three shards already in it to handle the power of a seal... this one's not quite ready.\n\nWe'll try again when it's more enchanted, yeah?");
 		close;
 	}
 	
-	set .@type,getequipid(.@part);
-	set .@qual,getequiprefinerycnt(.@part);
-	set .@ilvl,getequipilvl(.@part);
-	set .@ench1,getequipcardid(.@part,0);
-	set .@ench2,getequipcardid(.@part,1);
-	set .@ench3,getequipcardid(.@part,2);
-	set .@ench4,getequipcardid(.@part,3);
-	set .@roll1,getequiprolls(.@part,0);
-	set .@roll2,getequiprolls(.@part,1);
-	set .@roll3,getequiprolls(.@part,2);
-	set .@roll4,getequiprolls(.@part,3);
-	set .@rand,(.@ilvl / 2) + rand(24+.@ilvl);
+	.@type = getequipid(.@part);
+	.@qual = getequiprefinerycnt(.@part);
+	.@ilvl = getequipilvl(.@part);
+	
+	.@ench1 = getequipcardid(.@part,0);
+	.@ench2 = getequipcardid(.@part,1);
+	.@ench3 = getequipcardid(.@part,2);
+	.@ench4 = getequipcardid(.@part,3);
+	
+	.@roll1 = getequiprolls(.@part,0);
+	.@roll2 = getequiprolls(.@part,1);
+	.@roll3 = getequiprolls(.@part,2);
+	.@roll4 = getequiprolls(.@part,3);
 
-	unequip .@part;
-	delitem2 .@type,1,1,.@qual,.@ilvl,.@ench1,.@ench2,.@ench3,.@ench4;	
-	delitem .@bijou,1;
+	unequip(.@part);
+	delitem2(.@type,1,1,.@qual,.@ilvl,.@ench1,.@ench2,.@ench3,.@ench4);	
+	delitem(.@bijou,1);
 
-	set .@ench4,rand(.@SEALMIN,.@SEALMAX);
-	set .@roll4, .@rand;
+	.@ench4 = rand(.@SEALMIN,.@SEALMAX);
+	.@rand = (.@ilvl / 2) + rand(24 + .@ilvl);
+	.@roll4 = .@rand;
 
-	autoequip .@type,1;
-	spawnitem .@type,1,.@qual,.@ilvl,1,.@ench1,.@ench2,.@ench3,.@ench4,.@roll1,.@roll2,.@roll3,.@roll4;
-	autoequip .@type,0;
+	autoequip(.@type,1);
+	spawnitem(.@type,1,.@qual,.@ilvl,1,.@ench1,.@ench2,.@ench3,.@ench4,.@roll1,.@roll2,.@roll3,.@roll4);
+	autoequip(.@type,0);
 
 	cleartext;	
-	mes "[Serra]";
-	mes "Tada! Simple as that! Enjoy your stuff!";
+	mes("[Serra]");
+	mes("Tada! Simple as that! Enjoy your stuff!");
 	close;
 	
 enchCapricious:
 
 	cleartext;
-	if (getequipcardcnt(.@part) == 0) {
-		mes "[Serra]";
-		mes "This Bijou can only work on items that are already enchanted. Add some Shards first, yeah?";
+	if ( !getequipcardcnt(.@part) ) {
+		mes("[Serra]");
+		mes("This bijou can only work on items that are already enchanted.\n\nAdd some shards to it first, yeah?");
 		close;
 	}
 	
-	mes "[Serra]";		
-	mes "Now, this Capricious Bijou will ^FF0000^bocompletely randomize^ld^000000 the enchantments on here.\n\nYou sure you're okay with that?";
-	next;
-	if(select("Sounds good!:I changed my mind.") == 2) {
-		mes "[Serra]";
-		mes "Ah, alright then.";
+	mes("[Serra]");		
+	mes("Now, this Capricious Bijou will ^FF0000^borandomize the types and values^ld^000000 of every enchantment on here.\n\nYou sure you're okay with that?");
+	if( select("Sounds good!","I changed my mind.") == 2 ) {
+		cleartext;
+		mes("[Serra]");
+		mes("Ah, alright then.");
 		close;
 	}	
 	
-	set .@type,getequipid(.@part);
-	set .@qual,getequiprefinerycnt(.@part);
-	set .@ilvl,getequipilvl(.@part);
-	set .@ench1,getequipcardid(.@part,0);
-	set .@ench2,getequipcardid(.@part,1);
-	set .@ench3,getequipcardid(.@part,2);
-	set .@ench4,getequipcardid(.@part,3);
+	.@type = getequipid(.@part);
+	.@qual = getequiprefinerycnt(.@part);
+	.@ilvl = getequipilvl(.@part);
+	
+	.@ench1 = getequipcardid(.@part,0);
+	.@ench2 = getequipcardid(.@part,1);
+	.@ench3 = getequipcardid(.@part,2);
+	.@ench4 = getequipcardid(.@part,3);
 
-	unequip .@part;
-	delitem2 .@type,1,1,.@qual,.@ilvl,.@ench1,.@ench2,.@ench3,.@ench4;
-	delitem .@bijou,1;
+	unequip(.@part);
+	delitem2(.@type,1,1,.@qual,.@ilvl,.@ench1,.@ench2,.@ench3,.@ench4);
+	delitem(.@bijou,1);
 
-	set .@ench1,.@ench1 ? rand(.@SHARDMIN,.@SHARDMAX) : 0;
-	set .@ench2,.@ench2 ? rand(.@SHARDMIN,.@SHARDMAX) : 0;
-	set .@ench3,.@ench3 ? rand(.@SHARDMIN,.@SHARDMAX) : 0;
-	set .@ench4,.@ench4 ? rand(.@SEALMIN,.@SEALMAX) : 0;
-	set .@roll1,(.@ilvl / 2) + rand(24+.@ilvl);
-	set .@roll2,(.@ilvl / 2) + rand(24+.@ilvl);
-	set .@roll3,(.@ilvl / 2) + rand(24+.@ilvl);
-	set .@roll4,(.@ilvl / 2) + rand(24+.@ilvl);
+	.@ench1 = (.@ench1) ? rand(.@SHARDMIN,.@SHARDMAX) : 0;
+	.@ench2 = (.@ench2) ? rand(.@SHARDMIN,.@SHARDMAX) : 0;
+	.@ench3 = (.@ench3) ? rand(.@SHARDMIN,.@SHARDMAX) : 0;
+	.@ench4 = (.@ench4) ? rand(.@SEALMIN,.@SEALMAX)   : 0;
+	
+	.@roll1 = (.@ilvl / 2) + rand(24 + .@ilvl);
+	.@roll2 = (.@ilvl / 2) + rand(24 + .@ilvl);
+	.@roll3 = (.@ilvl / 2) + rand(24 + .@ilvl);
+	.@roll4 = (.@ilvl / 2) + rand(24 + .@ilvl);
 
-	autoequip .@type,1;
-	spawnitem .@type,1,.@qual,.@ilvl,1,.@ench1,.@ench2,.@ench3,.@ench4,.@roll1,.@roll2,.@roll3,.@roll4;
-	autoequip .@type,0;
+	autoequip(.@type,1);
+	spawnitem(.@type,1,.@qual,.@ilvl,1,.@ench1,.@ench2,.@ench3,.@ench4,.@roll1,.@roll2,.@roll3,.@roll4);
+	autoequip(.@type,0);
 
 	cleartext;
-	mes "[Serra]";
-	mes "Tada! Simple as that! Enjoy your stuff!";
+	mes("[Serra]");
+	mes("Tada! Simple as that! Enjoy your stuff!");
 	close;
 	
 enchDiscordant:
 
 	cleartext;
-	mes "[Serra]";		
-	mes "Now, this Discordant Bijou will ^FF0000^bocompletely warp^ld^000000 the enchantments and properties on this item... You sure you're okay with that?\n\nDon't blame me if you don't like the result.";
-	next;
-	if(select("Sounds good!:I changed my mind.") == 2) {
-		mes "[Serra]";
-		mes "Ah, alright then.";
+	mes("[Serra]");		
+	mes("Now, this Discordant Bijou will ^FF0000^bocompletely warp^ld^000000 the enchantments and properties on this item.\n\nDon't blame me if you don't like the result.");
+	
+	if( select("Sounds good!","I changed my mind.") == 2 ) {
+		cleartext;
+		mes("[Serra]");
+		mes("Ah, alright then.");
 		close;
 	}	
 	
-	set .@type,getequipid(.@part);
-	set .@qual,getequiprefinerycnt(.@part);
-	set .@ilvl,getequipilvl(.@part);
-	set .@ench1,getequipcardid(.@part,0);
-	set .@ench2,getequipcardid(.@part,1);
-	set .@ench3,getequipcardid(.@part,2);
-	set .@ench4,getequipcardid(.@part,3);
+	.@type = getequipid(.@part);
+	.@qual = getequiprefinerycnt(.@part);
+	.@ilvl = getequipilvl(.@part);
+	
+	.@ench1 = getequipcardid(.@part,0);
+	.@ench2 = getequipcardid(.@part,1);
+	.@ench3 = getequipcardid(.@part,2);
+	.@ench4 = getequipcardid(.@part,3);
 
-	unequip .@part;
-	delitem2 .@type,1,1,.@qual,.@ilvl,.@ench1,.@ench2,.@ench3,.@ench4;	
-	delitem .@bijou,1;
+	unequip(.@part);
+	delitem2(.@type,1,1,.@qual,.@ilvl,.@ench1,.@ench2,.@ench3,.@ench4);	
+	delitem(.@bijou,1);
 
-	if(rand(0,1))
-		set .@qual,rand(80,110);
-	else
-		set .@qual,rand(90,135);
+	.@qual = (rand(4) == 3) ? rand(85,135) : rand(65,110);
 
-	if(rand(0,1))
-		set .@ilvl,rand(BaseLevel)+1;
-	else {
-		set .@rnd,BaseLevel + 5 - rand(20);
-		set .@ilvl,(.@rnd < 1 ? 1 : .@rnd);
-	}
+	.@ilvl = (rand(0,1)) ? rand(BaseLevel + 1) : BaseLevel + 5 - rand(20);
+	.@ilvl = (.@ilvl < 1) ? 1 : .@ilvl;
 
 	.@rand = rand(100);
 
-	if(.@rand  > 75) {
-		set .@ench1,rand(.@SHARDMIN,.@SHARDMAX);
-		set .@ench2,rand(.@SHARDMIN,.@SHARDMAX);
-		set .@ench3,rand(.@SHARDMIN,.@SHARDMAX);
-		set .@ench4,rand(.@SEALMIN,.@SEALMAX);
-	} else if(.@rand  > 50) {
-		set .@ench1,rand(.@SHARDMIN,.@SHARDMAX);
-		set .@ench2,rand(.@SHARDMIN,.@SHARDMAX);
-		set .@ench3,rand(.@SHARDMIN,.@SHARDMAX);
-		set .@ench4,0;
-	} else if(.@rand  > 25) {
-		set .@ench1,rand(.@SHARDMIN,.@SHARDMAX);
-		set .@ench2,rand(.@SHARDMIN,.@SHARDMAX);
-		set .@ench3,0;
-		set .@ench4,0;
+	if(.@rand  >= 75) {
+		.@ench1 = rand(.@SHARDMIN,.@SHARDMAX);
+		.@ench2 = rand(.@SHARDMIN,.@SHARDMAX);
+		.@ench3 = rand(.@SHARDMIN,.@SHARDMAX);
+		.@ench4 = rand(.@SEALMIN,.@SEALMAX);
+	} else if(.@rand  >= 50) {
+		.@ench1 = rand(.@SHARDMIN,.@SHARDMAX);
+		.@ench2 = rand(.@SHARDMIN,.@SHARDMAX);
+		.@ench3 = rand(.@SHARDMIN,.@SHARDMAX);
+		.@ench4 = 0;
+	} else if(.@rand  >= 25) {
+		.@ench1 = rand(.@SHARDMIN,.@SHARDMAX);
+		.@ench2 = rand(.@SHARDMIN,.@SHARDMAX);
+		.@ench3 = 0;
+		.@ench4 = 0;
 	} else {
-		set .@ench1,rand(.@SHARDMIN,.@SHARDMAX);
-		set .@ench2,0;
-		set .@ench3,0;
-		set .@ench4,0;
+		.@ench1 = rand(.@SHARDMIN,.@SHARDMAX);
+		.@ench2 = 0;
+		.@ench3 = 0;
+		.@ench4 = 0;
 	}
 	
-	set .@roll1,rand(110);
-	set .@roll2,rand(110);
-	set .@roll3,rand(110);
-	set .@roll4,rand(110);
+	.@roll1 = rand(110);
+	.@roll2 = rand(110);
+	.@roll3 = rand(110);
+	.@roll4 = rand(110);
 
-	autoequip .@type,1;
-	spawnitem .@type,1,.@qual,.@ilvl,1,.@ench1,.@ench2,.@ench3,.@ench4,.@roll1,.@roll2,.@roll3,.@roll4;
-	autoequip .@type,0;
+	autoequip(.@type,1);
+	spawnitem(.@type,1,.@qual,.@ilvl,1,.@ench1,.@ench2,.@ench3,.@ench4,.@roll1,.@roll2,.@roll3,.@roll4);
+	autoequip(.@type,0);
 
 	cleartext;
-	mes "[Serra]";
-	mes "Tada! Simple as that! Enjoy your stuff!";
+	mes("[Serra]");
+	mes("Tada! Simple as that! Enjoy your stuff!");
 	close;
 
 thatsAll:
 
 	cleartext;
-	mes "[Serra]";
-	mes "I'll see you around!";
+	mes("[Serra]");
+	mes("See ya later!");
 	close;
 }

@@ -1,0 +1,33 @@
+ayo_fild01,231,49,6	script	Guardian#ruins	2_MONEMUS,{
+	'bx = 115;
+	'by = 300;
+
+	if( 'status == 1 ) {
+		if( xx == 0 && 'yy == 0 ) {
+			showscript("No checkpoint currently set.", getnpcid(0));
+		} else {
+			if( 'map$ != "" )
+				warpchar('map$, 'xx, 'yy, getcharid(CHAR_ID_CHAR));
+				viewpoint(1, 'xx, 'yy, 5, 0x5555AA);
+		}
+	}
+
+	if( 'status == 0 ) {
+		instance_announce(-1, "Trial Start !!", bc_map);
+		'status = 1;
+		areamonster("this", 0, 100, 340, 340, "Hardrock Slime", 1026, 200);
+		areamonster("this", 0, 100, 340, 340, "Timberwolf", 1027, 135);
+		areamonster("this", 0, 100, 340, 340, "Kindling", 1028, 80);
+		areamonster("this", 0, 100, 340, 340, "Boltfly", 1029, 100);
+		areamonster("this", 0, 100, 340, 340, "Grizzly", 1030, 90);
+		monster("this", 'bx, 'by, "Sabretooth", 1031,1,instance_npcname("Guardian#ruins")+"::onBossKilled");
+	}
+	
+	viewpoint(1, 'bx, 'by, 1, 0xFF0000);
+	end;
+	
+onBossKilled:
+	instance_announce(-1, "Trial Complete !!", bc_map);
+	giveTokens();
+	end;
+}

@@ -1,278 +1,305 @@
 prt_monk,202,172,6	script	Ysolt#blacksmith	4_F_FRUIT,{
 
 	disable_items;
-	mes "[Ysolt]";
-	mes "Hey, kid. Blacksmith at your service.\n\nNeed somethin' done?";
-	menu "Upgrade an item!",menuUpgrade,"What are your services?",askServices,"Nothing today.",thatsAll;
+	mes("[Ysolt]");
+	mes("Hey, kid. Blacksmith at your service.\n\nNeed somethin' done?");
+	menu("Upgrade an item!",menuUpgrade,"What are your services?",askServices,"Nothing today.",thatsAll);
 	
 backToMenu:
 
 	cleartext;
-	mes "[Ysolt]";
-	mes "Done thinkin' it over?";
-	menu "Upgrade an item!",menuUpgrade,"What are your services?",askServices,"That's all.",thatsAll;
+	mes("[Ysolt]");
+	mes("Done thinkin' it over?");
+	menu("Upgrade an item!",menuUpgrade,"What are your services?",askServices,"That's all.",thatsAll);
 	
 askServices:
 
 	cleartext;
-	mes "[Ysolt]";
-	mes "If ya got the right stuff, I can fix up an old or worn-out piece of equipment back into fighting shape.";
+	mes("[Ysolt]");
+	mes("If you got the right stuff, I can fix up an old or worn-out piece of equipment back into fighting shape.");
 	next;
-	mes "[Ysolt]";
-	mes "With ^5555AA^boMythril Ore^ld^000000 I can increase an item's quality by ^5555AA^bo10%^ld^000000, but only up to a max of 100%.\n\nI know I'm good, but I still got my limits, ya know?";
+	mes("[Ysolt]");
+	mes("With ^5555AA^boMythril Ore^ld^000000 I can increase an item's quality by ^5555AA^bo10%^ld^000000, but only up to a max of 100%.");
+	mes("\nI got my limits, you know?");
 	next;
-	mes "[Ysolt]";
-	mes "If ya got ^5555AA^boOrichalcum Ore^ld^000000, I can increase an item's level by ^5555AA^bo5^ld^000000, but only up to your own Base Level.";
+	mes("[Ysolt]");
+	mes("If you got ^5555AA^boOrichalcum Ore^ld^000000, I can increase an item's level by ^5555AA^bo5^ld^000000, but only up to your own base level.");
 	next;
-	mes "[Ysolt]";
-	mes "Now, get me a ^5555AA^boDivine Hammer^ld^000000, and I can transform a lower ranked item into the best of its type. My specialty!";
+	mes("[Ysolt]");
+	mes("This one's my specialty!");
+	mes("\nIt's rare, but if you can get me a ^5555AA^boDivine Hammer^ld^000000, I can transform a lower ranked item into the best of its type.");
 	next;
 	goto backToMenu;
 	
 menuUpgrade:
 
 	cleartext;
-	mes "[Ysolt]";
-	mes "Whadda ya got for me?";
-	menu "Mythril Ore (+10% Quality)",upgQuality,"Orichalcum Ore (+5 Item Level)",upgLevel,"Divine Hammer (+ Rank)",upgType,"I've changed my mind.",thatsAll;	
+	mes("[Ysolt]");
+	mes("Let's get to it. What're we workin' with?");
+	menu("Mythril Ore (+10% Quality)",upgQuality,"Orichalcum Ore (+5 Item Level)",upgLevel,"Divine Hammer (+ Rank)",upgType,"I've changed my mind.",thatsAll);	
 
 upgQuality:
 
 	cleartext;
-	setarray .@position$[1],"Body","Left Hand","Right Hand","Gloves","Belt","Robe","Shoes","Accessory 1", "Accessory 2";
-	set .@menu$,"";
-	for(set .@i,1; .@i<=9; set .@i,.@i+1) {
-		set .@menu$, .@menu$+((getequipisequiped(.@i+1)) ? getequipname(.@i+1) + " - " + getequiprefinerycnt(.@i+1) + "%" : "") + ":";
-		.@equipped += 1;
+	setarray(.@position$[1],"Body","Left Hand","Right Hand","Gloves","Belt","Robe","Shoes","Accessory 1", "Accessory 2");
+	.@menu$ = "";
+	for( .@i = 1; .@i <= 9; .@i++ ) {
+		if( getequipisequiped(.@i+1) ) {
+			.@menu$ += getequipname(.@i+1);
+			.@equipped = 1;
+		}
+		.@menu$ += ":";
 	}
 	
-	if (!.@equipped) {
+	if( !.@equipped ) {
 		cleartext;
-		mes "[Ysolt]";
-		mes "You're not even wearin'... ugh, nevermind. Don't waste my time, kid.";
+		mes("[Ysolt]");
+		mes("You're not even wearin'... ugh, nevermind. Don't waste my time, kid.");
 		close;
 	}
 	
-	set .@part, select(.@menu$)+1;
+	.@part = select(.@menu$) + 1;
 	
-	if (getequiprefinerycnt(.@part) == 100) {
+	if( getequiprefinerycnt(.@part) == 100 ) {
 		cleartext;
-		mes "[Ysolt]";
-		mes "I got my limits, kid. I can't make this beauty any better.";
+		mes("[Ysolt]");
+		mes("I got my limits, kid. I can't make this beauty any better.");
 		close;
 	}
 	
-	if (getequiprefinerycnt(.@part) > 100) {
+	if( getequiprefinerycnt(.@part) > 100 ) {
 		cleartext;
-		mes "[Ysolt]";
-		mes "The craftsmanship on this is beyond even my abilities... you're on your own here, kid.";
+		mes("[Ysolt]");
+		mes("This is a masterpiece, kid! I couldn't make it better if I tried.");
+		mes("\nYou're on your own on this one.");
 		close;
 	}
 	
-	set .@material,800;
+	.@material = 800;
 
-	if (countitem(.@material) == 0) {
+	if( !countitem(.@material) ) {
 		cleartext;
-		mes "[Ysolt]";
-		mes "I need some Mythril Ore to do this, kid.";
+		mes("[Ysolt]");
+		mes("I need some Mythril Ore to actually do this, kid.");
 		close;
 	}
 	
-	delitem .@material,1;
-	
-	successrefitem .@part,10,100;
+	delitem(.@material,1);
+	successrefitem(.@part,10,100);
 	
 	cleartext;
-	mes "[Ysolt]";
-	mes "Success! Enjoy, kid.";
+	mes("[Ysolt]");
+	mes("Success! Enjoy, kid.");
 	close;
 
 upgLevel:
 
 	cleartext;
-	setarray .@position$[1],"Body","Left Hand","Right Hand","Gloves","Belt","Robe","Shoes","Accessory 1", "Accessory 2";
-	set .@menu$,"";
-	for(set .@i,1; .@i<=9; set .@i,.@i+1) {
-		set .@menu$, .@menu$+((getequipisequiped(.@i+1))?getequipname(.@i+1) + " - Lv " + getequipilvl(.@i+1):"")+":";
-		.@equipped += 1;
+	setarray(.@position$[1],"Body","Left Hand","Right Hand","Gloves","Belt","Robe","Shoes","Accessory 1", "Accessory 2");
+	.@menu$ = "";
+	for( .@i = 1; .@i <= 9; .@i++ ) {
+		if( getequipisequiped(.@i+1) ) {
+			.@menu$ += getequipname(.@i+1);
+			.@equipped = 1;
+		}
+		.@menu$ += ":";
 	}
 	
-	if (!.@equipped) {
+	if( !.@equipped ) {
 		cleartext;
-		mes "[Ysolt]";
-		mes "You're not even wearin'... ugh, nevermind. Don't waste my time, kid.";
+		mes("[Ysolt]");
+		mes("You're not even wearin'... ugh, nevermind. Don't waste my time, kid.");
 		close;
 	}
 	
-	set .@part, select(.@menu$)+1;
+	.@part = select(.@menu$) + 1;
 	
-	if (getequipilvl(.@part) >= BaseLevel) {
-		mes "[Ysolt]";
-		mes "I can't make it any better than this, kid.";
+	if( getequipilvl(.@part) >= BaseLevel ) {
+		mes("[Ysolt]");
+		mes("I can't make it any better than this right now, kid.");
 		close;
 	}
 	
-	set .@material,801;
+	.@material = 801;
 	
-	cleartext;
-
-	if (countitem(.@material) == 0) {
+	if( !countitem(.@material) ) {
 		cleartext;
-		mes "[Ysolt]";
-		mes "I need some Orichalcum Ore to do this, kid.";
+		mes("[Ysolt]");
+		mes("I need some Orichalcum Ore to actually do this, kid.");
 		close;
 	}
 	
-	delitem .@material,1;
-	
-	successrefitemilvl .@part,5,BaseLevel;
+	delitem(.@material,1);
+	successrefitemilvl(.@part,5,BaseLevel);
 	
 	cleartext;	
-	mes "[Ysolt]";
-	mes "Success! Enjoy, kid.";
+	mes("[Ysolt]");
+	mes("Success! Enjoy, kid.");
 	close;
 	
 upgType:
 
 	cleartext;
-	setarray .@position$[1],"Body","Left Hand","Right Hand","Gloves","Belt","Robe","Shoes","Accessory 1", "Accessory 2";
-	set .@menu$,"";
-	for(set .@i,1; .@i<=9; set .@i,.@i+1) {
-		set .@menu$, .@menu$+((getequipisequiped(.@i+1))?getequipname(.@i+1):"")+":";
-		.@equipped += 1;
+	setarray(.@position$[1],"Body","Left Hand","Right Hand","Gloves","Belt","Robe","Shoes","Accessory 1", "Accessory 2");
+	.@menu$ = "";
+	for( .@i = 1; .@i <= 9; .@i++ ) {
+		if( getequipisequiped(.@i+1) ) {
+			.@menu$ += getequipname(.@i+1);
+			.@equipped = 1;
+		}
+		.@menu$ += ":";
 	}
 	
-	if (!.@equipped) {
+	if( !.@equipped ) {
 		cleartext;
-		mes "[Ysolt]";
-		mes "You're not even wearin'... ugh nevermind. Don't waste my time, kid.";
+		mes("[Ysolt]");
+		mes("You're not even wearin'... ugh nevermind. Don't waste my time, kid.");
 		close;
 	}
 	
-	set .@part, select(.@menu$)+1;
-	set .@upg,-1;
+	.@part = select(.@menu$) + 1;
+	.@upg = -1;
 	
 	switch(getequipid(.@part)) {
 		case 1:
 		case 2:
-			set .@upg,3;
+			.@upg = 3;
 			break;
+			
 		case 4:
 		case 5:
-			set .@upg,6;
+			.@upg = 6;
 			break;
+			
 		case 7:
 		case 8:
-			set .@upg,9;
+			.@upg = 9;
 			break;
+			
 		case 10:
 		case 11:
-			set .@upg,12;
+			.@upg = 12;
 			break;
+			
 		case 13:
 		case 14:
-			set .@upg,15;
+			.@upg = 15;
 			break;
+			
 		case 16:
 		case 17:
-			set .@upg,18;
+			.@upg = 18;
 			break;
+			
 		case 19:
 		case 20:
-			set .@upg,21;
+			.@upg = 21;
 			break;
+			
 		case 25:
 		case 26:
-			set .@upg,27;
+			.@upg = 27;
 			break;
+			
 		case 28:
 		case 29:
-			set .@upg,30;
+			.@upg = 30;
 			break;
+			
 		case 31:
 		case 32:
-			set .@upg,33;
+			.@upg = 33;
 			break;
+			
 		case 34:
 		case 35:
-			set .@upg,36;
+			.@upg = 36;
 			break;
+			
 		case 100:
 		case 101:
-			set .@upg,102;
+			.@upg = 102;
 			break;
+			
 		case 103:
 		case 104:
-			set .@upg,105;
+			.@upg = 105;
 			break;
+			
 		case 106:
 		case 107:
-			set .@upg,108;
+			.@upg = 108;
 			break;
+			
 		case 109:
 		case 110:
-			set .@upg,111;
+			.@upg = 111;
 			break;
+			
 		case 112:
 		case 113:
-			set .@upg,114;
+			.@upg = 114;
 			break;
+			
 		case 115:
 		case 116:
-			set .@upg,117;
+			.@upg = 117;
 			break;
+			
 		case 118:
 		case 119:
-			set .@upg,120;
+			.@upg = 120;
 			break;
 	}
 
 	
-	if (.@upg == -1) {
-		mes "[Ysolt]";
-		mes "Kid, this is already the best of its kind. Nothing to do here.";
+	if( .@upg == -1 ) {
+		mes("[Ysolt]");
+		mes("Kid, this is already the best of its kind. Nothing to do here.");
 		close;
 	}
 	
-	set .@material,808;
+	.@material = 808;
 	
 	cleartext;
-	if (countitem(.@material) == 0) {
-		mes "[Ysolt]";
-		mes "I need a Divine Hammer to do this, kid.";
+	if( !countitem(.@material) ) {
+		mes("[Ysolt]");
+		mes("I need a Divine Hammer to do this, kid.");
 		close;
 	}
 	
-	delitem .@material,1;
+	delitem(.@material,1);
 	
-	set .@oldtype,getequipid(.@part);
-	set .@qual,getequiprefinerycnt(.@part);
-	set .@ilvl,getequipilvl(.@part);
-	set .@ench1,getequipcardid(.@part,0);
-	set .@ench2,getequipcardid(.@part,1);
-	set .@ench3,getequipcardid(.@part,2);
-	set .@ench4,getequipcardid(.@part,3);
-	set .@roll1,getequiprolls(.@part,0);
-	set .@roll2,getequiprolls(.@part,1);
-	set .@roll3,getequiprolls(.@part,2);
-	set .@roll4,getequiprolls(.@part,3);
+	.@oldtype = getequipid(.@part);
+	.@qual    = getequiprefinerycnt(.@part);
+	.@ilvl    = getequipilvl(.@part);
 	
-	unequip .@part;
-	delitem2 .@oldtype,1,1,.@qual,.@ilvl,.@ench1,.@ench2,.@ench3,.@ench4;
+	.@ench1 = getequipcardid(.@part,0);
+	.@ench2 = getequipcardid(.@part,1);
+	.@ench3 = getequipcardid(.@part,2);
+	.@ench4 = getequipcardid(.@part,3);
 	
-	autoequip .@upg,1;
-	spawnitem .@upg,1,.@qual,.@ilvl,1,.@ench1,.@ench2,.@ench3,.@ench4,.@roll1,.@roll2,.@roll3,.@roll4;
-	autoequip .@upg,0;
+	.@roll1 = getequiprolls(.@part,0);
+	.@roll2 = getequiprolls(.@part,1);
+	.@roll3 = getequiprolls(.@part,2);
+	.@roll4 = getequiprolls(.@part,3);
+	
+	unequip(.@part);
+	delitem2(.@oldtype,1,1,.@qual,.@ilvl,.@ench1,.@ench2,.@ench3,.@ench4);
+	
+	autoequip(.@upg,1);
+	spawnitem(.@upg,1,.@qual,.@ilvl,1,.@ench1,.@ench2,.@ench3,.@ench4,.@roll1,.@roll2,.@roll3,.@roll4);
+	autoequip(.@upg,0);
 	
 	specialeffect2 154;
 	
-	mes "[Ysolt]";
-	mes "Success! Enjoy, kid.";
+	mes("[Ysolt]");
+	mes("Success! Enjoy, kid.");
 	close;
 	
 thatsAll:
 	cleartext;
-	mes "[Ysolt]";
-	mes "Nice doing business with ya, kid.";
+	mes("[Ysolt]");
+	mes("See you around, kid.");
 	close;
 }

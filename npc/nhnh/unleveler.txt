@@ -1,0 +1,166 @@
+prt_monk,205,184,6	script	Friendly Guy#unleveler	4_M_MOCASS1,{
+	setarray(.@exp[1],0,1000,1200,1440,1728,2073,2488,2985,3583,4299,5159,
+	                  6191,7430,8916,10699,12839,15407,18488,22186,26623,31947,
+	                  38337,46005,55206,66247,79496,95396,114475,137370,164844,197813,
+	                  237376,284851,341821,410186,492223,590668,708801,850562,1020674,1224809,
+	                  1469771,1763725,2116471,2539765,3047718,3657261,4388714,5266457,6319748,7583698);
+	
+	if( leechtype > 0 ) { goto L_MAIN2; }
+	
+	mes("[Friendly-Looking Guy]");
+	mes("Hey bud. Help a guy out.\n\nLet me borrow some of your ^boLevels^ld.");
+	select("Yeah! Sure man.","Levels... ??","Maybe another time.");
+
+L_MAIN:
+	switch( @menu ) {
+		case 1:
+			cleartext;
+			mes("[Friendly-Looking Guy]");
+			mes("So, how much can you give me?\n\n^boWhat level do you want to be reverted to?^ld");
+			input(.@dstlevel);
+			
+			if( .@dstlevel >= BaseLevel ) {
+				cleartext;
+				mes("[Friendly-Looking Guy]");
+				mes("You're supposed to be giving ^bome^ld the experience, not the other way around man.\n\nQuit messing around.");
+				close;
+			}
+			
+			if( .@dstlevel <= 0 ) {
+				cleartext;
+				mes("[Friendly-Looking Guy]");
+				mes("That's uh... that... that would kill you, man.\n\nI just need to borrow some experience, I'm not looking to do a murder.");
+				close;
+			}
+			
+			.@dstexp = 0;
+			for( .@i = .@dstlevel + 1; .@i <= BaseLevel; .@i++ )
+				.@dstexp += .@exp[.@i];
+				
+			.@dstexp += BaseExp;
+			
+			cleartext;
+			mes("[Friendly-Looking Guy]");
+			mes("Sounds good man, you'll be reverted to\n^boBase Level ^FF4444" + .@dstlevel + "^ld^000000.\n\nHow do you want it?");
+			
+			select("On second thought...","Stat Reset! (5% EXP Loss)","Stats and Skills! (10% EXP Loss)");
+			
+			switch( @menu ) {
+				case 1: goto L_END; break;
+				case 2: 
+					leechtype = 1;
+					leechexp = .@dstexp * 19 / 20;
+					BaseLevel = .@dstlevel;
+					BaseExp = 0;
+					resetstatus();
+					
+					cleartext;
+					mes("[Friendly-Looking Guy]");
+					mes("All done, man. Hope it didn't hurt too much.\n\nYou know where to find me if you need the experience back.");
+					close;
+				break;
+				
+				case 3:
+					leechtype = 2;
+					leechexp = .@dstexp * 9 / 10;
+					BaseLevel = .@dstlevel;
+					BaseExp = 0;
+					resetstatus();
+					resetskill();
+					
+					cleartext;
+					mes("[Friendly-Looking Guy]");
+					mes("All done, man. Hope it didn't hurt too much.\n\nYou know where to find me if you need the experience back.");
+					close;
+				break;
+			}
+			close;
+		break;
+		
+		case 2:
+			cleartext;
+			mes("[Friendly-Looking Guy]");
+			mes("Yeah. Levels. Like, your ^boBase Levels^ld.\n\nI need some cosmic spiritual energy or whatever for stuff. So let me borrow some.");
+			select("what","I'm gonna go now.");
+			switch( @menu ) {
+				case 1: 
+					cleartext;
+					mes("[Friendly-Looking Guy]");
+					mes("It's like this man:\n\nYou let me siphon out some base experience from you to use for awhile. When you need it again, I'll give back ^4444FF^bo95%^ld^000000 of what I took.");
+					next;
+					mes("[Friendly-Looking Guy]");
+					mes("I know you're probably thinking \"^boWhy The Hell Would I Do That^ld\"...");
+					select("Why The Hell Would I Do That");
+					cleartext;
+					mes("[Friendly-Looking Guy]");
+					mes("I'll tell you why, man. In exchange for helping me out, I'll give you a ^boStat Reset^ld absolutely free.\n\n");
+					next;
+					mes("[Friendly-Looking Guy]");
+					mes("If you're feeling generous, I can also give you a ^boSkill Reset^ld if you let me give back only ^4444FF^bo90%^ld^000000 of what I took.\n\nSounds like a good deal, eh?");
+
+					if( select("Yeah! Let's do it.","I'm gonna go now.") == 1 )
+						goto L_MAIN;
+					else
+						goto L_END;
+				break;
+				
+				case 2:
+					goto L_END;
+					close;
+				break;
+			}
+		
+		case 3:
+			goto L_END;
+	}
+	
+	
+L_MAIN2:
+	mes("[Friendly-Looking Guy]");
+	mes("Welcome back, man. You need your juice back?");
+	select("Gimme the juice.","What are you doing with my \"juice\"?","Just saying hello.");
+	
+	switch( @menu ) {
+		case 1:
+			cleartext;
+			mes("[Friendly-Looking Guy]");
+			mes("Sounds good. You ready?");
+			if( select("Yeah.","On second thought...") == 2 ) {
+				goto L_END;
+			} else {
+				while( leechexp > 0 ) {
+					BaseExp += ( leechexp > NextBaseExp ) ? NextBaseExp : leechexp;
+					leechexp -= NextBaseExp;
+				}
+				
+				leechtype = 0;
+				leechexp = 0;
+				
+				cleartext;
+				mes("[Friendly-Looking Guy]");
+				mes("There you go, man. Thanks again.");
+				close;
+			}
+		break;
+		
+		case 2:
+			cleartext;
+			mes("[Friendly-Looking Guy]");
+			mes("I wish I could tell you man. Really do. But it's uh, top secret stuff.");
+			next;
+			mes("[Friendly-Looking Guy]");
+			mes("Don't worry about it, just know your experience is being put to good use.");
+			close;
+		break;
+		
+		case 3:
+			goto L_END;
+		break;
+	}
+
+L_END:
+	cleartext;
+	mes("[Friendly-Looking Guy]");
+	mes("Sure, man. You know where to find me.");
+	close;
+}

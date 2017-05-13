@@ -10615,7 +10615,12 @@ int status_change_timer(int tid, int64 tick, int id, intptr_t data)
 						mob->log_damage(BL_UCAST(BL_MOB, bl), src, sce->val4);
 				}
 				map->freeblock_lock();
-				status->damage(src, bl, sce->val4, 0, clif->damage(src,bl,0,50,sce->val4,1,BDT_POISON,0), 1);
+
+				if( src )
+					status->damage(src, bl, sce->val4, 0, clif->damage(src,bl,0,50,sce->val4,1,BDT_POISON,0), 1);
+				else
+					status->damage(bl, bl, sce->val4, 0, clif->damage(bl,bl,0,50,sce->val4,1,BDT_POISON,0), 1);
+
 				if (sc->data[type]) {
 					sc_timer_next(500 + tick, status->change_timer, bl->id, data );
 				}
@@ -10632,7 +10637,12 @@ int status_change_timer(int tid, int64 tick, int id, intptr_t data)
 						mob->log_damage(BL_UCAST(BL_MOB, bl), src, sce->val4);
 				}
 				map->freeblock_lock();
-				status->damage(src, bl, sce->val4, 0, clif->damage(src,bl,0,50,sce->val4,1,BDT_IGNITE,0), 1);
+
+				if( src )
+					status->damage(src, bl, sce->val4, 0, clif->damage(src,bl,0,50,sce->val4,1,BDT_IGNITE,0), 1);
+				else
+					status->damage(bl, bl, sce->val4, 0, clif->damage(bl,bl,0,50,sce->val4,1,BDT_IGNITE,0), 1);
+
 				if (sc->data[type]) {
 					sc_timer_next(500 + tick, status->change_timer, bl->id, data );
 				}
@@ -10650,7 +10660,12 @@ int status_change_timer(int tid, int64 tick, int id, intptr_t data)
 					}
 				}
 				map->freeblock_lock();
-				status->damage(src, bl, sce->val4, 0, clif->damage(src,bl,0,50,sce->val4,1,BDT_BLEEDING,0), 1);
+
+				if( src )
+					status->damage(src, bl, sce->val4, 0, clif->damage(src,bl,0,50,sce->val4,1,BDT_BLEEDING,0), 1);
+				else
+					status->damage(bl, bl, sce->val4, 0, clif->damage(bl,bl,0,50,sce->val4,1,BDT_BLEEDING,0), 1);
+
 				if (sc->data[type]) {
 					sc_timer_next(500 + tick, status->change_timer, bl->id, data );
 				}
