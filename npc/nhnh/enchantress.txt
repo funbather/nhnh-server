@@ -26,27 +26,24 @@ askServices:
 	mes("\nThat's where I come in!!\nSerra the Enchantress, at your service!");
 	next;
 	mes("[Serra]");
-	mes("Every piece of gear has the potential to hold three minor enchantments called ^5555AA^boShards^ld^000000, and one major enchantment called a ^5555AA^boSeal^ld^000000.");
-	mes("\nThese enchantments can raise all sorts of different stats, and sometimes can do stuff even beyond that!");
-	next;
-	mes("[Serra]");
-	mes("Using different kinds of ^5555AA^boBijous^ld^000000, I can add shards and seals to stuff, and even help you mix and match enchantments to make your equipment the best it can be!");
+	mes("Using different ^5555AA^boBijous^ld^000000, I can add enchantments called ^5555AA^boShards^ld^000000 and ^5555AA^boSeals^ld^000000 to equipment.");
+	mes("\nThese enchantments grant all sorts of bonuses, and can even do stuff beyond just boosting some stats!");
 	next;
 	mes("[Serra]");
 	mes("\"Wow! What's a bijou?\" you may ask!");
 	mes("\nWell, they're magic-laced jewels carried by monsters. They go crazy over 'em! But then again... so do I!!");
 	next;
 	mes("[Serra]");
-	mes("The most common kind you'll find are ^5555AA^boEmpty Bijous^ld^000000. They might just look like a shiny rock, but they got the potential to hold a ton of magic!");
-	mes("\nUsing one, I can rip a shard out of an enchanted item and store it for you. You can then use it to replace any existing shard in another item! Cool, huh?");
+	mes("The most common kinds you'll find are ^5555AA^boArcane Bijous^ld^000000 and ^5555AA^boEmpty Bijous^ld^000000.");
+	mes("\nArcane Bijous let me add new shards to gear (which is cool!), but Empty Bijous are where things really get exciting!!");
 	next;
 	mes("[Serra]");
-	mes("Careful though...");
-	mes("\nAfter taking a shard out of an item, that item won't be left in... usable condition. So definitely don't bring me anything you're attached to, yeah?");
+	mes("I can use them to rip out a shard you like from a piece of equipment you may not like, and store it for you. I can then use it to replace a shard in any other piece of equipment you want!");
+	mes("\nYou can totally mix and match bonuses this way, and make the stat build of your dreams!!");
 	next;
 	mes("[Serra]");
-	mes("Beyond that, there are also rarer bijous out there already charged with magic!");
-	mes("\nThey can do all sorts of stuff, so bring me one and I'll see what I can do, yeah?");
+	mes("Beyond that, there are rarer bijous out there that can do even more stuff!");
+	mes("\nBring me one and I'll see what I can do with it, yeah?");
 	next;
 	goto backToMenu;
 	
@@ -151,14 +148,14 @@ enchEmpty2:
 	
 	cleartext;
 	mes("[Serra]");
-	mes("Tada! Simple as that!\n\nSorry about your stuff, but uh... look at the bright side! You got a cool new Fervent Bijou now.");
+	mes("Tada! Simple as that!\n\nSorry about your stuff, but uh... look at the bright side! You got a cool new Fervent Bijou now!");
 	close;
 	
 enchBijou:
 
 	cleartext;
 	mes("[Serra]");
-	mes("Yeah? Whadda ya got for me?");
+	mes("Let's get to it! What're we working with?");
 	
 	getinventorylist;
 	
@@ -430,7 +427,7 @@ enchDiscordant:
 
 	cleartext;
 	mes("[Serra]");		
-	mes("Now, this Discordant Bijou will ^FF0000^bocompletely warp^ld^000000 the enchantments and properties on this item.\n\nDon't blame me if you don't like the result.");
+	mes("Now, this Discordant Bijou will ^FF0000^borandomize^ld^000000 the enchantments and properties on this item.\n\nDon't blame me if you don't like the result!");
 	
 	if( select("Sounds good!","I changed my mind.") == 2 ) {
 		cleartext;

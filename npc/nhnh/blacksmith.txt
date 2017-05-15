@@ -2,7 +2,7 @@ prt_monk,202,172,6	script	Ysolt#blacksmith	4_F_FRUIT,{
 
 	disable_items;
 	mes("[Ysolt]");
-	mes("Hey, kid. Blacksmith at your service.\n\nNeed somethin' done?");
+	mes("Hey, kid. Blacksmith at your service.");
 	menu("Upgrade an item!",menuUpgrade,"What are your services?",askServices,"Nothing today.",thatsAll);
 	
 backToMenu:
@@ -20,14 +20,14 @@ askServices:
 	next;
 	mes("[Ysolt]");
 	mes("With ^5555AA^boMythril Ore^ld^000000 I can increase an item's quality by ^5555AA^bo10%^ld^000000, but only up to a max of 100%.");
-	mes("\nI got my limits, you know?");
+	mes("\nAn item's quality directly affects its base stats, a blade at 80% quality is only 80% as good as one at 100%.");
 	next;
 	mes("[Ysolt]");
 	mes("If you got ^5555AA^boOrichalcum Ore^ld^000000, I can increase an item's level by ^5555AA^bo5^ld^000000, but only up to your own base level.");
+	mes("\nItem level determines an item's base stats, and has a much greater influence than quality. Not keeping your gear levels in line with your own can be a fatal mistake.");
 	next;
 	mes("[Ysolt]");
-	mes("This one's my specialty!");
-	mes("\nIt's rare, but if you can get me a ^5555AA^boDivine Hammer^ld^000000, I can transform a lower ranked item into the best of its type.");
+	mes("Finally, if you can manage to get your hands on a ^5555AA^boDivine Hammer^ld^000000, I can transform a lower ranked item into the best of its type.");
 	next;
 	goto backToMenu;
 	
@@ -35,7 +35,7 @@ menuUpgrade:
 
 	cleartext;
 	mes("[Ysolt]");
-	mes("Let's get to it. What're we workin' with?");
+	mes("Let's get started, then. What've you got?");
 	menu("Mythril Ore (+10% Quality)",upgQuality,"Orichalcum Ore (+5 Item Level)",upgLevel,"Divine Hammer (+ Rank)",upgType,"I've changed my mind.",thatsAll);	
 
 upgQuality:
@@ -45,7 +45,7 @@ upgQuality:
 	.@menu$ = "";
 	for( .@i = 1; .@i <= 9; .@i++ ) {
 		if( getequipisequiped(.@i+1) ) {
-			.@menu$ += getequipname(.@i+1);
+			.@menu$ += getequipname(.@i+1) + " - " + getequiprefinerycnt(.@i+1) + "%";
 			.@equipped = 1;
 		}
 		.@menu$ += ":";
@@ -99,7 +99,7 @@ upgLevel:
 	.@menu$ = "";
 	for( .@i = 1; .@i <= 9; .@i++ ) {
 		if( getequipisequiped(.@i+1) ) {
-			.@menu$ += getequipname(.@i+1);
+			.@menu$ += getequipname(.@i+1) + " - Lv. " + getequipilvl(.@i+1);
 			.@equipped = 1;
 		}
 		.@menu$ += ":";
