@@ -3939,7 +3939,6 @@ void clif_updatestorageamount(struct map_session_data* sd, int amount, int max_a
 void clif_storageitemadded(struct map_session_data* sd, struct item* i, int index, int amount)
 {
 	int view,fd;
-	int offset = 0;
 
 	nullpo_retv(sd);
 	nullpo_retv(i);
@@ -4095,26 +4094,15 @@ void clif_getareachar_unit(struct map_session_data* sd,struct block_list *bl) {
 				clif->specialeffect_single(bl,421,sd->fd);
 		}
 			break;
-		case BL_MOB:
+		/*case BL_MOB:
 		{
 			struct mob_data *md = BL_UCAST(BL_MOB, bl);
-			/*if (md->special_state.size == SZ_BIG) // tiny/big mobs [Valaris]
+			if (md->special_state.size == SZ_BIG) // tiny/big mobs [Valaris]
 				clif->specialeffect_single(bl,423,sd->fd);
 			else if (md->special_state.size == SZ_MEDIUM)
-				clif->specialeffect_single(bl,421,sd->fd);*/
-#if (PACKETVER >= 20120404 && PACKETVER < 20131223)
-			if (battle_config.show_monster_hp_bar && !(md->status.mode&MD_BOSS)) {
-				int i;
-				for (i = 0; i < DAMAGELOG_SIZE; i++) {// must show hp bar to all char who already hit the mob.
-					if (md->dmglog[i].id == sd->status.char_id) {
-						clif->monster_hp_bar(md, sd);
-						break;
-					}
-				}
-			}
-#endif
+				clif->specialeffect_single(bl,421,sd->fd);
 		}
-			break;
+			break;*/
 		case BL_PET:
 			if (vd->head_bottom)
 				clif->send_petdata(NULL, BL_UCAST(BL_PET, bl), 3, vd->head_bottom); // needed to display pet equip properly
@@ -5064,7 +5052,6 @@ int clif_skill_damage2(struct block_list *src, struct block_list *dst, int64 tic
 int clif_skill_nodamage(struct block_list *src, struct block_list *dst, uint16 skill_id, int heal, int fail)
 {
 	unsigned char buf[32];
-	short offset = 0;
 	short cmd = 0x9cb;
 
 	int len = packet_len(cmd);
@@ -6036,7 +6023,6 @@ void clif_cart_additem(struct map_session_data *sd,int n,int amount,int fail)
 {
 	int view,fd;
 	unsigned char *buf;
-	int offset = 0;
 
 	nullpo_retv(sd);
 
@@ -9019,9 +9005,6 @@ void clif_parse_autotarget(int fd, struct map_session_data* sd) __attribute__((n
 /// 0556
 void clif_parse_autotarget(int fd, struct map_session_data* sd)
 {
-	if( !sd )
-		return;
-
 	sd->state.autotarget^=1;
 
 	if(sd->state.autotarget)

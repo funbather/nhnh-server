@@ -2311,10 +2311,9 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 {
 	static int calculating = 0; //Check for recursive call preemption. [Skotlex]
 	struct status_data *bstatus; // pointer to the player's base status
-	const struct status_change *sc;
 	struct s_skill b_skill[MAX_SKILL]; // previous skill tree
 	int b_weight, b_max_weight, b_cart_weight_max, // previous weight
-		i, k, index, skill_lv,refinedef=0;
+		i, k, index, skill_lv;
 	int64 i64;
 
 	nullpo_retr(-1, sd);
@@ -2445,10 +2444,6 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 			if (!calculating)
 				return 1;
 		}
-
-		// sanitize the refine level in case someone decreased the value in between
-		if (sd->status.inventory[index].refine > MAX_REFINE)
-			sd->status.inventory[index].refine = MAX_REFINE;
 
 		if(sd->inventory_data[index]->type == IT_WEAPON) {
 			int r = sd->status.inventory[index].refine,wlv = sd->inventory_data[index]->wlv;
@@ -3861,7 +3856,7 @@ int status_base_amotion_pc(struct map_session_data *sd, struct status_data *st)
 
 unsigned short status_base_atk(const struct block_list *bl, const struct status_data *st)
 {
-	int str;
+	int str = 0;
 
 	nullpo_ret(bl);
 	nullpo_ret(st);
@@ -7209,13 +7204,13 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 		switch( type ) {
 			case SC_POISON:
 				if( src_sd && src_sd->bonus.statuseffect&0x2 ) {
-					struct block_list* src = map->id2bl(sce->val2);
+					struct block_list* _src = map->id2bl(sce->val2);
 					if( sce->val2 && bl->type == BL_MOB ) {
 						if (src != NULL)
-							mob->log_damage(BL_UCAST(BL_MOB, bl), src, sce->val3 * sce->val4);
+							mob->log_damage(BL_UCAST(BL_MOB, bl), _src, sce->val3 * sce->val4);
 					}
 					map->freeblock_lock();
-					status->damage(src, bl, sce->val3 * sce->val4, 0, clif->damage(src,bl,200,200,sce->val3 * sce->val4,1,BDT_CRIT,0), 1);
+					status->damage(_src, bl, sce->val3 * sce->val4, 0, clif->damage(_src,bl,200,200,sce->val3 * sce->val4,1,BDT_CRIT,0), 1);
 					map->freeblock_unlock();
 
 					if( status->isdead(bl) ) // unit might be dead now

@@ -1542,7 +1542,7 @@ int pc_calc_skillpoint(struct map_session_data* sd) {
 int pc_calc_skilltree(struct map_session_data *sd)
 {
 	int i,j,id=0;
-	int class = 0, classidx = 0, cc = 0;
+	int class = 0, cc = 0;
 
 	nullpo_ret(sd);
 	i = pc->calc_skilltree_normalize_job(sd);

@@ -441,7 +441,6 @@ int64 battle_attr_fix(struct block_list *src, struct block_list *target, int64 d
 //FIXME: Missing documentation for flag, flag2
 int64 battle_calc_weapon_damage(struct block_list *src, struct block_list *bl, uint16 skill_id, uint16 skill_lv, struct weapon_atk *watk, int nk, bool n_ele, short s_ele, short s_ele_, int size, int type, int flag, int flag2){ // [malufett]
 	int64 damage, eatk = 0;
-	struct status_change *sc;
 	struct map_session_data *sd;
 
 	if( !src || !bl )
@@ -1264,9 +1263,9 @@ int64 battle_calc_cardfix(int attack_type, struct block_list *src, struct block_
  *------------------------------------------*/
 // TODO: Add an enum for flag
 int64 battle_calc_defense(int attack_type, struct block_list *src, struct block_list *target, uint16 skill_id, uint16 skill_lv, int64 damage, int flag, int pdef){
-	struct status_data *sstatus, *tstatus;
+	struct status_data *tstatus;
 	struct map_session_data *sd, *tsd;
-	struct status_change *sc, *tsc;
+	struct status_change *tsc;
 	int i;
 
 	if( !damage )
@@ -1277,9 +1276,9 @@ int64 battle_calc_defense(int attack_type, struct block_list *src, struct block_
 
 	sd = BL_CAST(BL_PC, src);
 	tsd = BL_CAST(BL_PC, target);
-	sstatus = status->get_status_data(src);
+	//sstatus = status->get_status_data(src);
 	tstatus = status->get_status_data(target);
-	sc = status->get_sc(src);
+	//sc = status->get_sc(src);
 	tsc = status->get_sc(target);
 
 	switch(attack_type){
@@ -1304,9 +1303,9 @@ int64 battle_calc_defense(int attack_type, struct block_list *src, struct block_
 
 				if ( tsd && pc->checkskill(tsd,SWD_DAUNTLESS) > 0 ) { // SWD_DAUNTLESS +3 + skill_lv% DEF per attacker
 					unsigned int attackers = unit->counttargeted(&tsd->bl);
-					int skill_lv = 3 + pc->checkskill(tsd,SWD_DAUNTLESS);
+					int skl = 3 + pc->checkskill(tsd,SWD_DAUNTLESS);
 
-					def1 += def1 * attackers * skill_lv / 100;
+					def1 += def1 * attackers * skl / 100;
 				}
 
 				if( def1 < -399 ) // it stops at -399
@@ -2682,7 +2681,7 @@ void battle_calc_skillratio_weapon_unknown(int *attack_type, struct block_list *
  * After this we apply bg/gvg reduction
  *------------------------------------------*/
 int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Damage *d,int64 damage,uint16 skill_id,uint16 skill_lv) {
-	struct map_session_data *s_sd, *t_sd;
+	struct map_session_data *t_sd;
 	struct status_change *s_sc, *sc;
 	struct status_change_entry *sce;
 	int64 tmpdmg = 0;
@@ -2691,7 +2690,7 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 	nullpo_ret(bl);
 	nullpo_ret(d);
 
-	s_sd = BL_CAST(BL_PC, src);
+	//s_sd = BL_CAST(BL_PC, src);
 	t_sd = BL_CAST(BL_PC, bl);
 	div_ = d->div_;
 	flag = d->flag;
@@ -2750,14 +2749,14 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 
 	if ( t_sd && (flag&BF_WEAPON) && pc->checkskill(t_sd,SWD_FORCEOFWILL) ) {
 		int hpr = t_sd->battle_status.hp * 100 / t_sd->battle_status.max_hp;
-		int skill_lv = pc->checkskill(t_sd,SWD_FORCEOFWILL);
+		int skl = pc->checkskill(t_sd,SWD_FORCEOFWILL);
 		int reduc = 0;
 
-		if      (hpr > 95) reduc = skill_lv;
-		else if (hpr > 80) reduc = skill_lv * 3 / 2;
-		else if (hpr > 60) reduc = skill_lv * 2;
-		else if (hpr > 35) reduc = skill_lv * 5 / 2;
-		else               reduc = skill_lv * 3;
+		if      (hpr > 95) reduc = skl;
+		else if (hpr > 80) reduc = skl * 3 / 2;
+		else if (hpr > 60) reduc = skl * 2;
+		else if (hpr > 35) reduc = skl * 5 / 2;
+		else               reduc = skl * 3;
 
 		damage -= damage * reduc / 100;
 	}
@@ -4041,9 +4040,6 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 			cri = cri * ( 100 - tsd->bonus.critical_def ) / 100;
 
 		if( sd && sd->bonus.criteffect & 0x4 ) { // CRITFX 0x4 - always crit vs SC_FREEZE
-			struct status_change *tsc;
-			tsc = status->get_sc(target);
-
 			if( tsc && tsc->data[SC_FREEZE] )
 				cri = 1000;
 		}
