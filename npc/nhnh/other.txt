@@ -33,20 +33,17 @@ function	script	useCoinBag	{
 }
 
 function	script	useWarpstone	{	
-	if( (gettimetick(0) - @tick) < 1000) {
-		warp("Save",0,0);
-		return;
-	}
-	
 	getmapxy(.@map$, .@xx, .@yy, 0);
 	
 	if( has_instance2(.@map$) >= 0 ) {
 		instance_attach(has_instance2(.@map$));
 		getmapxy('map$, 'xx, 'yy, 0);
-		viewpoint(1, 'xx, 'yy, 5, 0x5555AA);
+		
+		if( 'map$ != "" && 'portalname$ != "" ) {
+			enablenpc('portalname$);
+			movenpc('portalname$, 'xx, 'yy);
+		}
 	}
-	
-	@tick = gettimetick(0);
 	return;
 }
 

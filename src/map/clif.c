@@ -9987,7 +9987,7 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type, 
 		break;
 		case 0x02: // sitdown
 			if (DIFF_TICK(timer->gettick(), sd->canlog_tick) < 5000) {// In combat
-				clif_talkiebox(&sd->bl, "Cannot sit while in combat.");
+				clif_displaymessage(sd->fd, "Cannot sit while in combat.");
 				break;
 			}
 

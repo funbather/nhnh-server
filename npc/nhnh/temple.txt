@@ -1,9 +1,15 @@
-ayo_fild02,21,107,6	script	Guardian#temple	2_MONEMUS,{
-	'bx = 277;
-	'by = 151;
+ayo_fild02,21,107,6	script	Portal#temple	4_ENERGY_BLUE,{
+	warp("SavePoint", 0, 0);
+	end;
+	
+OnInstanceInit:
+	setnpcdistance(3);
+	end;
+}
 
+ayo_fild02,21,107,6	script	Guardian#temple	2_MONEMUS,{
 	if( 'status == 1 ) {
-		if( xx == 0 && 'yy == 0 ) {
+		if( 'xx == 0 && 'yy == 0 ) {
 			showscript("No checkpoint currently set.", getnpcid(0));
 		} else {
 			if( 'map$ != "" )
@@ -30,5 +36,14 @@ ayo_fild02,21,107,6	script	Guardian#temple	2_MONEMUS,{
 onBossKilled:
 	instance_announce(-1, "Trial Complete !!", bc_map);
 	giveTokens();
+	end;
+
+OnInstanceInit:
+	// boss coordinates
+	'bx = 277;
+	'by = 151;
+	
+	'portalname$ = instance_npcname("Portal#temple");
+	disablenpc('portalname$);
 	end;
 }

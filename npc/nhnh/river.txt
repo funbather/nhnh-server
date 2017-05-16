@@ -1,10 +1,15 @@
-prt_fild04,360,159,6	script	Guardian#river	2_MONEMUS,{
-	// boss coordinates
-	'bx = 32;
-	'by = 123;
+prt_fild04,360,159,6	script	Portal#river	4_ENERGY_BLUE,{
+	warp("SavePoint", 0, 0);
+	end;
+	
+OnInstanceInit:
+	setnpcdistance(3);
+	end;
+}
 
+prt_fild04,360,159,6	script	Guardian#river	2_MONEMUS,{
 	if( 'status == 1 ) {
-		if( xx == 0 && 'yy == 0 ) {
+		if( 'xx == 0 && 'yy == 0 ) {
 			showscript("No checkpoint currently set.", getnpcid(0));
 		} else {
 			if( 'map$ != "" )
@@ -30,5 +35,14 @@ prt_fild04,360,159,6	script	Guardian#river	2_MONEMUS,{
 onBossKilled:
 	instance_announce(-1, "Trial Complete !!", bc_map);
 	giveTokens();
+	end;	
+
+OnInstanceInit:
+	// boss coordinates
+	'bx = 32;
+	'by = 123;
+	
+	'portalname$ = instance_npcname("Portal#river");
+	disablenpc('portalname$);
 	end;
 }

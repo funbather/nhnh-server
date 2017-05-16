@@ -1,9 +1,15 @@
-moc_fild16,344,354,6	script	Guardian#desert	2_MONEMUS,{
-	'bx = 205;
-	'by = 295;
+moc_fild16,344,354,6	script	Portal#desert	4_ENERGY_BLUE,{
+	warp("SavePoint", 0, 0);
+	end;
+	
+OnInstanceInit:
+	setnpcdistance(3);
+	end;
+}
 
+moc_fild16,344,354,6	script	Guardian#desert	2_MONEMUS,{
 	if( 'status == 1 ) {
-		if( xx == 0 && 'yy == 0 ) {
+		if( 'xx == 0 && 'yy == 0 ) {
 			showscript("No checkpoint currently set.", getnpcid(0));
 		} else {
 			if( 'map$ != "" )
@@ -29,5 +35,14 @@ moc_fild16,344,354,6	script	Guardian#desert	2_MONEMUS,{
 onBossKilled:
 	instance_announce(-1, "Trial Complete !!", bc_map);
 	giveTokens();
+	end;
+
+OnInstanceInit:
+	// boss coordinates
+	'bx = 205;
+	'by = 295;
+	
+	'portalname$ = instance_npcname("Portal#desert");
+	disablenpc('portalname$);
 	end;
 }

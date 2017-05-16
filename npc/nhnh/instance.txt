@@ -236,7 +236,12 @@ goParty:
 	goto goWarp;
 	
 goWarp:
+
+	instance_attach(has_instance2(.@instance_map$));
 	
-	warp(has_instance(.@instance_map$), .@instance_spawnx, .@instance_spawny);
+	.@warpdestx = ( 'xx ) ? 'xx : .@instance_spawnx;
+	.@warpdesty = ( 'yy ) ? 'yy : .@instance_spawny;
+	
+	warp(has_instance(.@instance_map$), .@warpdestx, .@warpdesty);
 	end;
 }

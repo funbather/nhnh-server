@@ -5821,7 +5821,7 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 
 		case SWD_SWAGGER:
 			status_change_end(src, SC_SWAGGER, INVALID_TIMER);
-			sc_start4(src, bl, type, 100, 10 + 4 * skill_lv, src->id, status_get_dex(src), 0, skill->get_time(skill_id, skill_lv));
+			sc_start4(src, bl, type, 100, 10 + 3 * skill_lv, src->id, status_get_dex(src), 0, skill->get_time(skill_id, skill_lv));
 
 			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
 

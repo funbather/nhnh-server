@@ -1,9 +1,15 @@
-gef_fild11,335,259,6	script	Guardian#village	2_MONEMUS,{
-	'bx = 345;
-	'by = 123;
+gef_fild11,335,259,6	script	Portal#village	4_ENERGY_BLUE,{
+	warp("SavePoint", 0, 0);
+	end;
+	
+OnInstanceInit:
+	setnpcdistance(3);
+	end;
+}
 
+gef_fild11,335,259,6	script	Guardian#village	2_MONEMUS,{
 	if( 'status == 1 ) {
-		if( xx == 0 && 'yy == 0 ) {
+		if( 'xx == 0 && 'yy == 0 ) {
 			showscript("No checkpoint currently set.", getnpcid(0));
 		} else {
 			if( 'map$ != "" )
@@ -29,5 +35,14 @@ gef_fild11,335,259,6	script	Guardian#village	2_MONEMUS,{
 onBossKilled:
 	instance_announce(-1, "Trial Complete !!", bc_map);
 	giveTokens();
+	end;
+
+OnInstanceInit:
+	// boss coordinates
+	'bx = 345;
+	'by = 123;
+	
+	'portalname$ = instance_npcname("Portal#village");
+	disablenpc('portalname$);
 	end;
 }
