@@ -446,7 +446,7 @@ int64 battle_calc_weapon_damage(struct block_list *src, struct block_list *bl, u
 	if( !src || !bl )
 		return 0;
 
-	sc = status->get_sc(src);
+	//sc = status->get_sc(src);
 	sd = BL_CAST(BL_PC, src);
 
 	damage = status->get_weapon_atk(src, watk, flag);

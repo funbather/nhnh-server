@@ -2317,7 +2317,7 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 	int64 i64;
 
 	nullpo_retr(-1, sd);
-	sc = &sd->sc;
+	//sc = &sd->sc;
 	if (++calculating > 10) //Too many recursive calls!
 		return -1;
 

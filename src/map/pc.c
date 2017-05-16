@@ -1552,7 +1552,6 @@ int pc_calc_skilltree(struct map_session_data *sd)
 		ShowError("pc_calc_skilltree: Unable to normalize job %d for character %s (%d:%d)\n", i, sd->status.name, sd->status.account_id, sd->status.char_id);
 		return 1;
 	}
-	classidx = pc->class2idx(class);
 
 	for( i = 0; i < MAX_SKILL; i++ ) {
 		if( sd->status.skill[i].flag != SKILL_FLAG_PLAGIARIZED && sd->status.skill[i].flag != SKILL_FLAG_PERM_GRANTED ) //Don't touch these
