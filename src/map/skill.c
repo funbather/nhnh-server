@@ -5106,7 +5106,6 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 					                    sd->bonus.splash_range + skill_lv, BL_CHAR,
 					                    src, skill_id, skill_lv, tick, flag | BCT_ENEMY | 1,
 					                    skill->castend_damage_id);
-					flag|=1; //Set flag to 1 so ammo is not double-consumed. [Skotlex]
 				}
 			}
 			break;
@@ -5125,11 +5124,12 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 
 
 	if( sc && sc->data[SC_DISCHARGE] && (!skill_id || skill_id == ACO_HEAVENLYBLOW || skill->get_type(skill_id) == BF_WEAPON) ) { // remove on weapon attack (and ACO_HEAVENLYBLOW)
-		if( sd )
+		if( sd && !(flag&1) ) {
 			map->foreachinarea(skill->stormlocus_pulse, src->m, src->x-9, src->y-9, src->x+9, src->y+9, BL_SKILL); // trigger loci
 
-		clif->specialeffect(bl, 1, AREA); // discharge effect has to be here since it's not tied to a particular skill
-		status_change_end(src, SC_DISCHARGE, INVALID_TIMER);
+			clif->specialeffect(bl, 1, AREA); // discharge effect has to be here since it's not tied to a particular skill
+			status_change_end(src, SC_DISCHARGE, INVALID_TIMER);
+		}
 	}
 
 	if( sd && skill_id && skill->get_type(skill_id) == BF_MAGIC && skill_id != MGN_STORMLOCUS_PULSE && !(flag&1) ) // trigger all nearby loci on offensive spell use (except the pulse attack itself!)
