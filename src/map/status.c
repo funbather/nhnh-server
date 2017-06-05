@@ -767,7 +767,7 @@ void initChangeTables(void)
 	add_sc( SWD_SWASHBUCKLING , SC_SWASHBUCKLING );
 	status->set_sc( SWD_SECONDWIND , SC_SECONDWIND , SI_SECONDWIND , SCB_NONE );
 	status->set_sc( SWD_SWAGGER , SC_SWAGGER , SI_SWAGGER , SCB_DEF2 );
-	status->set_sc( SWD_ENDURE , SC_ENDURE_ , SI_ENDURE_ , SCB_NONE );
+	status->set_sc( SWD_ENDURE , SC_ENDURE_ , SI_ENDURE_ , SCB_DEF );
 	status->set_sc( THF_CAMOUFLAGE , SC_CAMO , SI_CAMO , SCB_FLEE|SCB_SPEED );
 	status->set_sc( THF_DOUBLETEAM , SC_DOUBLETEAM , SI_DOUBLETEAM , SCB_ASPD );
 	add_sc( THF_BROWBEAT , SC_BROWBEAT );
@@ -2744,6 +2744,8 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 		sd->crit_atk_rate += skill_lv * 3;
 	}
 
+	sd->crit_atk_rate += bstatus->dex; // MST - +1% crit dmg per MST
+
 	//Equipment modifiers for misc settings
 	if(sd->matk_rate < 0)
 		sd->matk_rate = 0;
@@ -3119,7 +3121,7 @@ void status_calc_regen(struct block_list *bl, struct status_data *st, struct reg
 		return;
 
 	sd = BL_CAST(BL_PC,bl);
-	val = max(5,(st->max_hp * (100 + st->vit)) / 5000); // BASE HP REGEN - 2% of Max HP per second, increased by 1% per VIT (5 HP/sec minimum)
+	val = max(5,st->max_hp / 50); // BASE HP REGEN - 2% of Max HP per second (5 HP/sec minimum)
 
 	if( sd && sd->hprecov_rate != 100 )
 		val = val*sd->hprecov_rate/100;
@@ -3856,19 +3858,17 @@ int status_base_amotion_pc(struct map_session_data *sd, struct status_data *st)
 
 unsigned short status_base_atk(const struct block_list *bl, const struct status_data *st)
 {
-	int str = 0;
+	int str = 1;
 
 	nullpo_ret(bl);
 	nullpo_ret(st);
 	if ( !(bl->type&battle_config.enable_baseatk) )
 		return 0;
 
-	if (bl->type == BL_PC)
-		str = (10 + BL_UCCAST(BL_PC, bl)->status.base_level);
-	else if (bl->type == BL_MOB)
-		str = 1;
-
-	str += str * st->str * 2 / 100;
+	if (bl->type == BL_PC) {
+		str = (10 + BL_UCCAST(BL_PC, bl)->status.base_level * 2);
+		str += str * st->str * 4 / 100;
+	}
 
 	return cap_value(str, 0, USHRT_MAX);
 }
@@ -3890,7 +3890,10 @@ unsigned short status_base_matk(struct block_list *bl, const struct status_data 
 	nullpo_ret(bl);
 	nullpo_ret(st);
 
-	return (10 + level) + (10 + level) * st->int_ * 4 / 100;
+	if (bl->type == BL_PC)
+		return (10 + level * 2) + (10 + level * 2) * st->int_ * 4 / 100;
+	else
+		return 1;
 }
 
 //Fills in the misc data that can be calculated from the other status info (except for level)
@@ -3922,38 +3925,13 @@ void status_calc_misc(struct block_list *bl, struct status_data *st, int level)
 		st->mdef2 += 0;
 	}
 
-	if ( bl->type&battle_config.enable_critical )
-		st->cri += 50 + 2 * st->dex; // MST Bonus - +0.2% to CRIT
+	if ( bl->type == BL_PC )
+		st->cri += 50;
 	else
 		st->cri = 0;
 
 	st->batk += status->base_atk(bl, st);
 
-	if ( st->cri ) {
-		switch ( bl->type ) {
-			case BL_MOB:
-				if ( battle_config.mob_critical_rate != 100 )
-					st->cri = st->cri*battle_config.mob_critical_rate / 100;
-				if ( !st->cri && battle_config.mob_critical_rate )
-					st->cri = 10;
-				break;
-			case BL_PC:
-				//Players don't have a critical adjustment setting as of yet.
-				break;
-			case BL_MER:
-	#ifdef RENEWAL
-				st->matk_min = st->matk_max = status->base_matk_max(st);
-				st->def2 = st->vit + level / 10 + st->vit / 5;
-				st->mdef2 = level / 10 + st->int_ / 5;
-	#endif
-			/* Fall through */
-			default:
-				if ( battle_config.critical_rate != 100 )
-					st->cri = st->cri*battle_config.critical_rate / 100;
-				if ( !st->cri && battle_config.critical_rate )
-					st->cri = 0;
-		}
-	}
 	if ( bl->type&BL_REGEN )
 		status->calc_regen(bl, st, status->get_regen_data(bl));
 }
@@ -4850,6 +4828,8 @@ defType status_calc_def(struct block_list *bl, struct status_change *sc, int def
 
 	if (sc->data[SC_FORCEARMOR])
 		def += def * sc->data[SC_FORCEARMOR]->val2 / 200;
+	if (sc->data[SC_ENDURE_])
+		def += def * sc->data[SC_ENDURE_]->val2 / 100;
 
 	if (sc->data[SC_STONEHARDSKIN])
 		def += sc->data[SC_STONEHARDSKIN]->val1;

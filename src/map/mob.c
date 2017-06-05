@@ -1867,28 +1867,50 @@ void mob_generate_item(struct mob_data *md, struct item *it, int flag) {
 
 	memset(it,0,sizeof(struct item));
 
-	if( flag == DT_EQUIP ) { // Equipment
+	if( flag & DT_EQUIP ) { // Equipment
 		int rank1[18] = { 1,4,7,10,13,16,19,25,28,31,34,100,103,106,109,112,115,118 };
 		int rank2[18] = { 2,5,8,11,14,17,20,26,29,32,35,101,104,107,110,113,116,119 };
 		int rank3[31] = { 3,6,9,12,15,18,21,22,23,24,37,38,39,40,41,42,43,44,45,46,27,30,33,36,102,105,108,111,114,117,120 };
 		int rand = rnd()%10000; // roll for item rank -> 55% R1, 30% R2, 14% R3, 1% Unique
+		int rtmp1 = 0, rtmp2 = 0;
+
+		if( flag & DT_BOSSKILL ) { // boss kill - 2 extra rolls, keep highest
+			rtmp1 = rnd()%10000;
+			rtmp2 = rnd()%10000;
+			rand = (rand > rtmp1) ? rand : rtmp1;
+			rand = (rand > rtmp2) ? rand : rtmp2;
+		}
 
 		if     ( rand >= 9900 ) itid = 200 + rnd()%uniques;
 		else if( rand >= 8500 ) itid = rank3[rnd()%(sizeof(rank3)/sizeof(rank3[0]))];
 		else if( rand >= 5500 ) itid = rank2[rnd()%(sizeof(rank2)/sizeof(rank2[0]))];
 		else                    itid = rank1[rnd()%(sizeof(rank1)/sizeof(rank1[0]))];
 
-		rand = rnd()%10000; // reroll for enchantments -> 5% - 4, 10% - 3, 15% - 2, 30% - 1, 40% - 0
+		rand = rnd()%10000; // reroll for enchantments -> 1% - 4, 4% - 3, 15% - 2, 35% - 1, 45% - 0
 
-		if( rand >= 9500 ) slot4 = 600 + rnd()%seals;
-		if( rand >= 8500 ) slot3 = 500 + rnd()%shards;
-		if( rand >= 7000 ) slot2 = 500 + rnd()%shards;
-		if( rand >= 4000 ) slot1 = 500 + rnd()%shards;
+		if( flag & DT_BOSSKILL ) {
+			rtmp1 = rnd()%10000;
+			rtmp2 = rnd()%10000;
+			rand = (rand > rtmp1) ? rand : rtmp1;
+			rand = (rand > rtmp2) ? rand : rtmp2;
+		}
 
-		rand = rnd()%10000; // reroll for quality -> 2% 116-125, 13% 101~115, 85% 65~100
+		if( rand >= 9900 ) slot4 = 600 + rnd()%seals;
+		if( rand >= 9500 ) slot3 = 500 + rnd()%shards;
+		if( rand >= 8000 ) slot2 = 500 + rnd()%shards;
+		if( rand >= 4500 ) slot1 = 500 + rnd()%shards;
 
-		if     ( rand >= 9800 ) quality = 116 + rnd()%10;
-		else if( rand >= 8500 ) quality = 101 + rnd()%15;
+		rand = rnd()%10000; // reroll for quality -> 1% 116~125, 4% 101~115, 95% 65~100
+
+		if( flag & DT_BOSSKILL ) { // boss kill - 2 extra rolls, keep highest
+			rtmp1 = rnd()%10000;
+			rtmp2 = rnd()%10000;
+			rand = (rand > rtmp1) ? rand : rtmp1;
+			rand = (rand > rtmp2) ? rand : rtmp2;
+		}
+
+		if     ( rand >= 9900 ) quality = 116 + rnd()%10;
+		else if( rand >= 9500 ) quality = 101 + rnd()%15;
 		else                    quality = 65  + rnd()%36;
 
 		// item level is just set to the mob's level (for now?)
@@ -1899,7 +1921,7 @@ void mob_generate_item(struct mob_data *md, struct item *it, int flag) {
 		rolls |= (ilvl / 2 + rnd()%(24 + ilvl)) << 8;
 		rolls |= (ilvl / 2 + rnd()%(24 + ilvl)) << 16;
 		rolls |= (ilvl / 2 + rnd()%(24 + ilvl)) << 24;
-	} else if( flag == DT_CRAFT ) {
+	} else if( flag & DT_CRAFT ) {
 		int rand = rnd()%10000;
 
 		// CRAFTING ITEMS
@@ -2544,20 +2566,24 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 			 * 16% 8% 4% 2% 1%
 			 *
 			 * 10 chances for boss flagged mobs
-			 * 100% 100% 100% 64% 32% 16% 8% 4% 2% 1%
-			 *
-			 * LUK increases each individual chance by 1%/LUK
-			 *
-			 * 4% (+1%/LUK) chance for a crafting item to drop */
+			 * 100% 100% 100% 64% 32% 16% 8% 4% 2% 1% */
+
 			int droprate;
 			struct item item_tmp;
+			int dropflag = (BL_UCCAST(BL_MOB, &md->bl)->status.mode&MD_BOSS) ? DT_EQUIP | DT_BOSSKILL : DT_EQUIP;
 			int baserate = (BL_UCCAST(BL_MOB, &md->bl)->status.mode&MD_BOSS) ? 51200 : 1600;
+
+			if ( md->sc.data[SC_BROWBEAT] && (rnd()%100 < md->sc.data[SC_BROWBEAT]->val1) ) { // Browbeat
+				mob->generate_item(md, &item_tmp, dropflag);
+				ditem = mob->setlootitem(&item_tmp);
+				mob->item_drop(md, dlist, ditem, 0, 10000, false);
+			}
 
 			for( i=0; i>=0; i++) {
 				droprate = (baserate / (1 << i)) * (100 + status_get_luk(src)) / 100; // Equipment
 
 				if( rnd()%10000 < droprate ) {
-					mob->generate_item(md, &item_tmp, DT_EQUIP);
+					mob->generate_item(md, &item_tmp, dropflag);
 					ditem = mob->setlootitem(&item_tmp);
 					mob->item_drop(md, dlist, ditem, 0, 10000, false);
 				}
@@ -2566,18 +2592,15 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 					i = -99; // break out
 			}
 
-			droprate = 500 * (100 + status_get_luk(src)) / 100; // Crafting Items
+			// Crafting Items
+			dropflag = (BL_UCCAST(BL_MOB, &md->bl)->status.mode&MD_BOSS) ? DT_CRAFT | DT_BOSSKILL : DT_CRAFT;
+			droprate = (BL_UCCAST(BL_MOB, &md->bl)->status.mode&MD_BOSS) ? 20000 * (100 + status_get_luk(src)) / 100 : 500 * (100 + status_get_luk(src)) / 100;
 
-			if( rnd()%10000 < droprate ) {
-				mob->generate_item(md, &item_tmp, DT_CRAFT);
+			while( rnd()%10000 < droprate ) {
+				mob->generate_item(md, &item_tmp, dropflag);
 				ditem = mob->setlootitem(&item_tmp);
 				mob->item_drop(md, dlist, ditem, 0, 10000, false);
-			}
-
-			if ( md->sc.data[SC_BROWBEAT] && (rnd()%100 < md->sc.data[SC_BROWBEAT]->val1) ) { // Browbeat
-				mob->generate_item(md, &item_tmp, DT_EQUIP);
-				ditem = mob->setlootitem(&item_tmp);
-				mob->item_drop(md, dlist, ditem, 0, 10000, false);
+				droprate = droprate * 50 / 100;
 			}
 		}
 

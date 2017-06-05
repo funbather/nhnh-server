@@ -2766,11 +2766,6 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 
 	if( sc && sc->count ) {
 		if ( (sce = sc->data[SC_ENDURE_]) && damage > 0 ) {
-			if ( t_sd ) {
-				damage -= damage * 25 * status_get_dex(bl) / 10000; // endure mastery bonus -> -0.25% damage/MST
-				damage = ( damage >= 0 ) ? damage : 0;
-			}
-
 			sce->val1 -= (int) cap_value(damage,INT_MIN,INT_MAX);
 
 			if ( sce->val1 >= 0 )
@@ -4190,8 +4185,8 @@ struct Damage battle_calc_weapon_attack(struct block_list *src,struct block_list
 					if(flag.cri && sd->crit_atk_rate)
 						ATK_RATE(sd->crit_atk_rate);
 
-					if(sd->battle_status.str > 0)
-						ATK_ADDRATE(sd->battle_status.str); // STR Bonus - +1% Phys damage dealt per STR
+					//if(sd->battle_status.str > 0)
+					//	ATK_ADDRATE(sd->battle_status.str); // STR Bonus - +1% Phys damage dealt per STR
 				}
 
 				if( flag.cri && tsc && tsc->data[SC_MARKED] )

@@ -1,4 +1,4 @@
-prt_monk,200,170,6	script	Serra#enchantress	4_F_ALCHE_A,{
+prt_monk,199,169,6	script	Serra#enchantress	4_F_ALCHE_A,{
 	disable_items;
 
   .@SHARDMIN = 500;

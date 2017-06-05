@@ -20,11 +20,11 @@ askTrial:
 
 	cleartext;
 	mes("[Kharis]");
-	mes("Trials are short instanced dungeons crawling with monsters, as well as a powerful Boss monster waiting at the end of each one.");
+	mes("Trials are short instanced dungeons crawling with monsters, as well as a powerful boss monster waiting at the end of each one.");
+	mes("\nTo clear a Trial, you must defeat its boss.");
 	next;
 	mes("[Kharis]");
-	mes("To clear a Trial, you must defeat the boss.");
-	mes("\nIt's truly a challenge, but clearing a Trial is not without reward; killing the boss grants a large amount of experience and plenty of item drops, including a Slime Token to use at the slot machine.");
+	mes("Slaying a boss monster is no easy feat, but it is not without great reward; killing the boss grants a large amount of experience and a wealth of treasure, including a Slime Token to use at the slot machine.");
 	next;
 	mes("[Kharis]");
 	mes("Trials can be attempted as many times as you like, as often as you like, and do not need to be cleared to retry.");

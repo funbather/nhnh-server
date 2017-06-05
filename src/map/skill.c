@@ -5833,7 +5833,7 @@ int skill_castend_nodamage_id(struct block_list *src, struct block_list *bl, uin
 
 		case SWD_ENDURE:
 			status_change_end(bl, SC_ENDURE_, INVALID_TIMER);
-			sc_start(src, bl, type, 100, status_get_max_hp(src) * (15 + 3 * skill_lv) / 100, skill->get_time(skill_id, skill_lv));
+			sc_start2(src, bl, type, 100, status_get_max_hp(src) * (15 + 3 * skill_lv) / 100, status_get_dex(src), skill->get_time(skill_id, skill_lv));
 
 			clif->skill_nodamage (src, bl, skill_id, skill_lv, 0);
 		break;

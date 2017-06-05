@@ -107,10 +107,11 @@ enum ai {
 };
 
 enum droptype {
-	DT_EQUIP = 0,
-	DT_CRAFT = 1,
-	DT_TAROT = 2,
-	DT_STONE = 3
+	DT_EQUIP    = 0x01,
+	DT_CRAFT    = 0x02,
+	DT_TAROT    = 0x04,
+	DT_STONE    = 0x08,
+	DT_BOSSKILL = 0x100,
 };
 
 /**
