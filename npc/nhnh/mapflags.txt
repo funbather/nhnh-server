@@ -1,1 +1,0 @@
-prt_monk	mapflag	loadevent

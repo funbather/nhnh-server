@@ -244,8 +244,4 @@ goWarp:
 	
 	warp(has_instance(.@instance_map$), .@warpdestx, .@warpdesty);
 	end;
-	
-OnPCLoadMapEvent:
-	showevent(QTYPE_QUEST,0);
-	end;
 }

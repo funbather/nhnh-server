@@ -21,11 +21,11 @@ gef_fild11,335,259,6	script	Guardian#village	2_MONEMUS,{
 	if( 'status == 0 ) {
 		instance_announce(-1, "Trial Start !!", bc_map);
 		'status = 1;
-		areamonster("this", 45, 0, 355, 245, "Goblin Blader", 1016, 170);
-		areamonster("this", 45, 0, 355, 245, "Goblin Mage", 1017, 80);
-		areamonster("this", 45, 0, 355, 245, "Goblin Masher", 1018, 110);
-		areamonster("this", 45, 0, 355, 245, "Goblin Archer", 1019, 80);
-		areamonster("this", 45, 0, 355, 245, "Goblin Crusher", 1020, 110);
+		areamonster("this", 45, 0, 355, 245, "Goblin Blader", 1016, 100);
+		areamonster("this", 45, 0, 355, 245, "Goblin Mage", 1017, 50);
+		areamonster("this", 45, 0, 355, 245, "Goblin Masher", 1018, 80);
+		areamonster("this", 45, 0, 355, 245, "Goblin Archer", 1019, 50);
+		areamonster("this", 45, 0, 355, 245, "Goblin Crusher", 1020, 80);
 		monster("this", 'bx, 'by, "Goblin King", 1021,1,instance_npcname("Guardian#village")+"::onBossKilled");
 	}
 	

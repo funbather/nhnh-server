@@ -21,10 +21,10 @@ ayo_fild02,21,107,6	script	Guardian#temple	2_MONEMUS,{
 	if( 'status == 0 ) {
 		instance_announce(-1, "Trial Start !!", bc_map);
 		'status = 1;
-		areamonster("this", 55, 0, 330, 280, "Wandering Spirit", 1032, 140);
-		areamonster("this", 55, 0, 330, 280, "Giant Spider", 1033, 135);
-		areamonster("this", 55, 0, 330, 280, "Dryad", 1034, 100);
-		areamonster("this", 55, 0, 330, 280, "Lesser Dragon", 1035, 135);
+		areamonster("this", 55, 0, 330, 280, "Wandering Spirit", 1032, 120);
+		areamonster("this", 55, 0, 330, 280, "Giant Spider", 1033, 90);
+		areamonster("this", 55, 0, 330, 280, "Dryad", 1034, 90);
+		areamonster("this", 55, 0, 330, 280, "Lesser Dragon", 1035, 120);
 		areamonster("this", 55, 0, 330, 280, "Leaf Cat", 1036, 70);
 		areamonster("this", 55, 0, 330, 280, "Wooden Golem", 1037, 60);
 		monster("this", 'bx, 'by, "Temple Guardian", 1038,1,instance_npcname("Guardian#temple")+"::onBossKilled");
