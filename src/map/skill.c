@@ -5119,10 +5119,6 @@ int skill_castend_damage_id(struct block_list* src, struct block_list *bl, uint1
 	if( sc && sc->data[SC_CURSEDCIRCLE_ATKER] ) //Should only remove after the skill has been casted.
 		status_change_end(src,SC_CURSEDCIRCLE_ATKER,INVALID_TIMER);
 
-	if( sc && skill_id && sc->data[SC_DOUBLETEAM] ) // removed on offensive skill use
-		status_change_end(src,SC_DOUBLETEAM,INVALID_TIMER);
-
-
 	if( sc && sc->data[SC_DISCHARGE] && (!skill_id || skill_id == ACO_HEAVENLYBLOW || skill->get_type(skill_id) == BF_WEAPON) ) { // remove on weapon attack (and ACO_HEAVENLYBLOW)
 		if( sd && !(flag&1) ) {
 			map->foreachinarea(skill->stormlocus_pulse, src->m, src->x-9, src->y-9, src->x+9, src->y+9, BL_SKILL); // trigger loci
