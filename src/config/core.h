@@ -73,7 +73,7 @@
 /// Client-sided range checks are, however, are always circular.
 /// Enabling this changes all checks to circular checks, which is more realistic,
 /// - but is not the official behaviour.
-#define CIRCULAR_AREA
+//#define CIRCULAR_AREA
 
 //This is the distance at which @autoloot works,
 //if the item drops farther from the player than this,

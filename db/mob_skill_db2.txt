@@ -91,7 +91,7 @@
 1032,WSpirit@HeavenlyBlow,attack,4037,2,3000,500,15000,no,target,always,0,,,,,,80,
 1033,GSpider@Poison,attack,176,5,2500,500,15000,no,target,always,0,,,,,,37,
 1036,LeafCat@Cure,any,4032,3,5000,1500,8000,no,friend,friendhpltmaxrate,99,,,,,,22,
-1037,WGolem@MeteorMash,attack,4010,3,2500,1250,9000,no,target,always,0,,,,,,7,
+1037,WGolem@MeteorMash,attack,4010,3,2500,1250,9000,no,self,always,0,,,,,,7,
 1038,TGuardian@Puncture,attack,4026,1,3000,500,7000,no,target,always,0,,,,,,36,
 1038,TGuardian@HallowedBolt,any,4036,3,2000,1250,9000,no,target,always,0,,,,,,36,
 1038,TGuardian@HeavenlyBlow,attack,4037,2,4000,800,5000,no,target,always,0,,,,,,36,

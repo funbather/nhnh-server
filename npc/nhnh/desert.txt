@@ -21,10 +21,10 @@ moc_fild16,344,354,6	script	Guardian#desert	2_MONEMUS,{
 	if( 'status == 0 ) {
 		instance_announce(-1, "Trial Start !!", bc_map);
 		'status = 1;
-		areamonster("this", 135, 90, 285, 331, "Eggshell"   , 1010, 130);
-		areamonster("this", 135, 90, 285, 331, "Dry Slime"  , 1011, 50);
-		areamonster("this", 135, 90, 285, 331, "Antlion"    , 1012, 60);
-		areamonster("this", 135, 90, 285, 331, "Rhea"       , 1013, 40);
+		areamonster("this", 135, 90, 285, 331, "Eggshell"   , 1010, 80);
+		areamonster("this", 135, 90, 285, 331, "Dry Slime"  , 1011, 45);
+		areamonster("this", 135, 90, 285, 331, "Antlion"    , 1012, 45);
+		areamonster("this", 135, 90, 285, 331, "Rhea"       , 1013, 30);
 		areamonster("this", 135, 90, 285, 331, "Sandstinger", 1014, 20);
 		monster("this", 'bx, 'by, "Titan Rhea", 1015,1,instance_npcname("Guardian#desert")+"::onBossKilled");
 	}
