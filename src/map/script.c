@@ -12049,6 +12049,17 @@ BUILDIN(resetskill)
 	return true;
 }
 
+BUILDIN(changeclass)
+{
+	struct map_session_data *sd = script->rid2sd(st);
+
+	if (sd == NULL)
+		return true;
+
+	pc->classchange(sd, script_getnum(st, 2));
+	return true;
+}
+
 /*==========================================
  * Counts total amount of skill points.
  *------------------------------------------*/
@@ -21245,6 +21256,7 @@ void script_parse_builtin(void) {
 		BUILDIN_DEF(resetlvl,"i"),
 		BUILDIN_DEF(resetstatus,""),
 		BUILDIN_DEF(resetskill,""),
+		BUILDIN_DEF(changeclass, "i"),
 		BUILDIN_DEF(skillpointcount,""),
 		BUILDIN_DEF(changebase,"i?"),
 		BUILDIN_DEF(changesex,""),

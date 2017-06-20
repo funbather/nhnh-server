@@ -4310,6 +4310,10 @@ int pc_calczenyvalue(struct item *item) {
 	basevalue = basevalue * item->refine / 12;
 	basevalue = basevalue * (1 + sqrt(pow(ench,3)));
 
+	// unique item
+	if (item->nameid >= 200 && item->nameid < 500)
+		basevalue = basevalue * 7;
+
 	return (int) basevalue;
 }
 
@@ -7194,11 +7198,15 @@ int pc_skillup(struct map_session_data *sd,uint16 skill_id) {
 
 	if( sd->status.skill_point > 0 &&
 		sd->status.skill[index].id &&
-		sd->status.skill[index].flag == SKILL_FLAG_PERMANENT && //Don't allow raising while you have granted skills. [Skotlex]
-		sd->status.skill[index].lv < skill->tree_get_max(skill_id, sd->status.class_choices) )
+		((sd->status.skill[index].flag == SKILL_FLAG_PERMANENT && sd->status.skill[index].lv < skill->tree_get_max(skill_id, sd->status.class_choices)) ||
+		(sd->status.skill[index].flag >= SKILL_FLAG_REPLACED_LV_0 && (sd->status.skill[index].flag - SKILL_FLAG_REPLACED_LV_0) < skill->tree_get_max(skill_id, sd->status.class_choices))) )
 	{
 		sd->status.skill[index].lv++;
 		sd->status.skill_point--;
+
+		if (sd->status.skill[index].flag)
+			sd->status.skill[index].flag++;
+
 		if( !skill->dbs->db[index].inf )
 			status_calc_pc(sd,SCO_NONE); // Only recalculate for passive skills.
 		else if (sd->status.skill_point == 0 && (sd->job & MAPID_UPPERMASK) == MAPID_TAEKWON
@@ -8744,6 +8752,46 @@ int pc_jobchange(struct map_session_data *sd, int class, int upper)
 			break;
 		}
 	}
+
+	return 0;
+}
+
+int pc_classchange(struct map_session_data *sd, int cls) {
+	nullpo_ret(sd);
+
+	pc->resetstate(sd);
+	pc->resetskill(sd, PCRESETSKILL_RESYNC);
+
+	// 1 - SWD 0x01000001
+	// 2 - THF 0x06000010
+	// 3 - ACO 0x0B000100
+	// 4 - MGN 0x15001000
+	switch (cls) {
+		case 1:
+			sd->status.class_choices = 0x01000001;
+			break;
+		case 2:
+			sd->status.class_choices = 0x06000010;
+			break;
+		case 3:
+			sd->status.class_choices = 0x0B000100;
+			break;
+		case 4:
+			sd->status.class_choices = 0x15001000;
+			break;
+		default:
+			return 0;
+	}
+
+	pc->equiplookall(sd);
+
+	pc->calc_skilltree(sd);
+	clif->skillinfoblock(sd);
+
+	status_calc_pc(sd, SCO_FORCE);
+
+	status->set_viewdata(&sd->bl, sd->status.class_choices >> 24);
+	clif->changelook(&sd->bl, LOOK_BASE, sd->vd.class);
 
 	return 0;
 }
@@ -12099,6 +12147,7 @@ void pc_defaults(void) {
 	pc->itemheal = pc_itemheal;
 	pc->percentheal = pc_percentheal;
 	pc->jobchange = pc_jobchange;
+	pc->classchange = pc_classchange;
 	pc->setoption = pc_setoption;
 	pc->setcart = pc_setcart;
 	pc->setfalcon = pc_setfalcon;

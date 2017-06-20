@@ -1907,7 +1907,7 @@ void clif_selllist(struct map_session_data *sd)
 			val=sd->inventory_data[i]->value_sell;
 			if( val < 0 )
 				continue;
-			if( sd->status.inventory[i].nameid < 200 ) val = pc->calczenyvalue(&sd->status.inventory[i]) / 10;
+			if( sd->status.inventory[i].nameid < 500 ) val = pc->calczenyvalue(&sd->status.inventory[i]) / 10;
 			WFIFOW(fd,4+c*10)=i+2;
 			WFIFOL(fd,6+c*10)=val;
 			WFIFOL(fd,10+c*10)=pc->modifysellvalue(sd,val);
@@ -4711,8 +4711,8 @@ void clif_skillup(struct map_session_data *sd, uint16 skill_id, int skill_lv, in
 	WFIFOW(fd, 4) = skill_lv;
 	WFIFOW(fd, 6) = skill->get_sp(skill_id, skill_lv);
 	WFIFOW(fd, 8) = (flag)?skill->get_range2(&sd->bl, skill_id, skill_lv) : skill->get_range(skill_id, skill_lv);
-	if( flag )
-		WFIFOB(fd,10) = (skill_lv < skill->tree_get_max(skill_id, sd->status.class_choices)) ? 1 : 0;
+	if ( flag >= SKILL_FLAG_REPLACED_LV_0 )
+		WFIFOB(fd, 10) = (flag - SKILL_FLAG_REPLACED_LV_0) < skill->tree_get_max(skill_id, sd->status.class_choices) ? 1 : 0;
 	else
 		WFIFOB(fd,10) = 1;
 

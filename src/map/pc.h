@@ -985,6 +985,7 @@ END_ZEROED_BLOCK; /* End */
 	int (*itemheal) (struct map_session_data *sd,int itemid, int hp,int sp);
 	int (*percentheal) (struct map_session_data *sd,int hp,int sp);
 	int (*jobchange) (struct map_session_data *sd, int class, int upper);
+	int (*classchange) (struct map_session_data *sd, int cls);
 	int (*setoption) (struct map_session_data *sd,int type);
 	int (*setcart) (struct map_session_data* sd, int type);
 	void (*setfalcon) (struct map_session_data *sd, bool flag);

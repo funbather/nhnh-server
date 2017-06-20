@@ -38,10 +38,19 @@ prt_monk,218,164,3	script	Anton#appraiser	4_M_KHKIEL,{
 			mes("[Anton]");
 			mes("Okay, what kind of appraisal do you want on this?");
 			
+			setarray(.@prices[1],275,1650,1650,1650,9900);
 			select("Standard (275z)","Quality Focus (1650z)","Item Level Focus (1650z)","Enchantment Focus (1650z)","All of the above! (9900z)");
 			
 			.@type = @menu;
+			.@cost = .@prices[@menu];
 			cleartext;
+			
+			if( .@cost > Zeny ) {
+				cleartext;
+				mes("[Anton]");
+				mes("I'm afraid you don't have enough zeny for this option, bud. I don't do this for free.");
+				close();
+			}
 			
 			switch( .@itid ) {
 				case 811:
@@ -63,6 +72,11 @@ prt_monk,218,164,3	script	Anton#appraiser	4_M_KHKIEL,{
 			}
 			
 			delitem2(.@itid,1,1,0,.@ilvl,0,0,0,0);
+			Zeny = Zeny - .@cost;
+			
+			cleartext;
+			mes("[Anton]");
+			mes("Enjoy.");
 			
 			close();
 			break;
