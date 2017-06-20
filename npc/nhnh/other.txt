@@ -1,4 +1,4 @@
-prt_monk,216,164,4	script	Stash#stash	TREASURECHEST,{
+prt_monk,216,164,4	script	Shared Stash#stash	TREASURECHEST,{
 	openstorage();
 	end;
 }
@@ -21,10 +21,10 @@ function	script	useCoinBag	{
 		
 		if     ( .@itemroll >= 7000 ) getitem(_mythril, 1);
 		else if( .@itemroll >= 4000 ) getitem(_orichalcum, 1);
-		else if( .@itemroll >= 1700 ) getitem(_emptybijou, 1);
-		else if( .@itemroll >=  700 ) getitem(_arcanebijou, 1);
-		else if( .@itemroll >=  450 ) getitem(_blessedbijou, 1);
-		else if( .@itemroll >=  250 ) getitem(_divinehammer, 1);
+		else if( .@itemroll >= 2500 ) getitem(_emptybijou, 1);
+		else if( .@itemroll >= 1000 ) getitem(_arcanebijou, 1);
+		else if( .@itemroll >=  500 ) getitem(_divinehammer, 1);
+		else if( .@itemroll >=  250 ) getitem(_blessedbijou, 1);
 		else if( .@itemroll >=  100 ) getitem(_capriciousbijou, 1);
 		else                          getitem(_discordantbijou, 1);
 	}
@@ -67,5 +67,123 @@ function	script	giveTokens	{
 		}
 	}
 
+	return;
+}
+
+function	script	appraiseItem	{	
+	// arg0 - Unappraised Item ID
+	// arg1 - Unappraised Item Level
+	// arg2 - Appraisal Type
+	//          1 / 0x0 - Standard
+	//          2 / 0x1 - +Quality
+	//          3 / 0x2 - +Enchantments
+	//          4 / 0x4 - +Level
+	//          5 / 0xF - +All
+	// arg3 - Itemtype Focus
+	//          1 - None
+	//          2 - Armor     / 1H Weapon
+	//          3 - Adornment / 2H Weapon
+	//          4 -    --     / Magic Weapon
+	
+	.@itid  = getarg(0);
+	.@ilvl  = getarg(1);
+	.@type  = getarg(2);
+	.@focus = getarg(3);
+	
+  .@SHARDMIN = 500;
+  .@SHARDMAX = 534;
+  .@SEALMIN = 600;
+  .@SEALMAX = 620;
+  
+  // menu selection -> bitfield
+	if     ( .@type == 1 ) { .@type = 0x0; }
+	else if( .@type == 2 ) { .@type = 0x1; }
+	else if( .@type == 3 ) { .@type = 0x2; }
+	else if( .@type == 4 ) { .@type = 0x4; }
+	else if( .@type == 5 ) { .@type = 0xF; }
+	
+	// quality
+	.@rnd = rand(10000);
+	.@rnd = (.@type & 0x1) ? .@rnd + (10000 - .@rnd) / 5 : .@rnd;
+	
+	if     ( .@rnd >= 9800 ) .@quality = rand(116,125);
+	else if( .@rnd >= 8500 ) .@quality = rand(101,115);
+	else if( .@rnd >= 4000 ) .@quality = rand(90,100);
+	else                     .@quality = rand(70,100);
+	
+	// enchantments
+	.@rnd = rand(10000);
+	.@rnd = (.@type & 0x2) ? .@rnd + (10000 - .@rnd) / 5 : .@rnd;
+	
+	if( .@rnd >= 9800 ) .@slot4 = rand(.@SEALMIN, .@SEALMAX);
+	if( .@rnd >= 9000 ) .@slot3 = rand(.@SHARDMIN, .@SHARDMAX);
+	if( .@rnd >= 7000 ) .@slot2 = rand(.@SHARDMIN, .@SHARDMAX);
+	if( .@rnd >= 3500 ) .@slot1 = rand(.@SHARDMIN, .@SHARDMAX);
+	
+	// item level
+	.@rnd = rand(10000);
+	.@rnd = (.@type & 0x4) ? .@rnd + (10000 - .@rnd) / 5 : .@rnd;
+	
+	if     ( .@rnd >= 9900 ) .@level = .@ilvl + 3;
+	else if( .@rnd >= 9000 ) .@level = .@ilvl + 2;
+	else if( .@rnd >= 7000 ) .@level = .@ilvl + 1;
+	else                     .@level = .@ilvl + 0;
+	
+	// enchantment rolls (set regardless of if there's anything in that slot)
+	.@roll1 = (.@ilvl / 2) + rand(24 + .@ilvl);
+	.@roll2 = (.@ilvl / 2) + rand(24 + .@ilvl);
+	.@roll3 = (.@ilvl / 2) + rand(24 + .@ilvl);
+	.@roll4 = (.@ilvl / 2) + rand(24 + .@ilvl);
+	
+	switch( .@itid ) {
+		case 811:
+			switch( .@focus ) {
+				case 1:
+					// All Weapons
+					setarray(.@items,100,103,106,109,112,118);
+					break;
+				case 2:
+					// 1H Weapons
+					setarray(.@items,100,103);
+					break;
+				case 3:
+					// 2H Weapons
+					setarray(.@items,109,112);
+					break;
+				case 4:
+					// Magic Weapons
+					setarray(.@items,106,118);
+					break;
+			}
+			break;
+		case 812:
+			switch( .@focus ) {
+				case 1:
+					// All Armor
+					setarray(.@items,1,4,7,10,13,16,19,22,23,24,25,28,31,34,37,38,39,40,41,42,43,44,45,46);
+					break;
+				case 2:
+					// Body/Shield/Robe/Boots
+					setarray(.@items,1,4,7,10,13,25,28,31,34);
+					break;
+				case 3:
+					// Gloves/Belt/Accessory
+					if ( rand(1,2) == 1 ) { setarray(.@items,16,19,22,23,24); }
+					else                  { setarray(.@items,37,38,39,40,41,42,43,44,45,46); }
+					break;
+			}
+			break;
+	}
+	
+	.@newitem = (getarraysize(.@items)) ? .@items[rand(getarraysize(.@items))] : .@newitem = rand(200,284);
+	spawnitem(.@newitem,1,.@quality,.@level,1,.@slot1,.@slot2,.@slot3,.@slot4,.@roll1,.@roll2,.@roll3,.@roll4);
+	
+	.@qualmsg$ = (.@quality > 100) ? (.@quality > 115) ? .@quality + "% (!!) "  : .@quality + "% (!) " : .@quality + "% ";
+	.@slotcnt = (.@slot1 > 0) + (.@slot2 > 0) + (.@slot3 > 0) + (.@slot4 > 0);
+	.@slotmsg$ = (.@slotcnt > 2) ? (.@slotcnt > 3) ? .@slotcnt + " (!!) " : .@slotcnt + " (!) " : .@slotcnt;
+	.@lvlmsg$ = ((.@level - .@ilvl) > 1) ? ((.@level - .@ilvl) > 2) ? .@level + " (!!) " : .@level + " (!) " : .@level;
+	
+	dispbottom("ITEM GET!!\n" + getitemname(.@newitem) + "\nQuality: " + .@qualmsg$ + "\nItem Level: " + .@lvlmsg$ + "\nEnchantments: " + .@slotmsg$); 
+	
 	return;
 }

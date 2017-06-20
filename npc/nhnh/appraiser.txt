@@ -1,0 +1,96 @@
+prt_monk,218,164,3	script	Anton#appraiser	4_M_KHKIEL,{
+	disable_items;
+  
+	mes("[Anton]");
+	mes("Hi. Need something appraised?");
+	select("Yeah!","Appraised?","Maybe another time.");
+	
+	cleartext;
+	
+	switch( @menu ) {
+		case 1:
+			if( !countitem(811) && !countitem(812) ) {
+				mes("[Anton]");
+				mes("C'mon, don't waste both of our time.");
+				mes("\nYou have to bring me an ^boUnappraised Item^ld for me to do this.");
+				close();
+			}
+			
+			mes("[Anton]");
+			mes("Which one of these do you want appraised?");
+			
+			getinventorylist;
+	
+			.@menu$ = "";
+			for( .@i = 0; .@i < @inventorylist_count; .@i++ ) {
+				if (@inventorylist_id[.@i] == 811 ||
+						@inventorylist_id[.@i] == 812 ) {
+					.@menu$ += getitemname(@inventorylist_id[.@i]) + " [Lv. "+@inventorylist_attribute[.@i]+"]";
+				}
+				.@menu$ += ":";
+			}
+			
+			.@selection = select(.@menu$) - 1;
+			.@itid = @inventorylist_id[.@selection];
+			.@ilvl = @inventorylist_attribute[.@selection];
+			cleartext;
+			
+			mes("[Anton]");
+			mes("Okay, what kind of appraisal do you want on this?");
+			
+			select("Standard (275z)","Quality Focus (1650z)","Item Level Focus (1650z)","Enchantment Focus (1650z)","All of the above! (9900z)");
+			
+			.@type = @menu;
+			cleartext;
+			
+			switch( .@itid ) {
+				case 811:
+					mes("[Anton]");
+					mes("What kind of item are you looking for?");
+					
+					select("Surprise me!","1-Handed Weapon","2-Handed Weapon","Magic Weapon");
+					
+					callfunc("appraiseItem", .@itid, .@ilvl, .@type, @menu, getcharid(CHAR_ID_ACCOUNT));
+					break;
+				case 812:
+					mes("[Anton]");
+					mes("What kind of item are you looking for?");
+					
+					select("Surprise me!","Armor","Adornment");
+					
+					callfunc("appraiseItem", .@itid, .@ilvl, .@type, @menu, getcharid(CHAR_ID_ACCOUNT));
+					break;
+			}
+			
+			delitem2(.@itid,1,1,0,.@ilvl,0,0,0,0);
+			
+			close();
+			break;
+			
+		case 2:
+			mes("[Anton]");
+			mes("Equipment you find in battle will often be unappraised, sealed within some sort of weird ''Cube,'' waiting to be uncovered.");
+			next;
+			mes("[Anton]");
+			mes("You ^bocould^ld appraise it yourself, basic appraisal isn't especially difficult.");
+			mes("\nThere's a reason that some of us have dedicated ourselves to the Art of Appraisal, however.");
+			next;
+			mes("[Anton]");
+			mes("Skilled appraisers like myself have a better chance of uncovering an item with a higher quality, item level, or number of enchantments.");
+			mes("\nI can even narrow down the possible kinds of items you receive. For a fee, of course.");
+			next;
+			mes("[Anton]");
+			mes("If you're serious about your loot-getting, bring me some unappraised items and I'll see what I can do for you.");
+			close();
+			break;
+			
+		case 3:
+			mes("[Anton]");
+			mes("I'll be here if you change your mind.");
+			close();
+			break;
+	}
+	
+	close();
+	end;
+}

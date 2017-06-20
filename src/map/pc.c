@@ -4609,6 +4609,7 @@ int pc_additem(struct map_session_data *sd,struct item *item_data,int amount,e_l
 		for( i = 0; i < MAX_INVENTORY; i++ ) {
 			if( sd->status.inventory[i].nameid == item_data->nameid &&
 			    sd->status.inventory[i].rolls == item_data->rolls &&
+			    sd->status.inventory[i].attribute == item_data->attribute &&
 			    sd->status.inventory[i].bound == item_data->bound &&
 			    sd->status.inventory[i].expire_time == 0 &&
 				sd->status.inventory[i].unique_id == item_data->unique_id &&
@@ -5160,6 +5161,8 @@ int pc_useitem(struct map_session_data *sd,int n) {
 	if( itemdb_iscashfood(nameid) )
 		sd->canusecashfood_tick = tick + battle_config.cashfood_use_interval;
 
+	script->current_item_ilvl = sd->status.inventory[n].attribute;
+	
 	script->run_use_script(sd, sd->inventory_data[n], npc->fake_nd->bl.id);
 	script->potion_flag = 0;
 

@@ -1,4 +1,4 @@
-moc_fild16,344,354,6	script	Portal#desert	4_ENERGY_BLUE,{
+ayo_fild01,231,49,6	script	Portal#ruins	4_ENERGY_BLUE,{
 	warp("SavePoint", 0, 0);
 	end;
 	
@@ -7,7 +7,7 @@ OnInstanceInit:
 	end;
 }
 
-moc_fild16,344,354,6	script	Guardian#desert	2_MONEMUS,{
+ayo_fild01,231,49,6	script	Guardian#ruins	2_MONEMUS,{
 	if( 'status == 1 ) {
 		if( 'xx == 0 && 'yy == 0 ) {
 			showscript("No checkpoint currently set.", getnpcid(0));
@@ -21,12 +21,12 @@ moc_fild16,344,354,6	script	Guardian#desert	2_MONEMUS,{
 	if( 'status == 0 ) {
 		instance_announce(-1, "Trial Start !!", bc_map);
 		'status = 1;
-		areamonster("this", 135, 90, 285, 331, "Eggshell"   , 1010, 80);
-		areamonster("this", 135, 90, 285, 331, "Dry Slime"  , 1011, 45);
-		areamonster("this", 135, 90, 285, 331, "Antlion"    , 1012, 45);
-		areamonster("this", 135, 90, 285, 331, "Rhea"       , 1013, 30);
-		areamonster("this", 135, 90, 285, 331, "Sandstinger", 1014, 20);
-		monster("this", 'bx, 'by, "Titan Rhea", 1015,1,instance_npcname("Guardian#desert")+"::onBossKilled");
+		areamonster("this", 0, 100, 340, 340, "Hardrock Slime", 1026, 80);
+		areamonster("this", 0, 100, 340, 340, "Timberwolf", 1027, 80);
+		areamonster("this", 0, 100, 340, 340, "Kindling", 1028, 50);
+		areamonster("this", 0, 100, 340, 340, "Boltfly", 1029, 65);
+		areamonster("this", 0, 100, 340, 340, "Grizzly", 1030, 60);
+		monster("this", 'bx, 'by, "Sabretooth", 1031,1,instance_npcname("Guardian#ruins")+"::onBossKilled");
 	}
 	
 	viewpoint(1, 'bx, 'by, 1, 0xFF0000);
@@ -39,10 +39,10 @@ onBossKilled:
 
 OnInstanceInit:
 	// boss coordinates
-	'bx = 205;
-	'by = 295;
+	'bx = 115;
+	'by = 300;
 	
-	'portalname$ = instance_npcname("Portal#desert");
+	'portalname$ = instance_npcname("Portal#ruins");
 	disablenpc('portalname$);
 	end;
 }

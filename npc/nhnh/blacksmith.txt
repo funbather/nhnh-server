@@ -27,7 +27,7 @@ askServices:
 	mes("\nItem level determines an item's base stats, and has a much greater influence than quality. Not keeping your gear levels in line with your own can be a fatal mistake.");
 	next;
 	mes("[Ysolt]");
-	mes("Finally, if you can manage to get your hands on a ^5555AA^boDivine Hammer^ld^000000, I can transform a lower ranked item into the best of its type.");
+	mes("Finally, if you can manage to get your hands on a ^5555AA^boDivine Hammer^ld^000000, I can transform a lower ranked item into one of a higher rank.");
 	next;
 	goto backToMenu;
 	
@@ -159,96 +159,46 @@ upgType:
 	
 	.@part = select(.@menu$) + 1;
 	.@upg = -1;
+	.@itid = getequipid(.@part);
 	
-	switch(getequipid(.@part)) {
+	switch( .@itid ) {
 		case 1:
 		case 2:
-			.@upg = 3;
-			break;
-			
 		case 4:
 		case 5:
-			.@upg = 6;
-			break;
-			
 		case 7:
 		case 8:
-			.@upg = 9;
-			break;
-			
 		case 10:
 		case 11:
-			.@upg = 12;
-			break;
-			
 		case 13:
 		case 14:
-			.@upg = 15;
-			break;
-			
 		case 16:
 		case 17:
-			.@upg = 18;
-			break;
-			
 		case 19:
 		case 20:
-			.@upg = 21;
-			break;
-			
 		case 25:
 		case 26:
-			.@upg = 27;
-			break;
-			
 		case 28:
 		case 29:
-			.@upg = 30;
-			break;
-			
 		case 31:
 		case 32:
-			.@upg = 33;
-			break;
-			
 		case 34:
 		case 35:
-			.@upg = 36;
-			break;
-			
 		case 100:
 		case 101:
-			.@upg = 102;
-			break;
-			
 		case 103:
 		case 104:
-			.@upg = 105;
-			break;
-			
 		case 106:
 		case 107:
-			.@upg = 108;
-			break;
-			
 		case 109:
 		case 110:
-			.@upg = 111;
-			break;
-			
 		case 112:
 		case 113:
-			.@upg = 114;
-			break;
-			
 		case 115:
 		case 116:
-			.@upg = 117;
-			break;
-			
 		case 118:
 		case 119:
-			.@upg = 120;
+			.@upg = .@itid + 1;
 			break;
 	}
 

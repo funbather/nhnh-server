@@ -15426,6 +15426,11 @@ BUILDIN(getilvl) {
 	return true;
 }
 
+/// Returns the Item Level of the item which invoked the current script
+BUILDIN(getilvl2) {
+	script_pushint(st, script->current_item_ilvl);
+	return true;
+}
 /// Returns the host item's enchantment roll value (00~FF) for the current slot
 BUILDIN(getroll) {
 	struct map_session_data *sd = script->rid2sd(st);
@@ -21028,6 +21033,7 @@ void script_run_use_script(struct map_session_data *sd, struct item_data *data, 
 	script->current_item_id = data->nameid;
 	script->run(data->script, 0, sd->bl.id, oid);
 	script->current_item_id = 0;
+	script->current_item_ilvl = 0;
 }
 
 void script_run_item_equip_script(struct map_session_data *sd, struct item_data *data, int oid) __attribute__((nonnull (1, 2)));
@@ -21339,6 +21345,7 @@ void script_parse_builtin(void) {
 		BUILDIN_DEF(cardscnt,"i*"), // check how many items/cards are being equipped in the same arm [Lupus]
 		BUILDIN_DEF(getrefine,""), // returns the refined number of the current item, or an item with index specified [celest]
 		BUILDIN_DEF(getilvl,""),
+		BUILDIN_DEF(getilvl2, ""),
 		BUILDIN_DEF(getroll,""),
 		BUILDIN_DEF(calcimplicit,"ii"), // calculate equipment bonuses
 		BUILDIN_DEF(calcexplicit,"ii"),  // calculate enchantment bonuses
@@ -21841,6 +21848,7 @@ void script_defaults(void)
 	script->word_size = 0;
 
 	script->current_item_id = 0;
+	script->current_item_ilvl = 0;
 
 	script->labels = NULL;
 	script->label_count = 0;

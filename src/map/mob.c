@@ -1927,21 +1927,34 @@ void mob_generate_item(struct mob_data *md, struct item *it, int flag) {
 		// CRAFTING ITEMS
 		//  30% Orichalcum Ore
 		//  30% Mythril Ore
-		//  23% Empty Bijou
-		//  10% Arcane Bijou
+		//  15% Empty Bijou
+		//  15% Arcane Bijou
+		//   5% Divine Hammer
 		// 2.5% Blessed Bijou
-		// 2.0% Divine Hammer
 		// 1.5% Capricious Bijou
 		// 1.0% Discordant Bijou
 
 		if     ( rand >= 7000 ) itid = ITEMID_ORICHALCUM;
 		else if( rand >= 4000 ) itid = ITEMID_MYTHRIL;
-		else if( rand >= 1700 ) itid = ITEMID_EMPTYBIJOU;
-		else if( rand >=  700 ) itid = ITEMID_ARCANEBIJOU;
-		else if( rand >=  450 ) itid = ITEMID_BLESSEDBIJOU;
-		else if( rand >=  250 ) itid = ITEMID_DIVINEHAMMER;
+		else if( rand >= 2500 ) itid = ITEMID_EMPTYBIJOU;
+		else if( rand >= 1000 ) itid = ITEMID_ARCANEBIJOU;
+		else if( rand >=  500 ) itid = ITEMID_DIVINEHAMMER;
+		else if( rand >=  250 ) itid = ITEMID_BLESSEDBIJOU;
 		else if( rand >=  100 ) itid = ITEMID_CAPRICIOUSBIJOU;
 		else                    itid = ITEMID_DISCORDANTBIJOU;
+
+	} else if( flag & DT_CUBE ) {
+		int rand = rnd()%10000;
+		ilvl = md->level;
+
+		// UNAPPRAISED ITEMS
+		// 60% Armor
+		// 39% Weapon
+		//  1% Unique (can be either)
+
+		if     ( rand >= 4000 ) itid = ITEMID_UNIDARMOR;
+		else if( rand >=  100 ) itid = ITEMID_UNIDWEAPON;
+		else                    itid = ITEMID_UNIDUNIQUE;
 
 	}
 
@@ -2560,18 +2573,9 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 		}
 
 		if( mvp_sd ) {
-			/* DROP RATE
-			 *
-			 * 5 chances for a standard equipment item drop
-			 * 16% 8% 4% 2% 1%
-			 *
-			 * 10 chances for boss flagged mobs
-			 * 100% 100% 100% 64% 32% 16% 8% 4% 2% 1% */
-
-			int droprate;
 			struct item item_tmp;
-			int dropflag = (BL_UCCAST(BL_MOB, &md->bl)->status.mode&MD_BOSS) ? DT_EQUIP | DT_BOSSKILL : DT_EQUIP;
-			int baserate = (BL_UCCAST(BL_MOB, &md->bl)->status.mode&MD_BOSS) ? 51200 : 1600;
+			int dropflag = (BL_UCCAST(BL_MOB, &md->bl)->status.mode&MD_BOSS) ? DT_CUBE | DT_BOSSKILL : DT_CUBE;
+			int droprate = (BL_UCCAST(BL_MOB, &md->bl)->status.mode&MD_BOSS) ? 25600 * (100 + status_get_luk(src)) / 100 : 800 * (100 + status_get_luk(src)) / 100;
 
 			if ( md->sc.data[SC_BROWBEAT] && (rnd()%100 < md->sc.data[SC_BROWBEAT]->val1) ) { // Browbeat
 				mob->generate_item(md, &item_tmp, dropflag);
@@ -2579,33 +2583,32 @@ int mob_dead(struct mob_data *md, struct block_list *src, int type) {
 				mob->item_drop(md, dlist, ditem, 0, 10000, false);
 			}
 
-			for( i=0; i>=0; i++) {
-				droprate = (baserate / (1 << i)) * (100 + status_get_luk(src)) / 100; // Equipment
-
-				if( rnd()%10000 < droprate ) {
+			while( droprate >= 100 ) {
+				if (rnd() % 10000 < droprate) {
 					mob->generate_item(md, &item_tmp, dropflag);
 					ditem = mob->setlootitem(&item_tmp);
 					mob->item_drop(md, dlist, ditem, 0, 10000, false);
 				}
 
-				if( (baserate / (1 << i)) <= 100 )
-					i = -99; // break out
+				droprate = droprate >> 1;
 			}
 
 			// Crafting Items
 			dropflag = (BL_UCCAST(BL_MOB, &md->bl)->status.mode&MD_BOSS) ? DT_CRAFT | DT_BOSSKILL : DT_CRAFT;
-			droprate = (BL_UCCAST(BL_MOB, &md->bl)->status.mode&MD_BOSS) ? 20000 * (100 + status_get_luk(src)) / 100 : 500 * (100 + status_get_luk(src)) / 100;
+			droprate = (BL_UCCAST(BL_MOB, &md->bl)->status.mode&MD_BOSS) ? 16000 * (100 + status_get_luk(src)) / 100 : 500 * (100 + status_get_luk(src)) / 100;
 
-			while( rnd()%10000 < droprate ) {
-				mob->generate_item(md, &item_tmp, dropflag);
-				ditem = mob->setlootitem(&item_tmp);
-				mob->item_drop(md, dlist, ditem, 0, 10000, false);
-				droprate = droprate * 50 / 100;
+			while( droprate >= 100 ) {
+				if (rnd() % 10000 < droprate) {
+					mob->generate_item(md, &item_tmp, dropflag);
+					ditem = mob->setlootitem(&item_tmp);
+					mob->item_drop(md, dlist, ditem, 0, 10000, false);
+				}
+
+				droprate = droprate >> 1;
 			}
-		}
 
-		if( sd && pc->checkskill(sd,THF_PICKPOCKET) && (rnd()%10000 < 300 + 40 * pc->checkskill(sd,THF_PICKPOCKET)) ) {
-			mob->item_drop(md, dlist, mob->setdropitem(ITEMID_COINBAG,1,NULL), 0, 10000, false);
+			if( pc->checkskill(mvp_sd,THF_PICKPOCKET) && (rnd()%10000 < 300 + 40 * pc->checkskill(mvp_sd,THF_PICKPOCKET)) )
+				mob->item_drop(md, dlist, mob->setdropitem(ITEMID_COINBAG,1,NULL), 0, 10000, false);
 		}
 
 		if( sd ) {

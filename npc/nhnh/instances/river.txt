@@ -21,11 +21,11 @@ prt_fild04,360,159,6	script	Guardian#river	2_MONEMUS,{
 	if( 'status == 0 ) {
 		instance_announce(-1, "Trial Start !!", bc_map);
 		'status = 1;
-		areamonster("this", 0, 0, 350, 160, "Slime",   1004, 80);
-		areamonster("this", 0, 0, 350, 160, "Hare",    1005, 40);
+		areamonster("this", 0, 0, 350, 160, "Slime",   1004, 90);
+		areamonster("this", 0, 0, 350, 160, "Hare",    1005, 70);
 		areamonster("this", 0, 0, 350, 160, "Bubble",  1006, 40);
-		areamonster("this", 0, 0, 350, 160, "Snapper", 1007, 25);
-		areamonster("this", 0, 0, 350, 160, "Frog",    1008, 25);
+		areamonster("this", 0, 0, 350, 160, "Snapper", 1007, 35);
+		areamonster("this", 0, 0, 350, 160, "Frog",    1008, 35);
 		monster("this", 'bx, 'by, "Gigant Frog", 1009,1,instance_npcname("Guardian#river")+"::onBossKilled");
 	}
 	

@@ -111,6 +111,7 @@ enum droptype {
 	DT_CRAFT    = 0x02,
 	DT_TAROT    = 0x04,
 	DT_STONE    = 0x08,
+	DT_CUBE     = 0x10,
 	DT_BOSSKILL = 0x100,
 };
 

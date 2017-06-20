@@ -587,6 +587,7 @@ struct script_interface {
 	int string_list_pos;
 	/*  */
 	unsigned short current_item_id;
+	unsigned short current_item_ilvl;
 	/* */
 	struct script_label_entry *labels;
 	int label_count;
