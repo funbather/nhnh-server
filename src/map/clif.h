@@ -901,6 +901,7 @@ struct clif_interface {
 	/* storage handling */
 	void (*storagelist) (struct map_session_data* sd, struct item* items, int items_length);
 	void (*updatestorageamount) (struct map_session_data* sd, int amount, int max_amount);
+	void (*updatestoragezeny) (struct map_session_data* sd, int amount);
 	void (*storageitemadded) (struct map_session_data* sd, struct item* i, int index, int amount);
 	void (*storageitemremoved) (struct map_session_data* sd, int index, int amount);
 	void (*storageclose) (struct map_session_data* sd);

@@ -7902,7 +7902,7 @@ BUILDIN(spawnitem)
 			quality = 0;
 		}
 		else {
-			quality = ilvl = 0;
+			quality = 0;
 		}
 
 		item_tmp.nameid=nameid;
@@ -15474,7 +15474,7 @@ BUILDIN(calcimplicit)
 	base = script_getnum(st,2);           //                                                            Lv1   Lv50
 	multiplier = script_getnum(st,3) - 1; // -1 to account for the base value, 15 Base/10 Multiplier -> 15  ~ 150
 	quality = sd->status.inventory[status->current_equip_item_index].refine;
-	ilvl = sd->status.inventory[status->current_equip_item_index].attribute * 2; // x2 to account for the max ilvl being 50, ilvl 50 items are at max potential
+	ilvl = min(sd->status.inventory[status->current_equip_item_index].attribute, sd->status.base_level + 3) * 2;
 
 	script_pushint(st,((ilvl * base * multiplier / 100) + base) * quality / 100);
 

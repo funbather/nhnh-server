@@ -1032,7 +1032,7 @@ void clif_set_unit_idle(struct block_list* bl, struct map_session_data *tsd, enu
 	p.robe = vd->robe;
 	p.GUID = g_id;
 	p.GEmblemVer = status->get_emblem_id(bl);
-	p.honor = (sd) ? sd->status.manner : 0;
+	p.honor = (bl->type == BL_MOB) ? BL_UCCAST(BL_MOB, bl)->special_state.ai : 0;
 	p.virtue = (sc) ? sc->opt3 : 0;
 	p.isPKModeON = (sd && sd->status.karma) ? 1 : 0;
 	p.sex = vd->sex;
@@ -1143,7 +1143,7 @@ void clif_spawn_unit(struct block_list* bl, enum send_target target) {
 	p.robe = vd->robe;
 	p.GUID = g_id;
 	p.GEmblemVer = status->get_emblem_id(bl);
-	p.honor = (sd) ? sd->status.manner : 0;
+	p.honor = (bl->type == BL_MOB) ? BL_UCCAST(BL_MOB, bl)->special_state.ai : 0;
 	p.virtue = (sc) ? sc->opt3 : 0;
 	p.isPKModeON = (sd && sd->status.karma) ? 1 : 0;
 	p.sex = vd->sex;
@@ -1214,7 +1214,7 @@ void clif_set_unit_walking(struct block_list* bl, struct map_session_data *tsd, 
 	p.robe = vd->robe;
 	p.GUID = g_id;
 	p.GEmblemVer = status->get_emblem_id(bl);
-	p.honor = (sd) ? sd->status.manner : 0;
+	p.honor = (bl->type == BL_MOB) ? BL_UCCAST(BL_MOB, bl)->special_state.ai : 0;
 	p.virtue = (sc) ? sc->opt3 : 0;
 	p.isPKModeON = (sd && sd->status.karma) ? 1 : 0;
 	p.sex = vd->sex;
@@ -3931,6 +3931,21 @@ void clif_updatestorageamount(struct map_session_data* sd, int amount, int max_a
 	WFIFOW(fd,2) = amount;
 	WFIFOW(fd,4) = max_amount;
 	WFIFOSET(fd,packet_len(0xf2));
+}
+
+/// Notifies client of zeny amount in bank (ZC_BANK_AMOUNT).
+/// 0557
+void clif_updatestoragezeny(struct map_session_data* sd, int amount)
+{
+	int fd;
+
+	nullpo_retv(sd);
+
+	fd = sd->fd;
+	WFIFOHEAD(fd, 6);
+	WFIFOW(fd, 0) = 0x557;
+	WFIFOL(fd, 2) = amount;
+	WFIFOSET(fd, 6);
 }
 
 /// Notifies the client of an item being added to the storage.
@@ -18020,6 +18035,7 @@ void clif_bank_deposit(struct map_session_data *sd, enum e_BANKING_DEPOSIT_ACK r
 	p.Money = (int64)sd->status.bank_vault;/* money in the bank */
 	p.Reason = (short)reason;
 
+	clif->updatestoragezeny(sd, sd->status.bank_vault);
 	clif->send(&p,sizeof(p), &sd->bl, SELF);
 #endif
 }
@@ -18035,6 +18051,7 @@ void clif_bank_withdraw(struct map_session_data *sd,enum e_BANKING_WITHDRAW_ACK 
 	p.Money = (int64)sd->status.bank_vault;/* money in the bank */
 	p.Reason = (short)reason;
 
+	clif->updatestoragezeny(sd, sd->status.bank_vault);
 	clif->send(&p,sizeof(p), &sd->bl, SELF);
 #endif
 }
@@ -19437,6 +19454,7 @@ void clif_defaults(void) {
 	/* storage handling */
 	clif->storagelist = clif_storagelist;
 	clif->updatestorageamount = clif_updatestorageamount;
+	clif->updatestoragezeny = clif_updatestoragezeny;
 	clif->storageitemadded = clif_storageitemadded;
 	clif->storageitemremoved = clif_storageitemremoved;
 	clif->storageclose = clif_storageclose;

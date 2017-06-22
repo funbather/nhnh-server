@@ -144,7 +144,7 @@ enchEmpty2:
 	delitem(802, 1);
 	delequip(.@part);
 	
-	spawnitem(803,1,0,0,1,.@ench,0,0,0,.@roll,0,0,0);
+	spawnitem(803,1,0,.@roll,1,.@ench,0,0,0,.@roll,0,0,0);
 	
 	cleartext;
 	mes("[Serra]");
@@ -183,6 +183,9 @@ enchBijou:
 	.@bijou     = @inventorylist_id[.@selection];
 	.@roll      = @inventorylist_rolls[.@selection];
 	.@shard     = @inventorylist_card1[.@selection];
+	.@fervroll  = @inventorylist_attribute[.@selection];
+	
+	debugmes(.@fervroll);
 	
 	cleartext;
 	mes("[Serra]");
@@ -248,7 +251,7 @@ enchFervent:
 	
 	unequip(.@part);
 	delitem2(.@type,1,1,.@qual,.@ilvl,.@ench1,.@ench2,.@ench3,.@ench4);	
-	delitem2(.@bijou,1,1,0,0,.@shard,0,0,0);
+	delitem2(.@bijou,1,1,0,.@fervroll,.@shard,0,0,0);
 	
 	switch( .@selection ) {
 		case 0: 

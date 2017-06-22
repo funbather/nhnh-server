@@ -1377,7 +1377,7 @@ ACMD(it)
 			loop = number;
 			get_count = 1;
 		} else {
-			quality = ilvl = 0;
+			quality = 0;
 		}
 		quality = cap_value(quality, 0, MAX_REFINE);
 		for (i = 0; i < loop; i++) {

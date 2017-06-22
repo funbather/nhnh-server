@@ -117,6 +117,7 @@ int storage_storageopen(struct map_session_data *sd)
 	storage->sortitem(sd->status.storage.items, ARRAYLENGTH(sd->status.storage.items));
 	clif->storagelist(sd, sd->status.storage.items, ARRAYLENGTH(sd->status.storage.items));
 	clif->updatestorageamount(sd, sd->status.storage.storage_amount, MAX_STORAGE);
+	clif->updatestoragezeny(sd, sd->status.bank_vault);
 	return 0;
 }
 
@@ -200,6 +201,7 @@ int storage_additem(struct map_session_data* sd, struct item* item_data, int amo
 	stor->items[i].amount = amount;
 	clif->storageitemadded(sd,&stor->items[i],i,amount);
 	clif->updatestorageamount(sd, stor->storage_amount, MAX_STORAGE);
+	clif->updatestoragezeny(sd, sd->status.bank_vault);
 
 	return 0;
 }
@@ -224,6 +226,8 @@ int storage_delitem(struct map_session_data* sd, int n, int amount)
 	}
 	if( sd->state.storage_flag == STORAGE_FLAG_NORMAL )
 		clif->storageitemremoved(sd,n,amount);
+
+	clif->updatestoragezeny(sd, sd->status.bank_vault);
 	return 0;
 }
 
