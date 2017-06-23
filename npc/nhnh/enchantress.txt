@@ -185,8 +185,6 @@ enchBijou:
 	.@shard     = @inventorylist_card1[.@selection];
 	.@fervroll  = @inventorylist_attribute[.@selection];
 	
-	debugmes(.@fervroll);
-	
 	cleartext;
 	mes("[Serra]");
 	mes("Which item are we lookin' at?");

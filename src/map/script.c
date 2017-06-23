@@ -15457,6 +15457,38 @@ BUILDIN(getroll) {
 	return true;
 }
 
+BUILDIN(showcubeui) {
+	struct map_session_data *sd = script->rid2sd(st);
+	unsigned short itid, slot1, slot2, slot3, slot4;
+	unsigned char  quality, ilvl, roll1, roll2, roll3, roll4, cubelvl;
+	unsigned int rolls;
+
+	if (sd == NULL)
+		return true;
+
+	itid    = script_getnum(st, 2);
+	quality = script_getnum(st, 3);
+	ilvl    = script_getnum(st, 4);
+	slot1   = script_getnum(st, 5);
+	slot2   = script_getnum(st, 6);
+	slot3   = script_getnum(st, 7);
+	slot4   = script_getnum(st, 8);
+	roll1   = script_getnum(st, 9);
+	roll2   = script_getnum(st, 10);
+	roll3   = script_getnum(st, 11);
+	roll4   = script_getnum(st, 12);
+	cubelvl = script_getnum(st, 13);
+
+	rolls = roll1;
+	rolls |= (roll2 << 8);
+	rolls |= (roll3 << 16);
+	rolls |= (roll4 << 24);
+
+	clif->cubeopen(sd, itid, quality, ilvl, slot1, slot2, slot3, slot4, rolls, cubelvl);
+
+	return true;
+}
+
 /// Calculate implicit stat bonuses from equipment based on ilvl, quality, etc
 BUILDIN(calcimplicit)
 {
@@ -21359,6 +21391,7 @@ void script_parse_builtin(void) {
 		BUILDIN_DEF(getilvl,""),
 		BUILDIN_DEF(getilvl2, ""),
 		BUILDIN_DEF(getroll,""),
+		BUILDIN_DEF(showcubeui, "iiiiiiiiiiii"),
 		BUILDIN_DEF(calcimplicit,"ii"), // calculate equipment bonuses
 		BUILDIN_DEF(calcexplicit,"ii"),  // calculate enchantment bonuses
 		BUILDIN_DEF(night,""), // sets the server to night time

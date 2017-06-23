@@ -58,27 +58,24 @@ prt_monk,218,164,3	script	Anton#appraiser	4_M_KHKIEL,{
 					mes("What kind of item are you looking for?");
 					
 					select("Surprise me!","1-Handed Weapon","2-Handed Weapon","Magic Weapon");
-					
-					callfunc("appraiseItem", .@itid, .@ilvl, .@type, @menu, getcharid(CHAR_ID_ACCOUNT));
 					break;
 				case 812:
 					mes("[Anton]");
 					mes("What kind of item are you looking for?");
 					
 					select("Surprise me!","Armor","Adornment");
-					
-					callfunc("appraiseItem", .@itid, .@ilvl, .@type, @menu, getcharid(CHAR_ID_ACCOUNT));
 					break;
 			}
 			
 			delitem2(.@itid,1,1,0,.@ilvl,0,0,0,0);
 			Zeny = Zeny - .@cost;
-			
+
 			cleartext;
 			mes("[Anton]");
-			mes("Enjoy.");
-			
-			close();
+			mes("Here we go...!!");
+			close2();	
+			callfunc("appraiseItem", .@itid, .@ilvl, .@type, @menu, getcharid(CHAR_ID_ACCOUNT));
+			end;
 			break;
 			
 		case 2:

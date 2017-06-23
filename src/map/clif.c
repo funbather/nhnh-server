@@ -2154,6 +2154,28 @@ void clif_scriptinputstr(struct map_session_data *sd, int npcid) {
 	WFIFOSET(fd,packet_len(0x1d4));
 }
 
+/// 0558 ZC_CUBE_OPEN
+/// Open 'item get!' UI on client when opening an item cube
+void clif_cubeopen(struct map_session_data *sd, unsigned short itid, unsigned char quality, unsigned char ilvl, unsigned short slot1, unsigned short slot2, unsigned short slot3, unsigned short slot4, unsigned int rolls, unsigned char cubelvl) {
+	int fd;
+
+	nullpo_retv(sd);
+
+	fd = sd->fd;
+	WFIFOHEAD(fd, 19);
+	WFIFOW(fd, 0) = 0x558;
+	WFIFOW(fd, 2) = itid;
+	WFIFOB(fd, 4) = quality;
+	WFIFOB(fd, 5) = ilvl;
+	WFIFOW(fd, 6) = slot1;
+	WFIFOW(fd, 8) = slot2;
+	WFIFOW(fd, 10) = slot3;
+	WFIFOW(fd, 12) = slot4;
+	WFIFOL(fd, 14) = rolls;
+	WFIFOB(fd, 18) = cubelvl;
+	WFIFOSET(fd, 19);
+}
+
 /// Marks a position on client's minimap (ZC_COMPASS).
 /// 0144 <npc id>.L <type>.L <x>.L <y>.L <id>.B <color>.L
 /// npc id:
@@ -19273,6 +19295,7 @@ void clif_defaults(void) {
 	clif->sendfakenpc = clif_sendfakenpc;
 	clif->scriptclear = clif_scriptclear;
 	/* client-user-interface-related */
+	clif->cubeopen = clif_cubeopen;
 	clif->viewpoint = clif_viewpoint;
 	clif->damage = clif_damage;
 	clif->sitting = clif_sitting;

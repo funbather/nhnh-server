@@ -1,8 +1,8 @@
 prt_monk,218,182,3	script	Kharis#missions	4_F_JP_NOAH,{
 	
 	// common settings
-	.@instance_timelimit = 3600;
-	.@instance_timeout = 300;
+	.@instance_timelimit = 7200;
+	.@instance_timeout = 7200;
 	.@party_id = getcharid(CHAR_ID_PARTY);
 
 	mes("[Kharis]");
