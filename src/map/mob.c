@@ -1945,15 +1945,15 @@ void mob_generate_item(struct mob_data *md, struct item *it, int flag) {
 
 	} else if( flag & DT_CUBE ) {
 		int rand = rnd()%10000;
-		ilvl = md->level;
+		ilvl = md->level / 4 + 1;
 
 		// UNAPPRAISED ITEMS
-		// 60% Armor
-		// 39% Weapon
-		//  1% Unique (can be either)
+		// 65.0% Armor
+		// 34.7% Weapon
+		//  0.3% Unique
 
-		if     ( rand >= 4000 ) itid = ITEMID_UNIDARMOR;
-		else if( rand >=  100 ) itid = ITEMID_UNIDWEAPON;
+		if     ( rand >= 3500 ) itid = ITEMID_UNIDARMOR;
+		else if( rand >=   30 ) itid = ITEMID_UNIDWEAPON;
 		else                    itid = ITEMID_UNIDUNIQUE;
 
 	}

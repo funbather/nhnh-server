@@ -327,7 +327,7 @@ struct NORMALITEM_INFO {
 	uint32 rolls;
 } __attribute__((packed));
 
-struct RndOptions {
+struct AFFIXES {
 	int16 index;
 	int16 value;
 	uint8 param;
@@ -345,9 +345,11 @@ struct EQUIPITEM_INFO {
 	uint16 bindOnEquipType;
 	uint16 wItemSpriteNumber;
 	uint8 option_count;
-	struct RndOptions option_data[5];
+	struct AFFIXES affix[5];
 	uint8 ilvl;
 	uint32 rolls;
+	int16 rank;
+	int16 slots;
 } __attribute__((packed));
 
 struct packet_authok {
@@ -389,7 +391,9 @@ struct packet_additem {
 	int32 HireExpireDate;
 	uint16 bindOnEquipType;
 	uint32 rolls;
-	struct RndOptions option_data[5];
+	int16 rank;
+	int16 slots;
+	struct AFFIXES affix[5];
 } __attribute__((packed));
 
 struct packet_dropflooritem {

@@ -15457,6 +15457,22 @@ BUILDIN(getroll) {
 	return true;
 }
 
+BUILDIN(getaffixvalue) {
+	int val = 0;
+	struct map_session_data *sd = NULL;
+
+	if ((sd = script->rid2sd(st)) == NULL || status->current_equip_item_index == -1 || status->current_equip_affix_index == -1
+		|| !sd->status.inventory[status->current_equip_item_index].affix[status->current_equip_affix_index].index) {
+		script_pushint(st, -1);
+		return false;
+	}
+
+	val = sd->status.inventory[status->current_equip_item_index].affix[status->current_equip_affix_index].value;
+	script_pushint(st, val);
+
+	return true;
+}
+
 BUILDIN(showcubeui) {
 	struct map_session_data *sd = script->rid2sd(st);
 	unsigned short itid, slot1, slot2, slot3, slot4;
@@ -21391,6 +21407,7 @@ void script_parse_builtin(void) {
 		BUILDIN_DEF(getilvl,""),
 		BUILDIN_DEF(getilvl2, ""),
 		BUILDIN_DEF(getroll,""),
+		BUILDIN_DEF(getaffixvalue,""),
 		BUILDIN_DEF(showcubeui, "iiiiiiiiiiii"),
 		BUILDIN_DEF(calcimplicit,"ii"), // calculate equipment bonuses
 		BUILDIN_DEF(calcexplicit,"ii"),  // calculate enchantment bonuses

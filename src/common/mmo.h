@@ -118,6 +118,7 @@
 //Number of slots carded equipment can have. Never set to less than 4 as they are also used to keep the data of forged items/equipment. [Skotlex]
 //Note: The client seems unable to receive data for more than 4 slots due to all related packets having a fixed size.
 #define MAX_SLOTS 4
+#define MAX_AFFIXES 5
 //Max amount of a single stacked item
 #define MAX_AMOUNT 30000
 #define MAX_ZENY INT_MAX
@@ -150,7 +151,7 @@
 #define MAX_WALK_SPEED 1000
 #endif
 #ifndef MAX_STORAGE
-#define MAX_STORAGE 600
+#define MAX_STORAGE 400
 #endif
 #ifndef MAX_GUILD_STORAGE
 #define MAX_GUILD_STORAGE 600
@@ -327,6 +328,13 @@ struct item {
 	unsigned char bound;
 	uint64 unique_id;
 	unsigned int rolls;
+	short rank;
+	short slots;
+	struct {
+		int16 index;
+		int16 value;
+		uint8 param;
+	} affix[MAX_AFFIXES];
 };
 
 //Equip position constants

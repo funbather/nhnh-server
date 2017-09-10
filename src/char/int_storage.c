@@ -62,9 +62,11 @@ int inter_storage_fromsql(int account_id, struct storage_data* p)
 
 	// storage {`account_id`/`id`/`nameid`/`amount`/`equip`/`identify`/`refine`/`attribute`/`card0`/`card1`/`card2`/`card3`}
 	StrBuf->Init(&buf);
-	StrBuf->AppendStr(&buf, "SELECT `id`,`nameid`,`amount`,`equip`,`identify`,`refine`,`attribute`,`expire_time`,`bound`,`unique_id`,`rolls`");
+	StrBuf->AppendStr(&buf, "SELECT `id`,`nameid`,`amount`,`equip`,`identify`,`refine`,`attribute`,`expire_time`,`bound`,`unique_id`,`rolls`,`rank`,`slots`");
 	for( j = 0; j < MAX_SLOTS; ++j )
 		StrBuf->Printf(&buf, ",`card%d`", j);
+	for( j = 0; j < MAX_AFFIXES; ++j )
+		StrBuf->Printf(&buf, ",`affix_idx%d`, `affix_val%d`", j, j);
 	StrBuf->Printf(&buf, " FROM `%s` WHERE `account_id`='%d' ORDER BY `nameid`", storage_db, account_id);
 
 	if (SQL_ERROR == SQL->QueryStr(inter->sql_handle, StrBuf->Value(&buf)))
@@ -85,9 +87,15 @@ int inter_storage_fromsql(int account_id, struct storage_data* p)
 		SQL->GetData(inter->sql_handle, 8, &data, NULL); item->bound = atoi(data);
 		SQL->GetData(inter->sql_handle, 9, &data, NULL); item->unique_id = strtoull(data, NULL, 10);
 		SQL->GetData(inter->sql_handle,10, &data, NULL); item->rolls = atoi(data);
+		SQL->GetData(inter->sql_handle,11, &data, NULL); item->rank = atoi(data);
+		SQL->GetData(inter->sql_handle,12, &data, NULL); item->slots = atoi(data);
+
 		for( j = 0; j < MAX_SLOTS; ++j )
-		{
-			SQL->GetData(inter->sql_handle, 11+j, &data, NULL); item->card[j] = atoi(data);
+			SQL->GetData(inter->sql_handle, 13+j, &data, NULL); item->card[j] = atoi(data);
+
+		for( j = 0; j < MAX_AFFIXES; ++j ) {
+			SQL->GetData(inter->sql_handle, 13+MAX_SLOTS+j*2, &data, NULL); item->affix[j].index = atoi(data);
+			SQL->GetData(inter->sql_handle, 14+MAX_SLOTS+j*2, &data, NULL); item->affix[j].value = atoi(data);
 		}
 	}
 	p->storage_amount = i;
@@ -121,9 +129,11 @@ int inter_storage_guild_storage_fromsql(int guild_id, struct guild_storage* p)
 
 	// storage {`guild_id`/`id`/`nameid`/`amount`/`equip`/`identify`/`refine`/`attribute`/`card0`/`card1`/`card2`/`card3`}
 	StrBuf->Init(&buf);
-	StrBuf->AppendStr(&buf, "SELECT `id`,`nameid`,`amount`,`equip`,`identify`,`refine`,`attribute`,`bound`,`unique_id`,`rolls`");
+	StrBuf->AppendStr(&buf, "SELECT `id`,`nameid`,`amount`,`equip`,`identify`,`refine`,`attribute`,`bound`,`unique_id`,`rolls`,`rank`,`slots`");
 	for( j = 0; j < MAX_SLOTS; ++j )
 		StrBuf->Printf(&buf, ",`card%d`", j);
+	for( j = 0; j < MAX_AFFIXES; ++j )
+		StrBuf->Printf(&buf, ",`affix_idx%d`, `affix_val%d`", j, j);
 	StrBuf->Printf(&buf, " FROM `%s` WHERE `guild_id`='%d' ORDER BY `nameid`", guild_storage_db, guild_id);
 
 	if( SQL_ERROR == SQL->QueryStr(inter->sql_handle, StrBuf->Value(&buf)))
@@ -143,10 +153,16 @@ int inter_storage_guild_storage_fromsql(int guild_id, struct guild_storage* p)
 		SQL->GetData(inter->sql_handle, 7, &data, NULL); item->bound = atoi(data);
 		SQL->GetData(inter->sql_handle, 8, &data, NULL); item->unique_id = strtoull(data, NULL, 10);
 		SQL->GetData(inter->sql_handle, 9, &data, NULL); item->rolls = atoi(data);
+		SQL->GetData(inter->sql_handle,10, &data, NULL); item->rank = atoi(data);
+		SQL->GetData(inter->sql_handle,11, &data, NULL); item->slots = atoi(data);
 		item->expire_time = 0;
 
 		for( j = 0; j < MAX_SLOTS; ++j ) {
-			SQL->GetData(inter->sql_handle, 10+j, &data, NULL); item->card[j] = atoi(data);
+			SQL->GetData(inter->sql_handle, 12+j, &data, NULL); item->card[j] = atoi(data);
+		}
+		for( j = 0; j < MAX_AFFIXES; ++j ) {
+			SQL->GetData(inter->sql_handle, 12+MAX_SLOTS+j*2, &data, NULL); item->affix[j].index = atoi(data);
+			SQL->GetData(inter->sql_handle, 13+MAX_SLOTS+j*2, &data, NULL); item->affix[j].value = atoi(data);
 		}
 	}
 	p->storage_amount = i;
@@ -289,9 +305,11 @@ int mapif_parse_ItemBoundRetrieve_sub(int fd)
 	int guild_id = RFIFOW(fd,10);
 
 	StrBuf->Init(&buf);
-	StrBuf->AppendStr(&buf, "SELECT `id`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `expire_time`, `bound`, `unique_id`,`rolls`");
+	StrBuf->AppendStr(&buf, "SELECT `id`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `expire_time`, `bound`, `unique_id`,`rolls`,`rank`,`slots`");
 	for( j = 0; j < MAX_SLOTS; ++j )
 		StrBuf->Printf(&buf, ", `card%d`", j);
+	for( j = 0; j < MAX_AFFIXES; ++j )
+		StrBuf->Printf(&buf, ", `affix_idx%d`, `affix_val%d`", j, j);
 	StrBuf->Printf(&buf, " FROM `%s` WHERE `char_id`='%d' AND `bound` = '%d'",inventory_db,char_id,IBT_GUILD);
 
 	stmt = SQL->StmtMalloc(inter->sql_handle);
@@ -316,8 +334,14 @@ int mapif_parse_ItemBoundRetrieve_sub(int fd)
 	SQL->StmtBindColumn(stmt, 8, SQLDT_UCHAR,     &item.bound,       0, NULL, NULL);
 	SQL->StmtBindColumn(stmt, 9, SQLDT_UINT64,    &item.unique_id,   0, NULL, NULL);
 	SQL->StmtBindColumn(stmt,10, SQLDT_UINT,      &item.rolls,       0, NULL, NULL);
+	SQL->StmtBindColumn(stmt,11, SQLDT_SHORT,     &item.rank,        0, NULL, NULL);
+	SQL->StmtBindColumn(stmt,12, SQLDT_SHORT,     &item.slots,       0, NULL, NULL);
 	for( j = 0; j < MAX_SLOTS; ++j )
 		SQL->StmtBindColumn(stmt, 11+j, SQLDT_SHORT, &item.card[j], 0, NULL, NULL);
+	for( j = 0; j < MAX_AFFIXES; ++j ) {
+		SQL->StmtBindColumn(stmt, 11+MAX_SLOTS+j*2, SQLDT_SHORT, &item.affix[j].index, 0, NULL, NULL);
+		SQL->StmtBindColumn(stmt, 12+MAX_SLOTS+j*2, SQLDT_SHORT, &item.affix[j].value, 0, NULL, NULL);
+	}
 
 	while( SQL_SUCCESS == SQL->StmtNextRow(stmt)) {
 		Assert_retb(i < MAX_INVENTORY);
@@ -409,21 +433,27 @@ int mapif_parse_ItemBoundRetrieve_sub(int fd)
 	/// call that function here as well [Panikon]
 	StrBuf->Clear(&buf);
 	StrBuf->Printf(&buf,"INSERT INTO `%s` (`guild_id`,`nameid`,`amount`,`equip`,`identify`,`refine`,"
-						"`attribute`,`expire_time`,`bound`,`unique_id`,`rolls`",
+						"`attribute`,`expire_time`,`bound`,`unique_id`,`rolls`, `rank`, `slots`",
 					guild_storage_db);
 	for( s = 0; s < MAX_SLOTS; ++s )
 		StrBuf->Printf(&buf, ", `card%d`", s);
+	for( s = 0; s < MAX_AFFIXES; ++s )
+		StrBuf->Printf(&buf, ", `affix_idx%d`, `affix_val%d`", s, s);
 	StrBuf->AppendStr(&buf," ) VALUES ");
 
 	for( j = 0; j < i; ++j ) {
 		if( j )
 			StrBuf->AppendStr(&buf, ",");
 
-		StrBuf->Printf(&buf, "('%d', '%d', '%d', '%u', '%d', '%d', '%d', '%u', '%d', '%"PRIu64"', '%u'",
+		StrBuf->Printf(&buf, "('%d', '%d', '%d', '%u', '%d', '%d', '%d', '%u', '%d', '%"PRIu64"', '%u', '%d', '%d'",
 			guild_id, items[j].nameid, items[j].amount, items[j].equip, items[j].identify, items[j].refine,
-			items[j].attribute, items[j].expire_time, items[j].bound, items[j].unique_id, items[j].rolls);
+			items[j].attribute, items[j].expire_time, items[j].bound, items[j].unique_id, items[j].rolls,
+			items[j].rank, items[j].slots);
 		for( s = 0; s < MAX_SLOTS; ++s )
 			StrBuf->Printf(&buf, ", '%d'", items[j].card[s]);
+		for( s = 0; s < MAX_AFFIXES; ++s ) {
+			StrBuf->Printf(&buf, ", '%d', '%d'", items[j].affix[s].index, items[j].affix[s].value);
+		}
 		StrBuf->AppendStr(&buf, ")");
 	}
 

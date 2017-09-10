@@ -132,11 +132,17 @@ int compare_item(struct item *a, struct item *b)
 		a->attribute == b->attribute &&
 		a->expire_time == b->expire_time &&
 		a->bound == b->bound &&
-		a->unique_id == b->unique_id)
+		a->unique_id == b->unique_id &&
+		a->rolls == b->rolls &&
+		a->rank == b->rank &&
+		a->slots == b->slots )
 	{
-		int i;
-		for (i = 0; i < MAX_SLOTS && (a->card[i] == b->card[i]); i++);
-		return (i == MAX_SLOTS);
+		int i = 0, k = 0;
+		ARR_FIND(0, MAX_SLOTS, i, a->card[i] != b->card[i]);
+		ARR_FIND(0, MAX_AFFIXES, k, a->affix[k].index != b->affix[k].index || a->affix[k].value != b->affix[k].value);
+
+		if (i == MAX_SLOTS && k == MAX_AFFIXES)
+			return 1;
 	}
 	return 0;
 }

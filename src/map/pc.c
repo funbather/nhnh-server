@@ -4613,6 +4613,8 @@ int pc_additem(struct map_session_data *sd,struct item *item_data,int amount,e_l
 		for( i = 0; i < MAX_INVENTORY; i++ ) {
 			if( sd->status.inventory[i].nameid == item_data->nameid &&
 			    sd->status.inventory[i].rolls == item_data->rolls &&
+			    sd->status.inventory[i].rank == item_data->rank &&
+			    sd->status.inventory[i].slots == item_data->slots &&
 			    sd->status.inventory[i].attribute == item_data->attribute &&
 			    sd->status.inventory[i].bound == item_data->bound &&
 			    sd->status.inventory[i].expire_time == 0 &&

@@ -2584,6 +2584,38 @@ int status_calc_pc_(struct map_session_data* sd, enum e_status_calc_opt opt)
 		}
 	}
 
+	for (i = 0; i < EQI_MAX; i++) {
+		status->current_equip_item_index = index = sd->equip_index[i];
+		status->current_equip_affix_index = -1;
+		
+		if (i == EQI_HAND_R && sd->equip_index[EQI_HAND_L] == index)
+			continue;
+		else if (i == EQI_HEAD_MID && sd->equip_index[EQI_HEAD_LOW] == index)
+			continue;
+		else if (i == EQI_HEAD_TOP && (sd->equip_index[EQI_HEAD_MID] == index || sd->equip_index[EQI_HEAD_LOW] == index))
+			continue;
+		
+		if (index >= 0 && sd->inventory_data[index]) {
+			int j = 0;
+			for (j = 0; j < MAX_AFFIXES; j++) {
+				int16 affix_index = sd->status.inventory[index].affix[j].index;
+				struct item_affix *ito = NULL;
+				
+				if (affix_index == 0 || (ito = itemdb->affix_exists(affix_index)) == NULL || ito->script == NULL)
+					continue;
+				
+				status->current_equip_affix_index = j;
+				script->run(ito->script, 0, sd->bl.id, 0);
+				
+				if (calculating == 0) //Abort, script->run his function. [Skotlex]
+					return 1;
+			}
+		}
+	}
+
+	status->current_equip_affix_index = -1;
+	status->current_equip_item_index = -1;
+
 	status->calc_pc_additional(sd, opt);
 
 	if( sd->pd ) { // Pet Bonus
@@ -7183,19 +7215,8 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 	if( (sce = sc->data[type]) ) {
 		switch( type ) {
 			case SC_POISON:
-				if( src_sd && src_sd->bonus.statuseffect&0x2 ) {
-					struct block_list* _src = map->id2bl(sce->val2);
-					if( sce->val2 && bl->type == BL_MOB ) {
-						if (src != NULL)
-							mob->log_damage(BL_UCAST(BL_MOB, bl), _src, sce->val3 * sce->val4);
-					}
-					map->freeblock_lock();
-					status->damage(_src, bl, sce->val3 * sce->val4, 0, clif->damage(_src,bl,200,200,sce->val3 * sce->val4,1,BDT_CRIT,0), 1);
-					map->freeblock_unlock();
-
-					if( status->isdead(bl) ) // unit might be dead now
-						return 0;
-				}
+				if( src_sd && src_sd->bonus.statuseffect&0x2 )
+					val4 = sce->val4 * sce->val4 * sce->val3 / sce->val1;
 				break;
 			case SC_MER_FLEE:
 			case SC_MER_ATK:
@@ -7618,8 +7639,12 @@ int status_change_start(struct block_list *src, struct block_list *bl, enum sc_t
 
 				// POISON - 4% of mhp per second
 				// val1 - bonus damage / val2 - src id
-				val4 = (1 + st->max_hp / 50) * ( val1 + 100 ) / 100;
+				// val4 - previous poison damage (if applicable)
+				val4 = val4 + (1 + st->max_hp / 50) * ( val1 + 100 ) / 100;
 				val4 = max(0, val4);
+
+				// after calculations are done, store total poison damage in val1
+				val1 = val3 * val4;
 				break;
 
 			case SC_IGNITE:

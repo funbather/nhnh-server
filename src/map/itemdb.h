@@ -475,6 +475,11 @@ struct item_package {
 	unsigned short must_qty;
 };
 
+struct item_affix {
+	int16 index;
+	struct script_code *script;
+};
+
 struct item_data {
 	uint16 nameid;
 	char name[ITEM_NAME_LENGTH],jname[ITEM_NAME_LENGTH];
@@ -608,11 +613,13 @@ struct itemdb_interface {
 	/* */
 	struct item_data *array[MAX_ITEMDB];
 	struct DBMap *other;// int nameid -> struct item_data*
+	struct DBMap *affixes;
 	struct item_data dummy; //This is the default dummy item used for non-existant items. [Skotlex]
 	/* */
 	void (*read_groups) (void);
 	void (*read_chains) (void);
 	void (*read_packages) (void);
+	void (*read_affixes) (void);
 	/* */
 	void (*write_cached_packages) (const char *config_filename);
 	bool (*read_cached_packages) (const char *config_filename);
@@ -623,6 +630,7 @@ struct itemdb_interface {
 	struct item_data* (*load)(int nameid);
 	struct item_data* (*search)(int nameid);
 	struct item_data* (*exists) (int nameid);
+	struct item_affix* (*affix_exists) (int index);
 	bool (*in_group) (struct item_group *group, int nameid);
 	int (*group_item) (struct item_group *group);
 	int (*chain_item) (unsigned short chain_id, int *rate);
@@ -663,6 +671,7 @@ struct itemdb_interface {
 	void (*read) (bool minimal);
 	void (*destroy_item_data) (struct item_data *self, int free_self);
 	int (*final_sub) (union DBKey key, struct DBData *data, va_list ap);
+	int (*affixes_final_sub) (union DBKey key, struct DBData *data, va_list ap);
 	void (*clear) (bool total);
 	struct item_combo * (*id2combo) (unsigned short id);
 	bool (*is_item_usable) (struct item_data *item);

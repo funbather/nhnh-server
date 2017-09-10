@@ -719,7 +719,7 @@ struct clif_interface {
 	void (*sendfakenpc) (struct map_session_data *sd, int npcid);
 	void (*scriptclear) (struct map_session_data *sd, int npcid);
 	/* client-user-interface-related */
-	void (*cubeopen) (struct map_session_data *sd, int itid, int quality, int ilvl, int slot1, int slot2, int slot3, int slot4, int rolls, int cubelvl);
+	void (*cubeopen) (struct map_session_data *sd, unsigned short itid, unsigned char quality, unsigned char ilvl, unsigned short slot1, unsigned short slot2, unsigned short slot3, unsigned short slot4, unsigned int rolls, unsigned char cubelvl);
 	void (*viewpoint) (struct map_session_data *sd, int npc_id, int type, int x, int y, int id, int color);
 	int (*damage) (struct block_list* src, struct block_list* dst, int sdelay, int ddelay, int64 damage, short div, unsigned char type, int64 damage2);
 	void (*sitting) (struct block_list* bl);

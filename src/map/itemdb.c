@@ -321,6 +321,10 @@ struct item_data* itemdb_exists(int nameid)
 	return item;
 }
 
+struct item_affix *itemdb_affix_exists(int index) {
+	return (struct item_affix *) idb_get(itemdb->affixes, index);
+}
+
 /// Returns human readable name for given item type.
 /// @param type Type id to retrieve name for ( IT_* ).
 const char* itemdb_typename(int type)
@@ -1366,6 +1370,100 @@ void itemdb_read_chains(void) {
 	ShowStatus("Done reading '"CL_WHITE"%d"CL_RESET"' entries in '"CL_WHITE"%s"CL_RESET"'.\n", count, config_filename);
 }
 
+void itemdb_read_affixes(void) {
+	struct config_t affix_db;
+	struct config_setting_t *ito = NULL, *conf = NULL;
+	int index = 0, count = 0;
+	const char *filepath = "db/affixes.conf";
+	VECTOR_DECL(int) duplicate_id;
+
+	if (!libconfig->load_file(&affix_db, filepath))
+		return;
+	
+#ifdef ENABLE_CASE_CHECK
+	script->parser_current_file = filepath;
+#endif // ENABLE_CASE_CHECK
+	
+	if ((ito=libconfig->setting_get_member(affix_db.root, "affix_db")) == NULL) {
+		ShowError("itemdb_read_affixes: '%s' could not be loaded.\n", filepath);
+		libconfig->destroy(&affix_db);
+		return;
+	}
+
+	VECTOR_INIT(duplicate_id);
+
+	VECTOR_ENSURE(duplicate_id, libconfig->setting_length(ito), 1);
+
+	while ((conf = libconfig->setting_get_elem(ito, index++))) {
+		struct item_affix t_opt = { 0 }, *s_opt = NULL;
+		const char *str = NULL;
+		int i = 0;
+
+		/* Id Lookup */
+		if (!libconfig->setting_lookup_int16(conf, "Id", &t_opt.index) || t_opt.index <= 0) {
+			ShowError("itemdb_read_affixes: Invalid Option Id provided for entry %d in '%s', skipping...\n", t_opt.index, filepath);
+			continue;
+		}
+
+		/* Checking for duplicate entries. */
+		ARR_FIND(0, VECTOR_LENGTH(duplicate_id), i, VECTOR_INDEX(duplicate_id, i) == t_opt.index);
+
+		if (i != VECTOR_LENGTH(duplicate_id)) {
+			ShowError("itemdb_read_affixes: Duplicate entry for Option Id %d in '%s', skipping...\n", t_opt.index, filepath);
+			continue;
+		}
+
+		VECTOR_PUSH(duplicate_id, t_opt.index);
+
+		/* Name Lookup */
+		if (!libconfig->setting_lookup_string(conf, "Name", &str)) {
+			ShowError("itemdb_read_affixes: Invalid Option Name '%s' provided for Id %d in '%s', skipping...\n", str, t_opt.index, filepath);
+			continue;
+		}
+
+		/* check for illegal characters in the constant. */
+		{
+			const char *c = str;
+
+			while (ISALNUM(*c) || *c == '_')
+				++c;
+
+			if (*c != '\0') {
+				ShowError("itemdb_read_affixes: Invalid characters in Affix Name '%s' for Id %d in '%s', skipping...\n", str, t_opt.index, filepath);
+				continue;
+			}
+		}
+
+		/* Set name as a script constant with index as value. */
+		script->set_constant2(str, t_opt.index, false, false);
+
+		/* Script Code Lookup */
+		if (!libconfig->setting_lookup_string(conf, "Script", &str)) {
+			ShowError("itemdb_read_affixes: Script code not found for entry %s (Id: %d) in '%s', skipping...\n", str, t_opt.index, filepath);
+			continue;
+		}
+		
+		/* Set Script */
+		t_opt.script = *str ? script->parse(str, filepath, t_opt.index, SCRIPT_IGNORE_EXTERNAL_BRACKETS, NULL) : NULL;
+
+		/* Allocate memory and copy contents */
+		CREATE(s_opt, struct item_affix, 1);
+		*s_opt = t_opt;
+
+		/* Store ptr in the database */
+		idb_put(itemdb->affixes, t_opt.index, s_opt);
+		count++;
+	}
+	
+#ifdef ENABLE_CASE_CHECK
+	script->parser_current_file = NULL;
+#endif // ENABLE_CASE_CHECK
+	
+	libconfig->destroy(&affix_db);
+	VECTOR_CLEAR(duplicate_id);
+	ShowStatus("Done reading '"CL_WHITE"%d"CL_RESET"' entries in '"CL_WHITE"%s"CL_RESET"'.\n", count, filepath);
+}
+
 /**
  * @return: amount of retrieved entries.
  **/
@@ -2165,6 +2263,7 @@ void itemdb_read(bool minimal) {
 	itemdb->read_groups();
 	itemdb->read_chains();
 	itemdb->read_packages();
+	itemdb->read_affixes();
 
 }
 
@@ -2226,6 +2325,17 @@ int itemdb_final_sub(union DBKey key, struct DBData *data, va_list ap)
 
 	return 0;
 }
+
+int itemdb_affixes_final_sub(union DBKey key, struct DBData *data, va_list ap)
+{
+	struct item_affix *ito = DB->data2ptr(data);
+	
+	if (ito->script != NULL)
+		script->free_code(ito->script);
+	
+	return 0;
+}
+
 void itemdb_clear(bool total) {
 	int i;
 	// clear the previous itemdb data
@@ -2289,6 +2399,7 @@ void itemdb_clear(bool total) {
 		return;
 
 	itemdb->other->clear(itemdb->other, itemdb->final_sub);
+	itemdb->affixes->clear(itemdb->affixes, itemdb->affixes_final_sub);
 
 	memset(itemdb->array, 0, sizeof(itemdb->array));
 
@@ -2373,6 +2484,7 @@ void do_final_itemdb(void) {
 	itemdb->clear(true);
 
 	itemdb->other->destroy(itemdb->other, itemdb->final_sub);
+	itemdb->affixes->destroy(itemdb->affixes, itemdb->affixes_final_sub);
 	itemdb->destroy_item_data(&itemdb->dummy, 0);
 	db_destroy(itemdb->names);
 }
@@ -2380,6 +2492,7 @@ void do_final_itemdb(void) {
 void do_init_itemdb(bool minimal) {
 	memset(itemdb->array, 0, sizeof(itemdb->array));
 	itemdb->other = idb_alloc(DB_OPT_BASE);
+	itemdb->affixes = idb_alloc(DB_OPT_RELEASE_DATA);
 	itemdb->names = strdb_alloc(DB_OPT_BASE,ITEM_NAME_LENGTH);
 	itemdb->create_dummy_data(); //Dummy data item.
 	itemdb->read(minimal);
@@ -2422,6 +2535,7 @@ void itemdb_defaults(void) {
 	itemdb->read_groups = itemdb_read_groups;
 	itemdb->read_chains = itemdb_read_chains;
 	itemdb->read_packages = itemdb_read_packages;
+	itemdb->read_affixes = itemdb_read_affixes;
 	/* */
 	itemdb->write_cached_packages = itemdb_write_cached_packages;
 	itemdb->read_cached_packages = itemdb_read_cached_packages;
@@ -2432,6 +2546,7 @@ void itemdb_defaults(void) {
 	itemdb->load = itemdb_load;
 	itemdb->search = itemdb_search;
 	itemdb->exists = itemdb_exists;
+	itemdb->affix_exists = itemdb_affix_exists;
 	itemdb->in_group = itemdb_in_group;
 	itemdb->group_item = itemdb_searchrandomid;
 	itemdb->chain_item = itemdb_chain_item;
@@ -2472,6 +2587,7 @@ void itemdb_defaults(void) {
 	itemdb->read = itemdb_read;
 	itemdb->destroy_item_data = destroy_item_data;
 	itemdb->final_sub = itemdb_final_sub;
+	itemdb->affixes_final_sub = itemdb_affixes_final_sub;
 	itemdb->clear = itemdb_clear;
 	itemdb->id2combo = itemdb_id2combo;
 	itemdb->is_item_usable = itemdb_is_item_usable;
