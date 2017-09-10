@@ -719,7 +719,7 @@ int char_memitemdata_to_sql(const struct item items[], int max, int id, int tabl
 {
 	StringBuf buf;
 	struct SqlStmt *stmt = NULL;
-	int i, j;
+	int i, j, k;
 	const char *tablename = NULL;
 	const char *selectoption = NULL;
 	bool has_favorite = false;
@@ -746,9 +746,11 @@ int char_memitemdata_to_sql(const struct item items[], int max, int id, int tabl
 	// it significantly reduces cpu load on the database server.
 
 	StrBuf->Init(&buf);
-	StrBuf->AppendStr(&buf, "SELECT `id`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `expire_time`, `bound`, `unique_id`,`rolls`");
+	StrBuf->AppendStr(&buf, "SELECT `id`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `expire_time`, `bound`, `unique_id`,`rolls`,`rank`,`slots`");
 	for (j = 0; j < MAX_SLOTS; ++j)
 		StrBuf->Printf(&buf, ", `card%d`", j);
+	for(j = 0; j < MAX_AFFIXES; j++)
+		StrBuf->Printf(&buf, ", `affix_idx%d`, `affix_val%d`", j, j);
 	if (has_favorite)
 		StrBuf->AppendStr(&buf, ", `favorite`");
 	StrBuf->Printf(&buf, " FROM `%s` WHERE `%s`='%d'", tablename, selectoption, id);
@@ -773,10 +775,18 @@ int char_memitemdata_to_sql(const struct item items[], int max, int id, int tabl
 	SQL->StmtBindColumn(stmt, 8, SQLDT_UCHAR,     &item.bound,       0, NULL, NULL);
 	SQL->StmtBindColumn(stmt, 9, SQLDT_UINT64,    &item.unique_id,   0, NULL, NULL);
 	SQL->StmtBindColumn(stmt,10, SQLDT_UINT,      &item.rolls,       0, NULL, NULL);
+	SQL->StmtBindColumn(stmt,11, SQLDT_SHORT,     &item.rank,        0, NULL, NULL);
+	SQL->StmtBindColumn(stmt,12, SQLDT_SHORT,     &item.slots,       0, NULL, NULL);
 	for (j = 0; j < MAX_SLOTS; ++j)
-		SQL->StmtBindColumn(stmt, 11+j, SQLDT_SHORT, &item.card[j], 0, NULL, NULL);
+		SQL->StmtBindColumn(stmt, 13+j, SQLDT_SHORT, &item.card[j], 0, NULL, NULL);
+
+	for (j = 0; j < MAX_AFFIXES; j++)
+		if (SQL_ERROR == SQL->StmtBindColumn(stmt, 13 + MAX_SLOTS + j * 2, SQLDT_INT16, &item.affix[j].index, 0, NULL, NULL)
+			|| SQL_ERROR == SQL->StmtBindColumn(stmt, 14 + MAX_SLOTS + j * 2, SQLDT_INT16, &item.affix[j].value, 0, NULL, NULL))
+			SqlStmt_ShowDebug(stmt);
+
 	if (has_favorite)
-		SQL->StmtBindColumn(stmt, 11+MAX_SLOTS, SQLDT_UCHAR, &item.favorite, 0, NULL, NULL);
+		SQL->StmtBindColumn(stmt, 13+MAX_SLOTS+MAX_AFFIXES*2, SQLDT_UCHAR, &item.favorite, 0, NULL, NULL);
 
 	// bit array indicating which inventory items have already been matched
 	flag = aCalloc(max, sizeof(bool));
@@ -791,13 +801,18 @@ int char_memitemdata_to_sql(const struct item items[], int max, int id, int tabl
 
 			if (items[i].nameid == item.nameid
 			 && items[i].unique_id == item.unique_id
+			 && items[i].rank == item.rank
+			 && items[i].slots == item.slots
 			 && items[i].card[0] == item.card[0]
+			 && items[i].card[1] == item.card[1]
 			 && items[i].card[2] == item.card[2]
 			 && items[i].card[3] == item.card[3]
 			) {
 				// They are the same item.
 				ARR_FIND(0, MAX_SLOTS, j, items[i].card[j] != item.card[j]);
+				ARR_FIND(0, MAX_AFFIXES, k, items[i].affix[k].index != item.affix[k].index);
 				if (j == MAX_SLOTS
+				 && k == MAX_AFFIXES
 				 && items[i].amount == item.amount
 				 && items[i].equip == item.equip
 				 && items[i].identify == item.identify
@@ -806,6 +821,8 @@ int char_memitemdata_to_sql(const struct item items[], int max, int id, int tabl
 				 && items[i].expire_time == item.expire_time
 				 && items[i].bound == item.bound
 				 && items[i].rolls == item.rolls
+				 && items[i].rank == item.rank
+				 && items[i].slots == item.slots
 				 && (!has_favorite || items[i].favorite == item.favorite)
 				) {
 					; //Do nothing.
@@ -816,6 +833,8 @@ int char_memitemdata_to_sql(const struct item items[], int max, int id, int tabl
 						tablename, items[i].amount, items[i].equip, items[i].identify, items[i].refine, items[i].attribute, items[i].expire_time, items[i].bound, items[i].rolls);
 					for (j = 0; j < MAX_SLOTS; ++j)
 						StrBuf->Printf(&buf, ", `card%d`='%d'", j, items[i].card[j]);
+					for (j = 0; j < MAX_AFFIXES; ++j)
+						StrBuf->Printf(&buf, ", `affix_idx%d`='%d', `affix_val%d`='%d'", j, items[i].affix[j].index, j, items[i].affix[j].value);
 					if (has_favorite)
 						StrBuf->Printf(&buf, ", `favorite`='%d'", items[i].favorite);
 					StrBuf->Printf(&buf, " WHERE `id`='%d' LIMIT 1", item.id);
@@ -841,9 +860,11 @@ int char_memitemdata_to_sql(const struct item items[], int max, int id, int tabl
 	SQL->StmtFree(stmt);
 
 	StrBuf->Clear(&buf);
-	StrBuf->Printf(&buf, "INSERT INTO `%s`(`%s`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `expire_time`, `bound`, `unique_id`, `rolls`", tablename, selectoption);
+	StrBuf->Printf(&buf, "INSERT INTO `%s`(`%s`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `expire_time`, `bound`, `unique_id`, `rolls`, `rank`, `slots`", tablename, selectoption);
 	for (j = 0; j < MAX_SLOTS; ++j)
 		StrBuf->Printf(&buf, ", `card%d`", j);
+	for (j = 0; j < MAX_AFFIXES; ++j)
+		StrBuf->Printf(&buf, ", `affix_idx%d`, `affix_val%d`", j);
 	if (has_favorite)
 		StrBuf->AppendStr(&buf, ", `favorite`");
 	StrBuf->AppendStr(&buf, ") VALUES ");
@@ -860,10 +881,12 @@ int char_memitemdata_to_sql(const struct item items[], int max, int id, int tabl
 		else
 			found = true;
 
-		StrBuf->Printf(&buf, "('%d', '%d', '%d', '%u', '%d', '%d', '%d', '%u', '%d', '%"PRIu64"', '%u'",
-			id, items[i].nameid, items[i].amount, items[i].equip, items[i].identify, items[i].refine, items[i].attribute, items[i].expire_time, items[i].bound, items[i].unique_id, items[i].rolls);
+		StrBuf->Printf(&buf, "('%d', '%d', '%d', '%u', '%d', '%d', '%d', '%u', '%d', '%"PRIu64"', '%u', '%d', '%d'",
+			id, items[i].nameid, items[i].amount, items[i].equip, items[i].identify, items[i].refine, items[i].attribute, items[i].expire_time, items[i].bound, items[i].unique_id, items[i].rolls, items[i].rank, items[i].slots);
 		for (j = 0; j < MAX_SLOTS; ++j)
 			StrBuf->Printf(&buf, ", '%d'", items[i].card[j]);
+		for (j = 0; j < MAX_AFFIXES; ++j)
+			StrBuf->Printf(&buf, ", '%d', '%d'", items[i].affix[j].index, items[i].affix[j].value);
 		if (has_favorite)
 			StrBuf->Printf(&buf, ", '%d'", items[i].favorite);
 		StrBuf->AppendStr(&buf, ")");
@@ -1195,9 +1218,11 @@ int char_mmo_char_fromsql(int char_id, struct mmo_charstatus* p, bool load_every
 	//read inventory
 	//`inventory` (`id`,`char_id`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `card0`, `card1`, `card2`, `card3`, `expire_time`, `favorite`, `bound`, `unique_id`, `rolls`)
 	StrBuf->Init(&buf);
-	StrBuf->AppendStr(&buf, "SELECT `id`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `expire_time`, `favorite`, `bound`, `unique_id`, `rolls`");
+	StrBuf->AppendStr(&buf, "SELECT `id`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `expire_time`, `favorite`, `bound`, `unique_id`, `rolls`, `rank`, `slots`");
 	for( i = 0; i < MAX_SLOTS; ++i )
 		StrBuf->Printf(&buf, ", `card%d`", i);
+	for( i = 0; i < MAX_AFFIXES; ++i )
+		StrBuf->Printf(&buf, ", `affix_idx%d`, `affix_val%d`", i, i);
 	StrBuf->Printf(&buf, " FROM `%s` WHERE `char_id`=? LIMIT %d", inventory_db, MAX_INVENTORY);
 
 	memset(&tmp_item, 0, sizeof(tmp_item));
@@ -1216,12 +1241,19 @@ int char_mmo_char_fromsql(int char_id, struct mmo_charstatus* p, bool load_every
 	 || SQL_ERROR == SQL->StmtBindColumn(stmt,  9, SQLDT_UCHAR,     &tmp_item.bound, 0, NULL, NULL)
 	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 10, SQLDT_UINT64,    &tmp_item.unique_id, 0, NULL, NULL)
 	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 11, SQLDT_UINT,      &tmp_item.rolls, 0, NULL, NULL)
+	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 12, SQLDT_SHORT,     &tmp_item.rank, 0, NULL, NULL)
+	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 13, SQLDT_SHORT,     &tmp_item.slots, 0, NULL, NULL)
 	)
 		SqlStmt_ShowDebug(stmt);
 	for( i = 0; i < MAX_SLOTS; ++i )
-		if( SQL_ERROR == SQL->StmtBindColumn(stmt, 12+i, SQLDT_SHORT, &tmp_item.card[i], 0, NULL, NULL) )
+		if( SQL_ERROR == SQL->StmtBindColumn(stmt, 14+i, SQLDT_SHORT, &tmp_item.card[i], 0, NULL, NULL) )
 			SqlStmt_ShowDebug(stmt);
-
+	for( i = 0; i < MAX_SLOTS; ++i ) {
+		if( SQL_ERROR == SQL->StmtBindColumn(stmt, 14+MAX_SLOTS+i*2, SQLDT_SHORT, &tmp_item.affix[i].index, 0, NULL, NULL) )
+			SqlStmt_ShowDebug(stmt);
+		if( SQL_ERROR == SQL->StmtBindColumn(stmt, 15+MAX_SLOTS+i*2, SQLDT_SHORT, &tmp_item.affix[i].value, 0, NULL, NULL) )
+			SqlStmt_ShowDebug(stmt);
+	}
 	for( i = 0; i < MAX_INVENTORY && SQL_SUCCESS == SQL->StmtNextRow(stmt); ++i )
 		memcpy(&p->inventory[i], &tmp_item, sizeof(tmp_item));
 
@@ -1230,7 +1262,7 @@ int char_mmo_char_fromsql(int char_id, struct mmo_charstatus* p, bool load_every
 	//read cart
 	//`cart_inventory` (`id`,`char_id`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `card0`, `card1`, `card2`, `card3`, expire_time`, `bound`, `unique_id`, `rolls`)
 	StrBuf->Clear(&buf);
-	StrBuf->AppendStr(&buf, "SELECT `id`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `expire_time`, `bound`, `unique_id`, `rolls`");
+	StrBuf->AppendStr(&buf, "SELECT `id`, `nameid`, `amount`, `equip`, `identify`, `refine`, `attribute`, `expire_time`, `bound`, `unique_id`, `rolls`, `rank`, `slots`");
 	for( j = 0; j < MAX_SLOTS; ++j )
 		StrBuf->Printf(&buf, ", `card%d`", j);
 	StrBuf->Printf(&buf, " FROM `%s` WHERE `char_id`=? LIMIT %d", cart_db, MAX_CART);
@@ -1250,11 +1282,18 @@ int char_mmo_char_fromsql(int char_id, struct mmo_charstatus* p, bool load_every
 	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 8, SQLDT_UCHAR,       &tmp_item.bound, 0, NULL, NULL)
 	 || SQL_ERROR == SQL->StmtBindColumn(stmt, 9, SQLDT_UINT64,      &tmp_item.unique_id, 0, NULL, NULL)
 	 || SQL_ERROR == SQL->StmtBindColumn(stmt,10, SQLDT_UINT,        &tmp_item.rolls, 0, NULL, NULL)
+	 || SQL_ERROR == SQL->StmtBindColumn(stmt,11, SQLDT_SHORT,       &tmp_item.rank, 0, NULL, NULL)
+	 || SQL_ERROR == SQL->StmtBindColumn(stmt,12, SQLDT_SHORT,       &tmp_item.slots, 0, NULL, NULL)
 	) {
 		SqlStmt_ShowDebug(stmt);
 	}
 	for( i = 0; i < MAX_SLOTS; ++i )
-		if( SQL_ERROR == SQL->StmtBindColumn(stmt, 11+i, SQLDT_SHORT, &tmp_item.card[i], 0, NULL, NULL) )
+		if( SQL_ERROR == SQL->StmtBindColumn(stmt, 13+i, SQLDT_SHORT, &tmp_item.card[i], 0, NULL, NULL) )
+			SqlStmt_ShowDebug(stmt);
+
+	for (i = 0; i < MAX_AFFIXES; i++)
+		if (SQL_ERROR == SQL->StmtBindColumn(stmt, 13 + MAX_SLOTS + i * 2, SQLDT_INT16, &tmp_item.affix[i].index, 0, NULL, NULL)
+			|| SQL_ERROR == SQL->StmtBindColumn(stmt, 14 + MAX_SLOTS + i * 2, SQLDT_INT16, &tmp_item.affix[i].value, 0, NULL, NULL))
 			SqlStmt_ShowDebug(stmt);
 
 	for( i = 0; i < MAX_CART && SQL_SUCCESS == SQL->StmtNextRow(stmt); ++i )

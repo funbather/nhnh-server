@@ -2389,10 +2389,12 @@ void clif_additem(struct map_session_data *sd, int n, int amount, int fail) {
 		p.HireExpireDate = sd->status.inventory[n].expire_time;
 		p.bindOnEquipType = sd->status.inventory[n].bound && !itemdb->isstackable2(sd->inventory_data[n]) ? 2 : sd->inventory_data[n]->flag.bindonequip ? 1 : 0;
 		p.rolls = sd->status.inventory[n].rolls;
+		p.rank = sd->status.inventory[n].rank;
+		p.slots = sd->status.inventory[n].slots;
 		for (i=0; i<5; i++){
-			p.option_data[i].index = 0;
-			p.option_data[i].value = 0;
-			p.option_data[i].param = 0;
+			p.affix[i].index = sd->status.inventory[n].affix[i].index;
+			p.affix[i].value = sd->status.inventory[n].affix[i].value;
+			p.affix[i].param = sd->status.inventory[n].affix[i].param;
 		}
 	}
 	p.result = (unsigned char)fail;
@@ -2490,13 +2492,15 @@ void clif_item_equip(short idx, struct EQUIPITEM_INFO *p, struct item *i, struct
 
 	p->option_count = 0;
 	for (j=0; j<5; j++){
-		p->option_data[j].index = 0;
-		p->option_data[j].value = 0;
-		p->option_data[j].param = 0;
+		p->affix[j].index = i->affix[j].index;
+		p->affix[j].value = i->affix[j].value;
+		p->affix[j].param = i->affix[j].param;
 	}
 
 	p->ilvl = i->attribute;
 	p->rolls = i->rolls;
+	p->rank = i->rank;
+	p->slots = i->slots;
 }
 
 void clif_item_normal(short idx, struct NORMALITEM_INFO *p, struct item *i, struct item_data *id) {

@@ -25,7 +25,7 @@ prt_monk,218,164,3	script	Anton#appraiser	4_M_KHKIEL,{
 			for( .@i = 0; .@i < @inventorylist_count; .@i++ ) {
 				if (@inventorylist_id[.@i] == 811 ||
 						@inventorylist_id[.@i] == 812 ) {
-					.@menu$ += getitemname(@inventorylist_id[.@i]) + " [Lv. "+@inventorylist_attribute[.@i]+"]";
+					.@menu$ += getitemname(@inventorylist_id[.@i]) + " [Tier "+@inventorylist_attribute[.@i]+"]";
 				}
 				.@menu$ += ":";
 			}
